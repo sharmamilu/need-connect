@@ -64,16 +64,19 @@ export default function TabsLayout() {
           }}
         />
 
-        {/* Sell/Add Item Tab */}
+        {/* Portfolio Tab Group */}
         <Tabs.Screen
-          name="sell"
+          name="portfolio"
           options={{
-            title: "Sell",
+            title: "Portfolio",
             tabBarIcon: ({ color, size }) => (
-              <Feather name="plus-circle" size={size} color={color} />
+              <Feather name="briefcase" size={size} color={color} />
             ),
           }}
         />
+
+        {/* Hide sell from tab bar */}
+        <Tabs.Screen name="sell" options={{ href: null }} />
 
         {/* Messages Tab */}
         <Tabs.Screen
