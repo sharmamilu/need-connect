@@ -10,6 +10,7 @@ export const registerApi = (payload: {
   return apiClient("/auth/register", {
     method: "POST",
     body: payload,
+    skipAuth: true, // Public endpoint
   });
 };
 
@@ -17,5 +18,6 @@ export const loginApi = (payload: { phone: string; password: string }) => {
   return apiClient("/auth/login", {
     method: "POST",
     body: payload,
+    skipAuth: true, // Public endpoint
   });
 };

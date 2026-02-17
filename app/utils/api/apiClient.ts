@@ -1,21 +1,27 @@
+import { getToken } from "../storage";
+
 const BASE_URL = "http://localhost:5000/api";
 
 type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "DELETE";
   body?: any;
-  token?: string;
+  skipAuth?: boolean; // For public endpoints like login/register
 };
 
 export const apiClient = async (
   endpoint: string,
-  { method = "GET", body, token }: RequestOptions = {},
+  { method = "GET", body, skipAuth = false }: RequestOptions = {},
 ) => {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
+  // Automatically get token from secure storage for protected routes
+  if (!skipAuth) {
+    const token = await getToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
   }
 
   const res = await fetch(`${BASE_URL}${endpoint}`, {

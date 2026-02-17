@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, router } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   KeyboardAvoidingView,
@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { getToken } from "../utils/storage";
 
 import AuthHeader from "../components/auth/AuthHeader";
 import AppButton from "../components/common/AppButton";
@@ -19,6 +20,7 @@ import AppInput from "../components/common/AppInput";
 import { colors } from "../constants/colors";
 import { useAlert } from "../utils/AlertManager";
 import { loginApi } from "../utils/api/auth.api";
+import { useAuth } from "../utils/AuthContext";
 
 type LoginForm = {
   phone: string;
@@ -29,6 +31,7 @@ type FormErrors = Partial<Record<keyof LoginForm, string>>;
 
 export default function Login() {
   const { showAlert } = useAlert();
+  const { login } = useAuth();
   const [form, setForm] = useState<LoginForm>({
     phone: "",
     password: "",
@@ -36,6 +39,7 @@ export default function Login() {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [isUserLogged, setIsUserLogged] = useState(false);
 
   // Animation refs for each field
   const phoneShakeAnimation = useRef(new Animated.Value(0)).current;
@@ -84,6 +88,17 @@ export default function Login() {
     ]).start();
   };
 
+  // check if the user is already logged in if so just redirect him to the dashboard
+  useEffect(() => {
+    const checkUserLogged = async () => {
+      const token = await getToken();
+      if (token) {
+        router.replace("/dashboard" as any);
+      }
+    };
+    checkUserLogged();
+  }, []);
+
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
 
@@ -116,7 +131,13 @@ export default function Login() {
     if (!validate()) return;
 
     try {
-      await loginApi(form as any);
+      const response = await loginApi(form as any);
+
+      // Use auth context to save token and user data
+      if (response.data?.token && response.data?.user) {
+        await login(response.data.token, response.data.user);
+      }
+
       showAlert("Login successful!", "success");
       router.replace("/(tabs)/dashboard" as any);
     } catch (err: any) {
