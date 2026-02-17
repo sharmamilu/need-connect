@@ -1,11 +1,11 @@
 import { StyleSheet, Text, View } from "react-native";
 
-export default function ExploreScreen() {
+export default function DashboardScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Explore Marketplace 🔍</Text>
+      <Text style={styles.title}>Welcome to P2P Marketplace 🎉</Text>
       <Text style={styles.subtitle}>
-        Search and discover amazing items from the community.
+        Your dashboard is ready. Browse, buy, and sell with ease.
       </Text>
     </View>
   );

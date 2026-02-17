@@ -1,11 +1,11 @@
 import { StyleSheet, Text, View } from "react-native";
 
-export default function ExploreScreen() {
+export default function MessagesScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Explore Marketplace 🔍</Text>
+      <Text style={styles.title}>Messages 💬</Text>
       <Text style={styles.subtitle}>
-        Search and discover amazing items from the community.
+        Chat with buyers and sellers. Your conversations will appear here.
       </Text>
     </View>
   );
