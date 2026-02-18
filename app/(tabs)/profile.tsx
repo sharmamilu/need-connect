@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../utils/AuthContext";
 
 export default function ProfileScreen() {
@@ -10,7 +11,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
           <Feather name="user" size={60} color="#4A6CF7" />
@@ -40,7 +41,7 @@ export default function ProfileScreen() {
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -51,8 +52,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    paddingTop: 60,
-    paddingBottom: 30,
+    paddingVertical: 30,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",

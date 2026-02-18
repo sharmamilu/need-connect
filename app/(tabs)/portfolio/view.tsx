@@ -1,6 +1,7 @@
 // app/(tabs)/portfolio/view.tsx
 import { router } from "expo-router";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import GallerySection from "../../components/portfolio/GallerySection";
 import PortfolioActions from "../../components/portfolio/PortfolioActions";
 import ProfileSection from "../../components/portfolio/ProfileSection";
@@ -78,36 +79,41 @@ export default function ViewPortfolio() {
   }
 
   return (
-    <ScrollView
-      style={{ backgroundColor: "#F8F9FA" }}
-      contentContainerStyle={{ padding: 18, paddingBottom: 40 }}
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: "#F8F9FA" }}
+      edges={["top"]}
     >
-      <ProfileSection data={portfolio} onChange={() => {}} mode="view" />
-      <ServicesSection
-        services={portfolio.services}
-        onChange={() => {}}
-        mode="view"
-      />
-      <SkillsSection
-        skills={portfolio.skills}
-        onChange={() => {}}
-        mode="view"
-      />
-      <GallerySection
-        images={portfolio.gallery}
-        onChange={() => {}}
-        mode="view"
-      />
-      <SocialLinksSection
-        links={portfolio.links}
-        onChange={() => {}}
-        mode="view"
-      />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 18, paddingBottom: 40 }}
+      >
+        <ProfileSection data={portfolio} onChange={() => {}} mode="view" />
+        <ServicesSection
+          services={portfolio.services}
+          onChange={() => {}}
+          mode="view"
+        />
+        <SkillsSection
+          skills={portfolio.skills}
+          onChange={() => {}}
+          mode="view"
+        />
+        <GallerySection
+          images={portfolio.gallery}
+          onChange={() => {}}
+          mode="view"
+        />
+        <SocialLinksSection
+          links={portfolio.links}
+          onChange={() => {}}
+          mode="view"
+        />
 
-      <PortfolioActions
-        mode="view"
-        onSubmit={() => router.push("/portfolio/edit")}
-      />
-    </ScrollView>
+        <PortfolioActions
+          mode="view"
+          onSubmit={() => router.push("/portfolio/edit")}
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 }

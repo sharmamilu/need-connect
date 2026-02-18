@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import GallerySection from "../../components/portfolio/GallerySection";
 import PortfolioActions from "../../components/portfolio/PortfolioActions";
 import ProfileSection from "../../components/portfolio/ProfileSection";
@@ -127,42 +128,51 @@ export default function EditPortfolio() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <SafeAreaView
       style={{ flex: 1, backgroundColor: "#F8F9FA" }}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      edges={["top"]}
     >
-      <ScrollView
-        contentContainerStyle={{ padding: 18, paddingBottom: 40 }}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
-        <ProfileSection data={portfolio} onChange={setPortfolio} mode="edit" />
-        <ServicesSection
-          services={portfolio.services}
-          onChange={(services) => setPortfolio({ ...portfolio, services })}
-          mode="edit"
-        />
-        <SkillsSection
-          skills={portfolio.skills}
-          onChange={(skills) => setPortfolio({ ...portfolio, skills })}
-          mode="edit"
-        />
-        <GallerySection
-          images={portfolio.gallery}
-          onChange={(gallery) => setPortfolio({ ...portfolio, gallery })}
-          mode="edit"
-        />
-        <SocialLinksSection
-          links={portfolio.links}
-          onChange={(links) => setPortfolio({ ...portfolio, links })}
-          mode="edit"
-        />
-        <PortfolioActions
-          mode={portfolio._id ? "edit" : "create"}
-          onSubmit={handleSubmit}
-          loading={saveLoading}
-        />
-      </ScrollView>
-    </KeyboardAvoidingView>
+        <ScrollView
+          contentContainerStyle={{ padding: 18, paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <ProfileSection
+            data={portfolio}
+            onChange={setPortfolio}
+            mode="edit"
+          />
+          <ServicesSection
+            services={portfolio.services}
+            onChange={(services) => setPortfolio({ ...portfolio, services })}
+            mode="edit"
+          />
+          <SkillsSection
+            skills={portfolio.skills}
+            onChange={(skills) => setPortfolio({ ...portfolio, skills })}
+            mode="edit"
+          />
+          <GallerySection
+            images={portfolio.gallery}
+            onChange={(gallery) => setPortfolio({ ...portfolio, gallery })}
+            mode="edit"
+          />
+          <SocialLinksSection
+            links={portfolio.links}
+            onChange={(links) => setPortfolio({ ...portfolio, links })}
+            mode="edit"
+          />
+          <PortfolioActions
+            mode={portfolio._id ? "edit" : "create"}
+            onSubmit={handleSubmit}
+            loading={saveLoading}
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -219,244 +220,246 @@ export default function RegisterScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={styles.card}>
-          {/* LOGO AREA */}
-          <View style={styles.logoContainer}>
-            {/* Replace with your real logo */}
-            <Image
-              source={require("../../assets/images/icon.png")}
-              style={styles.logo}
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.card}>
+            {/* LOGO AREA */}
+            <View style={styles.logoContainer}>
+              {/* Replace with your real logo */}
+              <Image
+                source={require("../../assets/images/icon.png")}
+                style={styles.logo}
+              />
+              <Text style={styles.logoText}>Need Connect</Text>
+            </View>
+
+            <AuthHeader
+              title="Create Account"
+              subtitle="Get started in seconds"
             />
-            <Text style={styles.logoText}>Need Connect</Text>
-          </View>
 
-          <AuthHeader
-            title="Create Account"
-            subtitle="Get started in seconds"
-          />
-
-          <View style={styles.form}>
-            {/* FULL NAME */}
-            <View>
-              <Animated.View
-                style={[
-                  styles.inputWrapper,
-                  {
-                    transform: [
-                      {
-                        translateX: nameShakeAnimation,
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <AppInput
-                  placeholder="Full Name"
-                  value={form.name}
-                  onChangeText={(v: string) => updateField("name", v)}
-                  style={styles.inputWithIcon}
-                />
-                <Feather
-                  name="user"
-                  size={20}
-                  color="#999"
-                  style={styles.inputIcon}
-                />
-              </Animated.View>
-              {errors.name && (
-                <Text style={styles.errorText}>{errors.name}</Text>
-              )}
-            </View>
-
-            {/* PHONE */}
-            <View>
-              <Animated.View
-                style={[
-                  styles.inputWrapper,
-                  {
-                    transform: [
-                      {
-                        translateX: phoneShakeAnimation,
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <AppInput
-                  placeholder="Phone Number"
-                  keyboardType="phone-pad"
-                  value={form.phone}
-                  onChangeText={(v: string) => updateField("phone", v)}
-                  style={styles.inputWithIcon}
-                />
-                <Feather
-                  name="phone"
-                  size={20}
-                  color="#999"
-                  style={styles.inputIcon}
-                />
-              </Animated.View>
-              {errors.phone && (
-                <Text style={styles.errorText}>{errors.phone}</Text>
-              )}
-            </View>
-
-            {/* EMAIL */}
-            <View>
-              <Animated.View
-                style={[
-                  styles.inputWrapper,
-                  {
-                    transform: [
-                      {
-                        translateX: emailShakeAnimation,
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <AppInput
-                  placeholder="Email (optional)"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  value={form.email}
-                  onChangeText={(v: string) => updateField("email", v)}
-                  style={styles.inputWithIcon}
-                />
-                <Feather
-                  name="mail"
-                  size={20}
-                  color="#999"
-                  style={styles.inputIcon}
-                />
-              </Animated.View>
-              {errors.email && (
-                <Text style={styles.errorText}>{errors.email}</Text>
-              )}
-            </View>
-
-            {/* PASSWORD */}
-            <View>
-              <Animated.View
-                style={[
-                  styles.inputWrapper,
-                  {
-                    transform: [
-                      {
-                        translateX: passwordShakeAnimation,
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <AppInput
-                  placeholder="Password"
-                  secureTextEntry={!showPassword}
-                  value={form.password}
-                  onChangeText={(v: string) => updateField("password", v)}
-                  style={styles.inputWithIcon}
-                />
-                <TouchableOpacity
-                  onPress={toggleShowPassword}
-                  style={styles.passwordIcon}
+            <View style={styles.form}>
+              {/* FULL NAME */}
+              <View>
+                <Animated.View
+                  style={[
+                    styles.inputWrapper,
+                    {
+                      transform: [
+                        {
+                          translateX: nameShakeAnimation,
+                        },
+                      ],
+                    },
+                  ]}
                 >
+                  <AppInput
+                    placeholder="Full Name"
+                    value={form.name}
+                    onChangeText={(v: string) => updateField("name", v)}
+                    style={styles.inputWithIcon}
+                  />
                   <Feather
-                    name={showPassword ? "eye-off" : "eye"}
+                    name="user"
                     size={20}
                     color="#999"
+                    style={styles.inputIcon}
                   />
-                </TouchableOpacity>
-              </Animated.View>
-              {errors.password && (
-                <Text style={styles.errorText}>{errors.password}</Text>
-              )}
-            </View>
+                </Animated.View>
+                {errors.name && (
+                  <Text style={styles.errorText}>{errors.name}</Text>
+                )}
+              </View>
 
-            {/* CONFIRM PASSWORD */}
-            <View>
-              <Animated.View
-                style={[
-                  styles.inputWrapper,
-                  {
-                    transform: [
-                      {
-                        translateX: confirmPasswordShakeAnimation,
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <AppInput
-                  placeholder="Confirm Password"
-                  secureTextEntry={!showConfirmPassword}
-                  value={form.confirmPassword}
-                  onChangeText={(v: string) =>
-                    updateField("confirmPassword", v)
-                  }
-                  style={styles.inputWithIcon}
-                />
-                <TouchableOpacity
-                  onPress={toggleShowConfirmPassword}
-                  style={styles.passwordIcon}
+              {/* PHONE */}
+              <View>
+                <Animated.View
+                  style={[
+                    styles.inputWrapper,
+                    {
+                      transform: [
+                        {
+                          translateX: phoneShakeAnimation,
+                        },
+                      ],
+                    },
+                  ]}
                 >
+                  <AppInput
+                    placeholder="Phone Number"
+                    keyboardType="phone-pad"
+                    value={form.phone}
+                    onChangeText={(v: string) => updateField("phone", v)}
+                    style={styles.inputWithIcon}
+                  />
                   <Feather
-                    name={showConfirmPassword ? "eye-off" : "eye"}
+                    name="phone"
                     size={20}
                     color="#999"
+                    style={styles.inputIcon}
                   />
+                </Animated.View>
+                {errors.phone && (
+                  <Text style={styles.errorText}>{errors.phone}</Text>
+                )}
+              </View>
+
+              {/* EMAIL */}
+              <View>
+                <Animated.View
+                  style={[
+                    styles.inputWrapper,
+                    {
+                      transform: [
+                        {
+                          translateX: emailShakeAnimation,
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  <AppInput
+                    placeholder="Email (optional)"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={form.email}
+                    onChangeText={(v: string) => updateField("email", v)}
+                    style={styles.inputWithIcon}
+                  />
+                  <Feather
+                    name="mail"
+                    size={20}
+                    color="#999"
+                    style={styles.inputIcon}
+                  />
+                </Animated.View>
+                {errors.email && (
+                  <Text style={styles.errorText}>{errors.email}</Text>
+                )}
+              </View>
+
+              {/* PASSWORD */}
+              <View>
+                <Animated.View
+                  style={[
+                    styles.inputWrapper,
+                    {
+                      transform: [
+                        {
+                          translateX: passwordShakeAnimation,
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  <AppInput
+                    placeholder="Password"
+                    secureTextEntry={!showPassword}
+                    value={form.password}
+                    onChangeText={(v: string) => updateField("password", v)}
+                    style={styles.inputWithIcon}
+                  />
+                  <TouchableOpacity
+                    onPress={toggleShowPassword}
+                    style={styles.passwordIcon}
+                  >
+                    <Feather
+                      name={showPassword ? "eye-off" : "eye"}
+                      size={20}
+                      color="#999"
+                    />
+                  </TouchableOpacity>
+                </Animated.View>
+                {errors.password && (
+                  <Text style={styles.errorText}>{errors.password}</Text>
+                )}
+              </View>
+
+              {/* CONFIRM PASSWORD */}
+              <View>
+                <Animated.View
+                  style={[
+                    styles.inputWrapper,
+                    {
+                      transform: [
+                        {
+                          translateX: confirmPasswordShakeAnimation,
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  <AppInput
+                    placeholder="Confirm Password"
+                    secureTextEntry={!showConfirmPassword}
+                    value={form.confirmPassword}
+                    onChangeText={(v: string) =>
+                      updateField("confirmPassword", v)
+                    }
+                    style={styles.inputWithIcon}
+                  />
+                  <TouchableOpacity
+                    onPress={toggleShowConfirmPassword}
+                    style={styles.passwordIcon}
+                  >
+                    <Feather
+                      name={showConfirmPassword ? "eye-off" : "eye"}
+                      size={20}
+                      color="#999"
+                    />
+                  </TouchableOpacity>
+                </Animated.View>
+                {errors.confirmPassword && (
+                  <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+                )}
+              </View>
+
+              {/* CHECKBOX */}
+              <View style={styles.checkboxContainer}>
+                <TouchableOpacity
+                  style={[styles.checkbox, accepted && styles.checkboxChecked]}
+                  onPress={() => setAccepted(!accepted)}
+                >
+                  {accepted && <Text style={styles.checkmark}>✓</Text>}
                 </TouchableOpacity>
-              </Animated.View>
-              {errors.confirmPassword && (
-                <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-              )}
+
+                <Text style={styles.checkboxText}>
+                  I agree to the{" "}
+                  <Link href="/login">
+                    <Text style={styles.link}>Terms & Conditions</Text>
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/login">
+                    <Text style={styles.link}>Privacy Policy</Text>
+                  </Link>
+                </Text>
+              </View>
+
+              <AppButton
+                title="Register"
+                onPress={handleRegister}
+                disabled={!isFormValid}
+              />
             </View>
 
-            {/* CHECKBOX */}
-            <View style={styles.checkboxContainer}>
-              <TouchableOpacity
-                style={[styles.checkbox, accepted && styles.checkboxChecked]}
-                onPress={() => setAccepted(!accepted)}
-              >
-                {accepted && <Text style={styles.checkmark}>✓</Text>}
-              </TouchableOpacity>
-
-              <Text style={styles.checkboxText}>
-                I agree to the{" "}
-                <Link href="/login">
-                  <Text style={styles.link}>Terms & Conditions</Text>
-                </Link>{" "}
-                and{" "}
-                <Link href="/login">
-                  <Text style={styles.link}>Privacy Policy</Text>
-                </Link>
-              </Text>
+            {/* LOGIN */}
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>Already have an account? </Text>
+              <Link href="/login">
+                <Text style={styles.loginLink}>Login</Text>
+              </Link>
             </View>
-
-            <AppButton
-              title="Register"
-              onPress={handleRegister}
-              disabled={!isFormValid}
-            />
           </View>
-
-          {/* LOGIN */}
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Already have an account? </Text>
-            <Link href="/login">
-              <Text style={styles.loginLink}>Login</Text>
-            </Link>
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

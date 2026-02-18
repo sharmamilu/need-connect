@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { getToken } from "../utils/storage";
 
 import AuthHeader from "../components/auth/AuthHeader";
@@ -162,125 +163,127 @@ export default function Login() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={styles.card}>
-          {/* LOGO AREA */}
-          <View style={styles.logoContainer}>
-            {/* Replace with your real logo */}
-            <Image
-              source={require("../../assets/images/icon.png")}
-              style={styles.logo}
-            />
-            <Text style={styles.logoText}>Need Connect</Text>
-          </View>
-
-          <AuthHeader
-            title="Welcome Back"
-            subtitle="Login using your phone number"
-          />
-
-          <View style={styles.form}>
-            {/* PHONE NUMBER */}
-            <View>
-              <Animated.View
-                style={[
-                  styles.inputWrapper,
-                  {
-                    transform: [
-                      {
-                        translateX: phoneShakeAnimation,
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <AppInput
-                  placeholder="Phone Number"
-                  keyboardType="phone-pad"
-                  value={form.phone}
-                  onChangeText={(v: string) => updateField("phone", v)}
-                  style={styles.inputWithIcon}
-                />
-                <Feather
-                  name="phone"
-                  size={20}
-                  color="#999"
-                  style={styles.inputIcon}
-                />
-              </Animated.View>
-              {errors.phone && (
-                <Text style={styles.errorText}>{errors.phone}</Text>
-              )}
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.card}>
+            {/* LOGO AREA */}
+            <View style={styles.logoContainer}>
+              {/* Replace with your real logo */}
+              <Image
+                source={require("../../assets/images/icon.png")}
+                style={styles.logo}
+              />
+              <Text style={styles.logoText}>Need Connect</Text>
             </View>
 
-            {/* PASSWORD */}
-            <View>
-              <Animated.View
-                style={[
-                  styles.inputWrapper,
-                  {
-                    transform: [
-                      {
-                        translateX: passwordShakeAnimation,
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <AppInput
-                  placeholder="Password"
-                  secureTextEntry={!showPassword}
-                  value={form.password}
-                  onChangeText={(v: string) => updateField("password", v)}
-                  style={styles.inputWithIcon}
-                />
-                <TouchableOpacity
-                  onPress={toggleShowPassword}
-                  style={styles.passwordIcon}
+            <AuthHeader
+              title="Welcome Back"
+              subtitle="Login using your phone number"
+            />
+
+            <View style={styles.form}>
+              {/* PHONE NUMBER */}
+              <View>
+                <Animated.View
+                  style={[
+                    styles.inputWrapper,
+                    {
+                      transform: [
+                        {
+                          translateX: phoneShakeAnimation,
+                        },
+                      ],
+                    },
+                  ]}
                 >
+                  <AppInput
+                    placeholder="Phone Number"
+                    keyboardType="phone-pad"
+                    value={form.phone}
+                    onChangeText={(v: string) => updateField("phone", v)}
+                    style={styles.inputWithIcon}
+                  />
                   <Feather
-                    name={showPassword ? "eye-off" : "eye"}
+                    name="phone"
                     size={20}
                     color="#999"
+                    style={styles.inputIcon}
                   />
-                </TouchableOpacity>
-              </Animated.View>
-              {errors.password && (
-                <Text style={styles.errorText}>{errors.password}</Text>
-              )}
+                </Animated.View>
+                {errors.phone && (
+                  <Text style={styles.errorText}>{errors.phone}</Text>
+                )}
+              </View>
+
+              {/* PASSWORD */}
+              <View>
+                <Animated.View
+                  style={[
+                    styles.inputWrapper,
+                    {
+                      transform: [
+                        {
+                          translateX: passwordShakeAnimation,
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  <AppInput
+                    placeholder="Password"
+                    secureTextEntry={!showPassword}
+                    value={form.password}
+                    onChangeText={(v: string) => updateField("password", v)}
+                    style={styles.inputWithIcon}
+                  />
+                  <TouchableOpacity
+                    onPress={toggleShowPassword}
+                    style={styles.passwordIcon}
+                  >
+                    <Feather
+                      name={showPassword ? "eye-off" : "eye"}
+                      size={20}
+                      color="#999"
+                    />
+                  </TouchableOpacity>
+                </Animated.View>
+                {errors.password && (
+                  <Text style={styles.errorText}>{errors.password}</Text>
+                )}
+              </View>
+
+              {/* FORGOT PASSWORD LINK */}
+              <View style={styles.forgotContainer}>
+                <Link href="/login">
+                  <Text style={styles.forgotLink}>Forgot Password?</Text>
+                </Link>
+              </View>
+
+              <AppButton
+                title="Login"
+                onPress={handleLogin}
+                disabled={!isFormValid}
+              />
             </View>
 
-            {/* FORGOT PASSWORD LINK */}
-            <View style={styles.forgotContainer}>
-              <Link href="/login">
-                <Text style={styles.forgotLink}>Forgot Password?</Text>
+            {/* REGISTER LINK */}
+            <View style={styles.registerContainer}>
+              <Text style={styles.registerText}>Don't have an account? </Text>
+              <Link href="/register">
+                <Text style={styles.registerLink}>Register</Text>
               </Link>
             </View>
-
-            <AppButton
-              title="Login"
-              onPress={handleLogin}
-              disabled={!isFormValid}
-            />
           </View>
-
-          {/* REGISTER LINK */}
-          <View style={styles.registerContainer}>
-            <Text style={styles.registerText}>Don't have an account? </Text>
-            <Link href="/register">
-              <Text style={styles.registerLink}>Register</Text>
-            </Link>
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
