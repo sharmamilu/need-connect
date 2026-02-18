@@ -48,7 +48,7 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
             quality: 0.7,
           });
           if (!result.canceled) {
-            onChange({ ...data, profilePhoto: result.assets[0].uri });
+            onChange({ ...data, profilePhoto: { uri: result.assets[0].uri } });
           }
         },
       },
@@ -61,7 +61,7 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
             quality: 0.7,
           });
           if (!result.canceled) {
-            onChange({ ...data, profilePhoto: result.assets[0].uri });
+            onChange({ ...data, profilePhoto: { uri: result.assets[0].uri } });
           }
         },
       },
@@ -92,7 +92,7 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
       if (address.length > 0) {
         const addr = address[0];
         const locationStr = `${addr.city || addr.district}, ${addr.region || addr.subregion}`;
-        onChange({ ...data, location: locationStr } as any);
+        onChange({ ...data, location: locationStr });
       }
     } catch (error) {
       Alert.alert(
@@ -114,7 +114,9 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
             <Image
               source={
                 data.profilePhoto
-                  ? { uri: data.profilePhoto }
+                  ? typeof data.profilePhoto === "string"
+                    ? { uri: data.profilePhoto }
+                    : { uri: data.profilePhoto.uri }
                   : require("../../../assets/images/icon.png")
               }
               style={styles.viewAvatar}
@@ -129,15 +131,12 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
             </Text>
           </View>
 
-          {/* Location View */}
-          {(data as any).location && (
+          {data.location ? (
             <View style={styles.viewLocationBadge}>
               <Feather name="map-pin" size={12} color="#666" />
-              <Text style={styles.viewLocationText}>
-                {(data as any).location}
-              </Text>
+              <Text style={styles.viewLocationText}>{data.location}</Text>
             </View>
-          )}
+          ) : null}
 
           <View style={styles.viewDivider} />
 
@@ -179,7 +178,9 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
             <Image
               source={
                 data.profilePhoto
-                  ? { uri: data.profilePhoto }
+                  ? typeof data.profilePhoto === "string"
+                    ? { uri: data.profilePhoto }
+                    : { uri: data.profilePhoto.uri }
                   : require("../../../assets/images/icon.png")
               }
               style={styles.avatar}
@@ -228,15 +229,15 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
           <TextInput
             placeholder="City, State"
             placeholderTextColor="#aaa"
-            value={(data as any).location || ""}
+            value={data.location || ""}
             editable={editable}
-            onChangeText={(location) => onChange({ ...data, location } as any)}
+            onChangeText={(location) => onChange({ ...data, location })}
             style={styles.input}
           />
           <Feather
             name="map-pin"
             size={18}
-            color={(data as any).location ? "#4A6CF7" : "#999"}
+            color={data.location ? "#4A6CF7" : "#999"}
             style={styles.inputIcon}
           />
           {editable && (

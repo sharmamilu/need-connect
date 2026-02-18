@@ -1,24 +1,36 @@
 import { Feather } from "@expo/vector-icons";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-export default function PortfolioActions({ mode, onSubmit }: any) {
+export default function PortfolioActions({ mode, onSubmit, loading }: any) {
   const isView = mode === "view";
 
   return (
     <View style={styles.container}>
       <TouchableOpacity
         onPress={onSubmit}
+        disabled={loading}
         style={[
           styles.button,
           isView ? styles.editButton : styles.submitButton,
+          loading && { opacity: 0.7 },
         ]}
         activeOpacity={0.8}
       >
-        <Feather
-          name={isView ? "edit-2" : "check-circle"}
-          size={18}
-          color="#fff"
-        />
+        {loading ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <Feather
+            name={isView ? "edit-2" : "check-circle"}
+            size={18}
+            color="#fff"
+          />
+        )}
         <Text style={styles.buttonText}>
           {mode === "view"
             ? "Edit Portfolio"

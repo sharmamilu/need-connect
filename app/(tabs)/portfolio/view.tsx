@@ -1,6 +1,6 @@
 // app/(tabs)/portfolio/view.tsx
 import { router } from "expo-router";
-import { ScrollView } from "react-native";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import GallerySection from "../../components/portfolio/GallerySection";
 import PortfolioActions from "../../components/portfolio/PortfolioActions";
 import ProfileSection from "../../components/portfolio/ProfileSection";
@@ -9,19 +9,73 @@ import SkillsSection from "../../components/portfolio/SkillsSection";
 import SocialLinksSection from "../../components/portfolio/SocialLinksSection";
 import { usePortfolio } from "../../hooks/usePortfolio";
 
-// mock data – later from API
-const mockPortfolio = {
-  name: "Milan Sharma",
-  profession: "Electrician",
-  bio: "Experienced electrician for home and office work.",
-  services: ["Wiring", "Repair", "Installation"],
-  skills: ["Safety", "Fast Service"],
-  gallery: [],
-  links: { linkedin: "https://linkedin.com" },
-};
-
 export default function ViewPortfolio() {
-  const { portfolio } = usePortfolio(mockPortfolio);
+  const { portfolio, loading, error } = usePortfolio();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#4A6CF7" />
+        <Text style={{ marginTop: 10, color: "#666" }}>
+          Loading Portfolio...
+        </Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 20,
+        }}
+      >
+        <Text style={{ fontSize: 16, color: "#E53935", textAlign: "center" }}>
+          {error}
+        </Text>
+        <PortfolioActions
+          mode="create"
+          onSubmit={() => router.push("/portfolio/create")}
+        />
+      </View>
+    );
+  }
+
+  // If loading is done and there's no name, it's likely empty
+  if (!portfolio.name && !loading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 20,
+        }}
+      >
+        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
+          No Portfolio Found
+        </Text>
+        <Text
+          style={{
+            textAlign: "center",
+            color: "#666",
+            marginTop: 10,
+            marginBottom: 20,
+          }}
+        >
+          You haven't created a portfolio yet. Let's build one to showcase your
+          skills!
+        </Text>
+        <PortfolioActions
+          mode="create"
+          onSubmit={() => router.push("/portfolio/create")}
+        />
+      </View>
+    );
+  }
 
   return (
     <ScrollView

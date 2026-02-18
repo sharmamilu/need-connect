@@ -10,22 +10,25 @@ import {
   View,
 } from "react-native";
 
+import { PortfolioLocalImage } from "../../types/portfolio";
+
 type Props = {
-  images: string[];
-  onChange: (images: string[]) => void;
+  images: (string | PortfolioLocalImage)[];
+  onChange: (images: (string | PortfolioLocalImage)[]) => void;
   mode: "create" | "edit" | "view";
 };
 
 const ImageItem = ({
-  uri,
+  item,
   onRemove,
   editable,
 }: {
-  uri: string;
+  item: string | PortfolioLocalImage;
   onRemove: () => void;
   editable: boolean;
 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const uri = typeof item === "string" ? item : item.uri;
 
   useState(() => {
     Animated.timing(fadeAnim, {
@@ -86,8 +89,10 @@ export default function GallerySection({ images = [], onChange, mode }: Props) {
     });
 
     if (!result.canceled) {
-      const newUris = result.assets.map((asset) => asset.uri);
-      onChange([...images, ...newUris]);
+      const newImages: PortfolioLocalImage[] = result.assets.map((asset) => ({
+        uri: asset.uri,
+      }));
+      onChange([...images, ...newImages]);
     }
   };
 
@@ -122,10 +127,10 @@ export default function GallerySection({ images = [], onChange, mode }: Props) {
         </View>
       ) : (
         <View style={styles.grid}>
-          {images.map((uri, index) => (
+          {images.map((item, index) => (
             <ImageItem
-              key={`${uri}-${index}`}
-              uri={uri}
+              key={`${index}`}
+              item={item}
               editable={editable}
               onRemove={() => removeImage(index)}
             />

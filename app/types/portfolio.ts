@@ -1,18 +1,23 @@
-// types/portfolio.ts
+export type PortfolioLocalImage = {
+  uri: string;
+};
+
 export type Portfolio = {
-  profilePhoto?: string;
+  _id?: string;
+  profilePhoto?: string | PortfolioLocalImage;
   name: string;
   profession: string;
   bio: string;
-  location?: string;
+  location: string;
 
   services: string[];
   skills: string[];
-  gallery: string[];
+  gallery: (string | PortfolioLocalImage)[];
 
   links: {
     linkedin?: string;
     github?: string;
     website?: string;
+    [key: string]: string | undefined;
   };
 };
