@@ -85,7 +85,7 @@ export default function ViewPortfolio() {
     >
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 18, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 18, paddingBottom: 10 }}
       >
         <ProfileSection data={portfolio} onChange={() => {}} mode="view" />
         <ServicesSection

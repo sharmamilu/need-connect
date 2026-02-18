@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { Platform } from "react-native";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 
 export default function TabsLayout() {
@@ -10,12 +11,13 @@ export default function TabsLayout() {
           headerShown: false,
           tabBarActiveTintColor: "#4A6CF7",
           tabBarInactiveTintColor: "#999",
+          tabBarHideOnKeyboard: true,
           tabBarStyle: {
             backgroundColor: "#fff",
             borderTopWidth: 1,
             borderTopColor: "#f0f0f0",
-            height: 84,
-            paddingBottom: 10,
+            height: Platform.OS === "ios" ? 88 : 78,
+            paddingBottom: Platform.OS === "ios" ? 30 : 12,
             paddingTop: 10,
             elevation: 8,
             shadowColor: "#000",

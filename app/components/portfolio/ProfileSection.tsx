@@ -43,8 +43,7 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
         text: "Camera",
         onPress: async () => {
           const result = await ImagePicker.launchCameraAsync({
-            allowsEditing: true,
-            aspect: [1, 1],
+            allowsEditing: false,
             quality: 0.7,
           });
           if (!result.canceled) {
@@ -56,8 +55,7 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
         text: "Gallery",
         onPress: async () => {
           const result = await ImagePicker.launchImageLibraryAsync({
-            allowsEditing: true,
-            aspect: [1, 1],
+            allowsEditing: false,
             quality: 0.7,
           });
           if (!result.canceled) {

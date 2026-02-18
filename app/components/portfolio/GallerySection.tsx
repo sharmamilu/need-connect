@@ -84,6 +84,7 @@ export default function GallerySection({ images = [], onChange, mode }: Props) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsMultipleSelection: true,
+      allowsEditing: false,
       selectionLimit: 10,
       quality: 0.7,
     });

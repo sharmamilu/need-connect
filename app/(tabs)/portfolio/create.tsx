@@ -113,7 +113,7 @@ export default function CreatePortfolio() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
         <ScrollView
-          contentContainerStyle={{ padding: 18, paddingBottom: 40 }}
+          contentContainerStyle={{ padding: 18, paddingBottom: 10 }}
           showsVerticalScrollIndicator={false}
         >
           <ProfileSection
