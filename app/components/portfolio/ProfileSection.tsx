@@ -1,9 +1,10 @@
 import { Feather } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import { useState } from "react";
 import {
+  Alert,
   Image,
-  KeyboardAvoidingView,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -23,8 +24,87 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
   const [nameFocused, setNameFocused] = useState(false);
   const [professionFocused, setProfessionFocused] = useState(false);
   const [bioFocused, setBioFocused] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
 
-  // For View Mode, we want a different look
+  const pickImage = async () => {
+    if (!editable) return;
+
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission Required",
+        "We need access to your gallery to upload a photo.",
+      );
+      return;
+    }
+
+    Alert.alert("Update Photo", "Choose a source", [
+      {
+        text: "Camera",
+        onPress: async () => {
+          const result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.7,
+          });
+          if (!result.canceled) {
+            onChange({ ...data, profilePhoto: result.assets[0].uri });
+          }
+        },
+      },
+      {
+        text: "Gallery",
+        onPress: async () => {
+          const result = await ImagePicker.launchImageLibraryAsync({
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.7,
+          });
+          if (!result.canceled) {
+            onChange({ ...data, profilePhoto: result.assets[0].uri });
+          }
+        },
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
+  const getLocation = async () => {
+    if (!editable) return;
+    setLocationLoading(true);
+
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Denied",
+          "Location access is needed to auto-fill your area.",
+        );
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      const address = await Location.reverseGeocodeAsync({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+
+      if (address.length > 0) {
+        const addr = address[0];
+        const locationStr = `${addr.city || addr.district}, ${addr.region || addr.subregion}`;
+        onChange({ ...data, location: locationStr } as any);
+      }
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        "Could not fetch location. Please enter it manually.",
+      );
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
+  // For View Mode
   if (mode === "view") {
     return (
       <View style={styles.viewCard}>
@@ -49,6 +129,16 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
             </Text>
           </View>
 
+          {/* Location View */}
+          {(data as any).location && (
+            <View style={styles.viewLocationBadge}>
+              <Feather name="map-pin" size={12} color="#666" />
+              <Text style={styles.viewLocationText}>
+                {(data as any).location}
+              </Text>
+            </View>
+          )}
+
           <View style={styles.viewDivider} />
 
           <View style={styles.bioContainer_view}>
@@ -69,10 +159,7 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <View style={styles.card}>
         <View style={styles.editHeader}>
           <Text style={styles.editTitle}>
@@ -87,6 +174,7 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
             disabled={!editable}
             style={styles.photoWrapper}
             activeOpacity={0.7}
+            onPress={pickImage}
           >
             <Image
               source={
@@ -103,7 +191,9 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
             )}
           </TouchableOpacity>
           {editable && (
-            <Text style={styles.photoHint}>Tap to change photo</Text>
+            <TouchableOpacity onPress={pickImage}>
+              <Text style={styles.photoHint}>Tap to change photo</Text>
+            </TouchableOpacity>
           )}
         </View>
 
@@ -112,12 +202,6 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
           <Text style={styles.fieldLabel}>Full Name</Text>
         </View>
         <View style={styles.inputContainer}>
-          <Feather
-            name="user"
-            size={18}
-            color={nameFocused ? "#4A6CF7" : "#999"}
-            style={styles.inputIcon}
-          />
           <TextInput
             placeholder="Your Full Name"
             placeholderTextColor="#aaa"
@@ -128,6 +212,42 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
             onFocus={() => setNameFocused(true)}
             onBlur={() => setNameFocused(false)}
           />
+          <Feather
+            name="user"
+            size={18}
+            color={nameFocused ? "#4A6CF7" : "#999"}
+            style={styles.inputIcon}
+          />
+        </View>
+
+        {/* Location Input */}
+        <View style={styles.fieldLabelContainer}>
+          <Text style={styles.fieldLabel}>Location</Text>
+        </View>
+        <View style={styles.inputContainer}>
+          <TextInput
+            placeholder="City, State"
+            placeholderTextColor="#aaa"
+            value={(data as any).location || ""}
+            editable={editable}
+            onChangeText={(location) => onChange({ ...data, location } as any)}
+            style={styles.input}
+          />
+          <Feather
+            name="map-pin"
+            size={18}
+            color={(data as any).location ? "#4A6CF7" : "#999"}
+            style={styles.inputIcon}
+          />
+          {editable && (
+            <TouchableOpacity
+              style={styles.locationButton}
+              onPress={getLocation}
+              disabled={locationLoading}
+            >
+              <Feather name="crosshair" size={18} color="#4A6CF7" />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Profession Input */}
@@ -135,12 +255,6 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
           <Text style={styles.fieldLabel}>Profession</Text>
         </View>
         <View style={styles.inputContainer}>
-          <Feather
-            name="briefcase"
-            size={18}
-            color={professionFocused ? "#4A6CF7" : "#999"}
-            style={styles.inputIcon}
-          />
           <TextInput
             placeholder="e.g., Lead Electrician"
             placeholderTextColor="#aaa"
@@ -151,6 +265,12 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
             onFocus={() => setProfessionFocused(true)}
             onBlur={() => setProfessionFocused(false)}
           />
+          <Feather
+            name="briefcase"
+            size={18}
+            color={professionFocused ? "#4A6CF7" : "#999"}
+            style={styles.inputIcon}
+          />
         </View>
 
         {/* Bio Input */}
@@ -158,14 +278,8 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
           <Text style={styles.fieldLabel}>Professional Bio</Text>
         </View>
         <View style={[styles.inputContainer, styles.bioContainer]}>
-          <Feather
-            name="align-left"
-            size={18}
-            color={bioFocused ? "#4A6CF7" : "#999"}
-            style={[styles.inputIcon, styles.bioIcon]}
-          />
           <TextInput
-            placeholder="Describe your experience and what you offer..."
+            placeholder="Describe your experience..."
             placeholderTextColor="#aaa"
             value={data.bio}
             editable={editable}
@@ -181,6 +295,12 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
             onFocus={() => setBioFocused(true)}
             onBlur={() => setBioFocused(false)}
           />
+          <Feather
+            name="align-left"
+            size={18}
+            color={bioFocused ? "#4A6CF7" : "#999"}
+            style={[styles.inputIcon, styles.bioIcon]}
+          />
         </View>
 
         {/* Character count for bio */}
@@ -190,7 +310,7 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
           </Text>
         )}
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -214,14 +334,14 @@ const styles = StyleSheet.create({
   },
   banner: {
     height: 100,
-    backgroundColor: "#4A6CF7", // Could be a gradient
+    backgroundColor: "#4A6CF7",
     opacity: 0.9,
   },
   viewContent: {
     alignItems: "center",
     paddingHorizontal: 20,
     paddingBottom: 24,
-    marginTop: -50, // Pull content up over banner
+    marginTop: -50,
   },
   avatarBorder: {
     padding: 4,
@@ -259,6 +379,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#4A6CF7",
+  },
+  viewLocationBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+    gap: 4,
+  },
+  viewLocationText: {
+    fontSize: 12,
+    color: "#666",
+    fontWeight: "500",
   },
   viewDivider: {
     width: "100%",
@@ -362,7 +493,8 @@ const styles = StyleSheet.create({
   inputIcon: {
     position: "absolute",
     left: 14,
-    zIndex: 1,
+    zIndex: 10,
+    elevation: 10,
   },
   bioIcon: {
     top: 14,
@@ -386,6 +518,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 2,
+  },
+  locationButton: {
+    position: "absolute",
+    right: 12,
+    padding: 8,
   },
   bio: {
     minHeight: 120,

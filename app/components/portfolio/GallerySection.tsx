@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useRef, useState } from "react";
 import {
   Animated,
@@ -68,6 +69,28 @@ const ImageItem = ({
 export default function GallerySection({ images = [], onChange, mode }: Props) {
   const editable = mode !== "view";
 
+  const pickImages = async () => {
+    if (!editable) return;
+
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      alert("Permission to access gallery is required!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsMultipleSelection: true,
+      selectionLimit: 10,
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      const newUris = result.assets.map((asset) => asset.uri);
+      onChange([...images, ...newUris]);
+    }
+  };
+
   const removeImage = (index: number) => {
     onChange(images.filter((_, i) => i !== index));
   };
@@ -111,7 +134,11 @@ export default function GallerySection({ images = [], onChange, mode }: Props) {
       )}
 
       {editable && (
-        <TouchableOpacity style={styles.uploadButton} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.uploadButton}
+          activeOpacity={0.7}
+          onPress={pickImages}
+        >
           <View style={styles.uploadContent}>
             <Feather name="upload-cloud" size={20} color="#4A6CF7" />
             <Text style={styles.uploadText}>Upload New Photos</Text>

@@ -26,12 +26,6 @@ export default function SocialLinksSection({ links, onChange, mode }: Props) {
       </View>
 
       <View style={styles.inputContainer}>
-        <Feather
-          name="linkedin"
-          size={18}
-          color={linkedinFocused ? "#4A6CF7" : "#999"}
-          style={styles.icon}
-        />
         <TextInput
           placeholder="LinkedIn Profile URL"
           placeholderTextColor="#aaa"
@@ -46,15 +40,15 @@ export default function SocialLinksSection({ links, onChange, mode }: Props) {
             !editable && styles.inputDisabled,
           ]}
         />
+        <Feather
+          name="linkedin"
+          size={18}
+          color={linkedinFocused ? "#4A6CF7" : "#999"}
+          style={styles.icon}
+        />
       </View>
 
       <View style={styles.inputContainer}>
-        <Feather
-          name="github"
-          size={18}
-          color={githubFocused ? "#4A6CF7" : "#999"}
-          style={styles.icon}
-        />
         <TextInput
           placeholder="GitHub Profile URL"
           placeholderTextColor="#aaa"
@@ -69,15 +63,15 @@ export default function SocialLinksSection({ links, onChange, mode }: Props) {
             !editable && styles.inputDisabled,
           ]}
         />
+        <Feather
+          name="github"
+          size={18}
+          color={githubFocused ? "#4A6CF7" : "#999"}
+          style={styles.icon}
+        />
       </View>
 
       <View style={styles.inputContainer}>
-        <Feather
-          name="globe"
-          size={18}
-          color={websiteFocused ? "#4A6CF7" : "#999"}
-          style={styles.icon}
-        />
         <TextInput
           placeholder="Personal Website URL"
           placeholderTextColor="#aaa"
@@ -91,6 +85,12 @@ export default function SocialLinksSection({ links, onChange, mode }: Props) {
             websiteFocused && styles.inputFocused,
             !editable && styles.inputDisabled,
           ]}
+        />
+        <Feather
+          name="globe"
+          size={18}
+          color={websiteFocused ? "#4A6CF7" : "#999"}
+          style={styles.icon}
         />
       </View>
     </View>
@@ -131,7 +131,8 @@ const styles = StyleSheet.create({
   icon: {
     position: "absolute",
     left: 12,
-    zIndex: 1,
+    zIndex: 10,
+    elevation: 10,
   },
   input: {
     flex: 1,

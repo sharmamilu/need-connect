@@ -4,6 +4,7 @@ export type Portfolio = {
   name: string;
   profession: string;
   bio: string;
+  location?: string;
 
   services: string[];
   skills: string[];
