@@ -1,7 +1,8 @@
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
-import { useState } from "react";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Image,
@@ -12,6 +13,8 @@ import {
   View,
 } from "react-native";
 import { Portfolio } from "../../types/portfolio";
+import { CountryData, fetchCountries } from "../../utils/countryHelper";
+import CountryCodePicker from "./CountryCodePicker";
 
 type Props = {
   data: Portfolio;
@@ -24,7 +27,48 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
   const [nameFocused, setNameFocused] = useState(false);
   const [professionFocused, setProfessionFocused] = useState(false);
   const [bioFocused, setBioFocused] = useState(false);
+  const [contactFocused, setContactFocused] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<CountryData>({
+    name: "United States",
+    code: data.contact?.countryCode || "+1",
+    flag: "🇺🇸",
+    cca2: "US",
+  });
+
+  // Sync selected country and ensure data.contact.countryCode is set
+  useEffect(() => {
+    const syncCountryData = async () => {
+      const currentCode = data.contact?.countryCode;
+
+      // 1. If data is missing countryCode but we have a default/selected one, push it to parent
+      if (!currentCode && selectedCountry.code) {
+        onChange({
+          ...data,
+          contact: { ...data.contact, countryCode: selectedCountry.code },
+        });
+      }
+
+      // 2. Initial manual sync for UI state if code changed from parent
+      if (currentCode && currentCode !== selectedCountry.code) {
+        setSelectedCountry((prev) => ({ ...prev, code: currentCode }));
+      }
+
+      // 3. Resolve full country data to get the correct flag
+      if (editable) {
+        const countries = await fetchCountries();
+        const codeToMatch = currentCode || selectedCountry.code || "+1";
+        const found = countries.find((c) => c.code === codeToMatch);
+        if (found) {
+          setSelectedCountry(found);
+        }
+      }
+    };
+
+    syncCountryData();
+  }, [data.contact?.countryCode]);
 
   const pickImage = async () => {
     if (!editable) return;
@@ -150,6 +194,25 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
                 "No bio added yet. Tell people about your expertise!"}
             </Text>
           </View>
+
+          <View style={styles.viewDivider} />
+
+          <View style={styles.viewContactGrid}>
+            <View style={styles.viewContactItem}>
+              <Feather name="phone" size={16} color="#4A6CF7" />
+              <Text style={styles.viewContactText}>
+                {data.contact?.countryCode
+                  ? `${data.contact.countryCode} ${data.contact.phone || ""}`
+                  : data.contact?.phone || "No phone added"}
+              </Text>
+            </View>
+            <View style={styles.viewContactItem}>
+              <Feather name="mail" size={16} color="#4A6CF7" />
+              <Text style={styles.viewContactText}>
+                {data.email || "No email added"}
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
     );
@@ -159,10 +222,20 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
     <View style={styles.container}>
       <View style={styles.card}>
         <View style={styles.editHeader}>
-          <Text style={styles.editTitle}>
-            {mode === "create" ? "Build Your Profile" : "Edit Profile"}
-          </Text>
-          <Text style={styles.editSubtitle}>Make a great first impression</Text>
+          <View>
+            <Text style={styles.editTitle}>
+              {mode === "create" ? "Build Your Profile" : "Edit Profile"}
+            </Text>
+            <Text style={styles.editSubtitle}>
+              Make a great first impression
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => router.back()}
+          >
+            <Feather name="x" size={24} color="#666" />
+          </TouchableOpacity>
         </View>
 
         {/* Profile Photo Section */}
@@ -249,6 +322,85 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
           )}
         </View>
 
+        {/* Contact Input */}
+        <View style={styles.fieldLabelContainer}>
+          <Text style={styles.fieldLabel}>Phone Number (Mandatory)</Text>
+        </View>
+        <View style={styles.phoneInputRow}>
+          <TouchableOpacity
+            style={styles.countryPickerButton}
+            onPress={() => setPickerVisible(true)}
+            disabled={!editable}
+          >
+            <Text style={styles.countryFlag}>{selectedCountry.flag}</Text>
+            <Text style={styles.countryCodeText}>{selectedCountry.code}</Text>
+            <Feather name="chevron-down" size={14} color="#666" />
+          </TouchableOpacity>
+          <View style={[styles.inputContainer, { flex: 1, marginBottom: 0 }]}>
+            <TextInput
+              placeholder="e.g. 123 456 7890"
+              placeholderTextColor="#aaa"
+              keyboardType="phone-pad"
+              value={data.contact?.phone || ""}
+              editable={editable}
+              onChangeText={(phone) =>
+                onChange({
+                  ...data,
+                  contact: {
+                    ...data.contact,
+                    countryCode: selectedCountry.code,
+                    phone,
+                  },
+                })
+              }
+              style={[
+                styles.input,
+                styles.phoneInput,
+                contactFocused && styles.inputFocused,
+              ]}
+              onFocus={() => setContactFocused(true)}
+              onBlur={() => setContactFocused(false)}
+            />
+            <Feather
+              name="phone"
+              size={18}
+              color={contactFocused ? "#4A6CF7" : "#999"}
+              style={styles.inputIcon}
+            />
+          </View>
+        </View>
+        {!data.contact?.phone && (
+          <Text style={styles.errorHint}>* Contact number is required</Text>
+        )}
+
+        {/* Email Input */}
+        <View style={styles.fieldLabelContainer}>
+          <Text style={styles.fieldLabel}>Email Address (Optional)</Text>
+        </View>
+        <View style={styles.inputContainer}>
+          <TextInput
+            placeholder="e.g. hello@example.com"
+            placeholderTextColor="#aaa"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={data.email}
+            editable={editable}
+            onChangeText={(email) => onChange({ ...data, email })}
+            style={[styles.input, emailFocused && styles.inputFocused]}
+            onFocus={() => setEmailFocused(true)}
+            onBlur={() => setEmailFocused(false)}
+          />
+          <Feather
+            name="mail"
+            size={18}
+            color={emailFocused ? "#4A6CF7" : "#999"}
+            style={styles.inputIcon}
+          />
+        </View>
+        {data.email && !/^\S+@\S+\.\S+$/.test(data.email) && (
+          <Text style={styles.errorHint}>* Please enter a valid email</Text>
+        )}
+
         {/* Profession Input */}
         <View style={styles.fieldLabelContainer}>
           <Text style={styles.fieldLabel}>Profession</Text>
@@ -308,6 +460,19 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
             {data.bio?.length || 0}/500 characters
           </Text>
         )}
+
+        <CountryCodePicker
+          visible={pickerVisible}
+          onClose={() => setPickerVisible(false)}
+          onSelect={(country) => {
+            setSelectedCountry(country);
+            // Update nested countryCode AND clear phone as requested
+            onChange({
+              ...data,
+              contact: { countryCode: country.code, phone: "" },
+            });
+          }}
+        />
       </View>
     </View>
   );
@@ -428,6 +593,13 @@ const styles = StyleSheet.create({
   },
   editHeader: {
     marginBottom: 24,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  closeButton: {
+    padding: 4,
+    marginTop: -2,
   },
   editTitle: {
     fontSize: 20,
@@ -531,11 +703,63 @@ const styles = StyleSheet.create({
   bioContainer: {
     alignItems: "flex-start",
   },
+  phoneInput: {
+    paddingLeft: 44,
+  },
   charCount: {
     fontSize: 11,
     color: "#999",
     textAlign: "right",
     marginTop: -12,
     marginBottom: 10,
+  },
+  viewContactGrid: {
+    width: "100%",
+    gap: 12,
+  },
+  viewContactItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FAFAFA",
+    padding: 12,
+    borderRadius: 12,
+    gap: 12,
+  },
+  viewContactText: {
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "500",
+  },
+  phoneInputRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  countryPickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FAFAFA",
+    borderWidth: 1.5,
+    borderColor: "#F0F0F0",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 52,
+    gap: 6,
+  },
+  countryFlag: {
+    fontSize: 20,
+  },
+  countryCodeText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#333",
+  },
+  errorHint: {
+    color: "#E53935",
+    fontSize: 12,
+    marginTop: -15,
+    marginBottom: 15,
+    marginLeft: 4,
   },
 });

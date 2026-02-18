@@ -46,7 +46,7 @@ export default function PortfolioActions({ mode, onSubmit, loading }: any) {
 const styles = StyleSheet.create({
   container: {
     marginTop: 10,
-    marginBottom: 10,
+    marginBottom: 20,
   },
   button: {
     flexDirection: "row",

@@ -9,6 +9,11 @@ export type Portfolio = {
   profession: string;
   bio: string;
   location: string;
+  contact: {
+    countryCode: string;
+    phone: string;
+  };
+  email: string;
 
   services: string[];
   skills: string[];

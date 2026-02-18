@@ -9,6 +9,11 @@ export const usePortfolio = (initial?: Portfolio) => {
     profession: "",
     bio: "",
     location: "",
+    contact: {
+      countryCode: "",
+      phone: "",
+    },
+    email: "",
     services: [],
     skills: [],
     gallery: [],

@@ -35,6 +35,12 @@ export default function EditPortfolio() {
 
   const handleSubmit = async () => {
     if (saveLoading) return;
+
+    if (!portfolio.contact?.phone) {
+      Alert.alert("Required Field", "Please add a contact phone number.");
+      return;
+    }
+
     setSaveLoading(true);
 
     try {
@@ -73,6 +79,15 @@ export default function EditPortfolio() {
       /* 3️⃣ Build final payload */
       const payload = {
         ...portfolio,
+        name: portfolio.name?.trim(),
+        profession: portfolio.profession?.trim(),
+        bio: portfolio.bio?.trim(),
+        location: portfolio.location?.trim(),
+        email: portfolio.email?.trim(),
+        contact: {
+          ...portfolio.contact,
+          phone: portfolio.contact?.phone?.trim(),
+        },
         profilePhoto: profilePhotoUrl,
         gallery: galleryUrls,
       };

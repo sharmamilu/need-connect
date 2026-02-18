@@ -69,11 +69,20 @@ const ImageItem = ({
   );
 };
 
+const MAX_IMAGES = 8;
+
 export default function GallerySection({ images = [], onChange, mode }: Props) {
   const editable = mode !== "view";
+  const [showLimitError, setShowLimitError] = useState(false);
 
   const pickImages = async () => {
     if (!editable) return;
+
+    if (images.length >= MAX_IMAGES) {
+      setShowLimitError(true);
+      setTimeout(() => setShowLimitError(false), 3000);
+      return;
+    }
 
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -81,16 +90,19 @@ export default function GallerySection({ images = [], onChange, mode }: Props) {
       return;
     }
 
+    const remainingCount = MAX_IMAGES - images.length;
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsMultipleSelection: true,
       allowsEditing: false,
-      selectionLimit: 10,
+      selectionLimit: remainingCount,
       quality: 0.7,
     });
 
     if (!result.canceled) {
-      const newImages: PortfolioLocalImage[] = result.assets.map((asset) => ({
+      const selectedImages = result.assets.slice(0, remainingCount);
+      const newImages: PortfolioLocalImage[] = selectedImages.map((asset) => ({
         uri: asset.uri,
       }));
       onChange([...images, ...newImages]);
@@ -111,7 +123,9 @@ export default function GallerySection({ images = [], onChange, mode }: Props) {
 
         {images.length > 0 && (
           <View style={styles.countBadge}>
-            <Text style={styles.countText}>{images.length}</Text>
+            <Text style={styles.countText}>
+              {images.length}/{MAX_IMAGES}
+            </Text>
           </View>
         )}
       </View>
@@ -140,16 +154,26 @@ export default function GallerySection({ images = [], onChange, mode }: Props) {
       )}
 
       {editable && (
-        <TouchableOpacity
-          style={styles.uploadButton}
-          activeOpacity={0.7}
-          onPress={pickImages}
-        >
-          <View style={styles.uploadContent}>
-            <Feather name="upload-cloud" size={20} color="#4A6CF7" />
-            <Text style={styles.uploadText}>Upload New Photos</Text>
-          </View>
-        </TouchableOpacity>
+        <>
+          {showLimitError && (
+            <View style={styles.errorContainer}>
+              <Feather name="alert-circle" size={16} color="#E53935" />
+              <Text style={styles.errorText}>
+                Limit reached! Max {MAX_IMAGES} photos allowed.
+              </Text>
+            </View>
+          )}
+          <TouchableOpacity
+            style={styles.uploadButton}
+            activeOpacity={0.7}
+            onPress={pickImages}
+          >
+            <View style={styles.uploadContent}>
+              <Feather name="upload-cloud" size={20} color="#4A6CF7" />
+              <Text style={styles.uploadText}>Upload New Photos</Text>
+            </View>
+          </TouchableOpacity>
+        </>
       )}
     </View>
   );
@@ -259,6 +283,23 @@ const styles = StyleSheet.create({
   uploadText: {
     color: "#4A6CF7",
     fontSize: 14,
+    fontWeight: "600",
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFEBEE",
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginBottom: 12,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "#FFCDD2",
+  },
+  errorText: {
+    color: "#E53935",
+    fontSize: 13,
     fontWeight: "600",
   },
 });
