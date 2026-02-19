@@ -81,6 +81,14 @@ export default function TabsLayout() {
             ),
           }}
         />
+
+        {/* Hide CommentsScreen from tab bar */}
+        <Tabs.Screen
+          name="CommentsScreen"
+          options={{
+            href: null,
+          }}
+        />
       </Tabs>
     </ProtectedRoute>
   );
