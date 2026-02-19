@@ -1,15 +1,21 @@
-import { StyleSheet, Text, View } from "react-native";
+import { FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import PostCard from "../components/post/PostCard";
+import { mockPosts } from "../data/mockPosts";
 
-export default function DashboardScreen() {
+export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Welcome to P2P Marketplace 🎉</Text>
-        <Text style={styles.subtitle}>
-          Your dashboard is ready. Browse, buy, and sell with ease.
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Feed</Text>
       </View>
+      <FlatList
+        data={mockPosts}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <PostCard post={item} />}
+        contentContainerStyle={{ padding: 16 }}
+        showsVerticalScrollIndicator={false}
+      />
     </SafeAreaView>
   );
 }
@@ -17,23 +23,18 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#f5f6fa",
   },
-  content: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
   },
-  title: {
-    fontSize: 22,
+  headerTitle: {
+    fontSize: 20,
     fontWeight: "700",
     color: "#333",
-  },
-  subtitle: {
-    marginTop: 10,
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
   },
 });

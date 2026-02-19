@@ -29,6 +29,14 @@ export default function RootLayout() {
               name="modal"
               options={{ presentation: "modal", title: "Modal" }}
             />
+            <Stack.Screen
+              name="comments"
+              options={{
+                presentation: "modal",
+                headerShown: false,
+                animation: "slide_from_bottom",
+              }}
+            />
           </Stack>
           <StatusBar style="auto" />
         </AlertProvider>
