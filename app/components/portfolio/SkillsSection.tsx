@@ -90,7 +90,9 @@ export default function SkillsSection({ skills = [], onChange, mode }: Props) {
       <View style={styles.header}>
         <View style={styles.titleContainer}>
           <Feather name="target" size={20} color="#4A6CF7" />
-          <Text style={styles.title}>Key Skills</Text>
+          <Text style={styles.title}>
+            Key Skills <Text style={{ color: "#E53935" }}>*</Text>
+          </Text>
         </View>
 
         {skills.length > 0 && (

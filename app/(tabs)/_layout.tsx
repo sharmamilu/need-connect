@@ -35,18 +35,9 @@ export default function TabsLayout() {
           },
         }}
       >
-        {/* Hide index.tsx from tab bar */}
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: "Home",
-            href: null,
-          }}
-        />
-
         {/* Home/Dashboard Tab */}
         <Tabs.Screen
-          name="dashboard"
+          name="index"
           options={{
             title: "Home",
             tabBarIcon: ({ color, size }) => (
@@ -79,17 +70,6 @@ export default function TabsLayout() {
 
         {/* Hide sell from tab bar */}
         <Tabs.Screen name="sell" options={{ href: null }} />
-
-        {/* Messages Tab */}
-        <Tabs.Screen
-          name="messages"
-          options={{
-            title: "Messages",
-            tabBarIcon: ({ color, size }) => (
-              <Feather name="message-circle" size={size} color={color} />
-            ),
-          }}
-        />
 
         {/* Profile Tab */}
         <Tabs.Screen

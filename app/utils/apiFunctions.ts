@@ -29,7 +29,7 @@ export const uploadProfileImage = async (image: any) => {
     headers: { "Content-Type": "multipart/form-data" },
   });
 
-  return res.data.data.url;
+  return res.data?.data?.url || res.data?.url;
 };
 
 export const uploadGalleryImages = async (images: any[]) => {
@@ -47,7 +47,7 @@ export const uploadGalleryImages = async (images: any[]) => {
     headers: { "Content-Type": "multipart/form-data" },
   });
 
-  return res.data.data.urls;
+  return res.data?.data?.urls || res.data?.urls;
 };
 
 /* ---------- PORTFOLIO ---------- */
@@ -57,3 +57,16 @@ export const createPortfolio = (data: any) => API.post("/portfolio", data);
 export const updatePortfolio = (data: any) => API.put("/portfolio", data);
 
 export const fetchMyPortfolio = () => API.get("/portfolio/me");
+
+export const fetchPortfolios = (params: {
+  page?: number;
+  limit?: number;
+  skill?: string;
+  location?: string;
+  profession?: string;
+}) => API.get("/portfolio", { params });
+
+export const fetchPortfolioById = (id: string) => API.get(`/portfolio/${id}`);
+
+export const fetchSuggestions = (type: "skill" | "location", query: string) =>
+  API.get("/portfolio/suggestions", { params: { type, query } });

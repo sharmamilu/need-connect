@@ -271,7 +271,9 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
 
         {/* Name Input */}
         <View style={styles.fieldLabelContainer}>
-          <Text style={styles.fieldLabel}>Full Name</Text>
+          <Text style={styles.fieldLabel}>
+            Full Name <Text style={{ color: "#E53935" }}>*</Text>
+          </Text>
         </View>
         <View style={styles.inputContainer}>
           <TextInput
@@ -294,7 +296,9 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
 
         {/* Location Input */}
         <View style={styles.fieldLabelContainer}>
-          <Text style={styles.fieldLabel}>Location</Text>
+          <Text style={styles.fieldLabel}>
+            Location <Text style={{ color: "#E53935" }}>*</Text>
+          </Text>
         </View>
         <View style={styles.inputContainer}>
           <TextInput
@@ -324,7 +328,9 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
 
         {/* Contact Input */}
         <View style={styles.fieldLabelContainer}>
-          <Text style={styles.fieldLabel}>Phone Number (Mandatory)</Text>
+          <Text style={styles.fieldLabel}>
+            Phone Number <Text style={{ color: "#E53935" }}>*</Text>
+          </Text>
         </View>
         <View style={styles.phoneInputRow}>
           <TouchableOpacity
@@ -403,7 +409,9 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
 
         {/* Profession Input */}
         <View style={styles.fieldLabelContainer}>
-          <Text style={styles.fieldLabel}>Profession</Text>
+          <Text style={styles.fieldLabel}>
+            Profession <Text style={{ color: "#E53935" }}>*</Text>
+          </Text>
         </View>
         <View style={styles.inputContainer}>
           <TextInput
@@ -426,7 +434,9 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
 
         {/* Bio Input */}
         <View style={styles.fieldLabelContainer}>
-          <Text style={styles.fieldLabel}>Professional Bio</Text>
+          <Text style={styles.fieldLabel}>
+            Professional Bio <Text style={{ color: "#E53935" }}>*</Text>
+          </Text>
         </View>
         <View style={[styles.inputContainer, styles.bioContainer]}>
           <TextInput

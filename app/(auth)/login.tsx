@@ -140,7 +140,7 @@ export default function Login() {
       }
 
       showAlert("Login successful!", "success");
-      router.replace("/(tabs)/dashboard" as any);
+      router.replace("/" as any);
     } catch (err: any) {
       // Check if error is related to specific fields
       const errorMessage = err.message?.toLowerCase() || "";
@@ -166,7 +166,8 @@ export default function Login() {
     <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContainer}

@@ -95,7 +95,9 @@ export default function ServicesSection({
       <View style={styles.header}>
         <View style={styles.titleContainer}>
           <Feather name="briefcase" size={20} color="#4A6CF7" />
-          <Text style={styles.title}>Services Offered</Text>
+          <Text style={styles.title}>
+            Services Offered <Text style={{ color: "#E53935" }}>*</Text>
+          </Text>
         </View>
 
         {services.length > 0 && (

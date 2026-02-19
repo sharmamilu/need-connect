@@ -28,47 +28,84 @@ export default function CreatePortfolio() {
   const { portfolio, setPortfolio, loading: fetchLoading } = usePortfolio();
   const [saveLoading, setSaveLoading] = useState(false);
 
+  const validate = (): boolean => {
+    if (!portfolio.name?.trim()) {
+      Alert.alert("Required Field", "Please enter your full name.");
+      return false;
+    }
+    if (!portfolio.location?.trim()) {
+      Alert.alert("Required Field", "Please enter your location.");
+      return false;
+    }
+    if (!portfolio.profession?.trim()) {
+      Alert.alert("Required Field", "Please enter your profession.");
+      return false;
+    }
+    if (!portfolio.bio?.trim()) {
+      Alert.alert("Required Field", "Please add a professional bio.");
+      return false;
+    }
+    if (!portfolio.contact?.phone?.trim()) {
+      Alert.alert("Required Field", "Please provide a contact phone number.");
+      return false;
+    }
+    if (
+      portfolio.email?.trim() &&
+      !/^\S+@\S+\.\S+$/.test(portfolio.email.trim())
+    ) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      return false;
+    }
+    if (!portfolio.services || portfolio.services.length < 1) {
+      Alert.alert("Required Field", "Please add at least 1 service you offer.");
+      return false;
+    }
+    if (!portfolio.skills || portfolio.skills.length < 1) {
+      Alert.alert("Required Field", "Please add at least 1 skill.");
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async () => {
     if (saveLoading) return;
-
-    if (!portfolio.contact?.phone) {
-      Alert.alert("Required Field", "Please provide a contact phone number.");
-      return;
-    }
+    if (!validate()) return;
 
     setSaveLoading(true);
 
     try {
+      const currentGallery = portfolio.gallery || [];
       let profilePhotoUrl = portfolio.profilePhoto as string;
-      let galleryUrls = portfolio.gallery as string[];
+      let galleryUrls: string[] = [];
 
       /* 1️⃣ Upload profile photo if local */
       if (
         portfolio.profilePhoto &&
         typeof portfolio.profilePhoto !== "string" &&
-        portfolio.profilePhoto.uri
+        (portfolio.profilePhoto as any).uri
       ) {
-        profilePhotoUrl = await uploadProfileImage(portfolio.profilePhoto);
+        const uploadedProfileUrl = await uploadProfileImage(
+          portfolio.profilePhoto,
+        );
+        if (uploadedProfileUrl) {
+          profilePhotoUrl = uploadedProfileUrl;
+        }
       }
 
       /* 2️⃣ Upload new gallery images */
-      const newImages = portfolio.gallery.filter(
-        (img) => typeof img !== "string" && img.uri,
+      const newImages = currentGallery.filter(
+        (img) => typeof img !== "string" && (img as any).uri,
       );
+
+      const existingUrls = currentGallery.filter(
+        (img) => typeof img === "string",
+      ) as string[];
 
       if (newImages.length > 0) {
         const uploadedUrls = await uploadGalleryImages(newImages);
-
-        galleryUrls = [
-          ...(portfolio.gallery.filter(
-            (img) => typeof img === "string",
-          ) as string[]),
-          ...uploadedUrls,
-        ];
+        galleryUrls = [...existingUrls, ...(uploadedUrls || [])];
       } else {
-        galleryUrls = portfolio.gallery.filter(
-          (img) => typeof img === "string",
-        ) as string[];
+        galleryUrls = existingUrls;
       }
 
       /* 3️⃣ Build final payload */
@@ -80,9 +117,10 @@ export default function CreatePortfolio() {
         location: portfolio.location?.trim(),
         email: portfolio.email?.trim(),
         contact: {
-          ...portfolio.contact,
-          phone: portfolio.contact?.phone?.trim(),
+          countryCode: portfolio.contact?.countryCode || "+1",
+          phone: portfolio.contact?.phone?.trim() || "",
         },
+        links: portfolio.links || {},
         profilePhoto: profilePhotoUrl,
         gallery: galleryUrls,
       };
