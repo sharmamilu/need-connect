@@ -24,8 +24,7 @@ export default function ImagePickerSection({ images = [], setImages }) {
     });
 
     if (!result.canceled) {
-      const newImages = result.assets.map((asset) => asset.uri);
-      setImages([...images, ...newImages].slice(0, 5));
+      setImages([...images, ...result.assets].slice(0, 5));
     }
   };
 
@@ -43,7 +42,7 @@ export default function ImagePickerSection({ images = [], setImages }) {
       >
         {images.map((img, index) => (
           <View key={index} style={styles.imageWrapper}>
-            <Image source={{ uri: img }} style={styles.preview} />
+            <Image source={{ uri: img.uri || img }} style={styles.preview} />
             <TouchableOpacity
               style={styles.removeButton}
               onPress={() => removeImage(index)}
