@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -9,33 +10,48 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { createPost, uploadPostImages } from "../../utils/apiFunctions";
 import ImagePickerSection from "./ImagePickerSection";
 import TagSelector from "./TagSelector";
 
 export default function CreatePostCard({ onSubmit }) {
   const [description, setDescription] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
-  const [image, setImage] = useState(null);
+  const [images, setImages] = useState([]);
+  const [isPosting, setIsPosting] = useState(false);
 
-  const handlePost = () => {
+  const handlePost = async () => {
     if (!description.trim()) return;
 
-    const newPost = {
-      id: Date.now().toString(),
-      description,
-      tags: selectedTags,
-      image,
-      createdAt: "Just now",
-      likes: 0,
-      comments: 0,
-    };
+    try {
+      setIsPosting(true);
+      let uploadedUrls = [];
 
-    onSubmit(newPost);
+      // 1. Upload images if exist
+      if (images.length > 0) {
+        uploadedUrls = await uploadPostImages(images);
+      }
 
-    // Reset fields
-    setDescription("");
-    setSelectedTags([]);
-    setImage(null);
+      // 2. Create the post
+      const res = await createPost({
+        description,
+        tags: selectedTags,
+        images: uploadedUrls, // Array of URLs
+      });
+
+      if (res.data.success) {
+        onSubmit(res.data.data);
+        // Reset fields
+        setDescription("");
+        setSelectedTags([]);
+        setImages([]);
+      }
+    } catch (error) {
+      console.error("Error creating post:", error);
+      alert("Failed to create post. Please try again.");
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   return (
@@ -57,7 +73,7 @@ export default function CreatePostCard({ onSubmit }) {
           placeholderTextColor="#999"
         />
 
-        <ImagePickerSection image={image} setImage={setImage} />
+        <ImagePickerSection images={images} setImages={setImages} />
 
         <TagSelector
           selectedTags={selectedTags}
@@ -66,13 +82,17 @@ export default function CreatePostCard({ onSubmit }) {
 
         <TouchableOpacity
           onPress={handlePost}
-          disabled={!description.trim()}
+          disabled={!description.trim() || isPosting}
           style={[
             styles.postButton,
-            !description.trim() && styles.disabledPostButton,
+            (!description.trim() || isPosting) && styles.disabledPostButton,
           ]}
         >
-          <Text style={styles.postButtonText}>Post</Text>
+          {isPosting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.postButtonText}>Post</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

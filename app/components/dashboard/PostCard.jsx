@@ -1,14 +1,18 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { formatRelativeTime } from "../../utils/dateUtils";
+import PostImageGrid from "../post/PostImageGrid";
 
 export default function PostCard({ post }) {
   const router = useRouter();
+  const displayImages =
+    post.images?.length > 0 ? post.images : post.image ? [post.image] : [];
 
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.time}>{post.createdAt}</Text>
+        <Text style={styles.time}>{formatRelativeTime(post.createdAt)}</Text>
         <TouchableOpacity>
           <Feather name="more-horizontal" size={18} color="#888" />
         </TouchableOpacity>
@@ -16,14 +20,12 @@ export default function PostCard({ post }) {
 
       <Text style={styles.description}>{post.description}</Text>
 
-      {post.image && (
-        <Image source={{ uri: post.image }} style={styles.image} />
-      )}
+      <PostImageGrid images={displayImages} />
 
       {post.tags?.length > 0 && (
         <View style={styles.tags}>
-          {post.tags.map((tag) => (
-            <Text key={tag} style={styles.tag}>
+          {post.tags.map((tag, index) => (
+            <Text key={tag + index} style={styles.tag}>
               #{tag}
             </Text>
           ))}
@@ -33,7 +35,9 @@ export default function PostCard({ post }) {
       <View style={styles.footer}>
         <TouchableOpacity style={styles.stat}>
           <Feather name="heart" size={14} color="#666" />
-          <Text style={styles.statText}>{post.likes || 0}</Text>
+          <Text style={styles.statText}>
+            {post.likesCount || post.likes || 0}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -41,7 +45,9 @@ export default function PostCard({ post }) {
           onPress={() => router.push("/comments")}
         >
           <Feather name="message-circle" size={14} color="#666" />
-          <Text style={styles.statText}>{post.comments || 0}</Text>
+          <Text style={styles.statText}>
+            {post.commentsCount || post.comments || 0}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

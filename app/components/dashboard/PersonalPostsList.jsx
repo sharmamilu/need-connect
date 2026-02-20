@@ -5,7 +5,7 @@ export default function PersonalPostsList({ posts }) {
   return (
     <View style={styles.container}>
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard key={post._id || post.id} post={post} />
       ))}
     </View>
   );

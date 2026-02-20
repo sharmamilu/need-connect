@@ -84,9 +84,9 @@ export default function CommentItem({ comment, onReply, depth = 0 }) {
           )}
 
           {showReplies &&
-            comment.replies?.map((reply) => (
+            comment.replies?.map((reply, index) => (
               <CommentItem
-                key={reply.id}
+                key={reply._id || reply.id || index}
                 comment={reply}
                 onReply={onReply}
                 depth={depth + 1}

@@ -1,10 +1,14 @@
 import { StyleSheet, Text, View } from "react-native";
 import PostActions from "./PostActions";
 import PostHeader from "./PostHeader";
-import PostImage from "./PostImage";
+import PostImageGrid from "./PostImageGrid";
 import PostTags from "./PostTags";
 
 export default function PostCard({ post }) {
+  // Use images array if available, otherwise wrap single image in an array
+  const displayImages =
+    post.images?.length > 0 ? post.images : post.image ? [post.image] : [];
+
   return (
     <View style={styles.card}>
       <PostHeader user={post.user} createdAt={post.createdAt} />
@@ -12,9 +16,12 @@ export default function PostCard({ post }) {
 
       {post.tags?.length > 0 && <PostTags tags={post.tags} />}
 
-      {post.image && <PostImage image={post.image} />}
+      <PostImageGrid images={displayImages} />
 
-      <PostActions likes={post.likes} comments={post.comments} />
+      <PostActions
+        likes={post.likesCount || post.likes || 0}
+        comments={post.commentsCount || post.comments || 0}
+      />
     </View>
   );
 }

@@ -32,6 +32,24 @@ export const uploadProfileImage = async (image: any) => {
   return res.data?.data?.url || res.data?.url;
 };
 
+export const uploadPostImages = async (images: any[]) => {
+  const formData = new FormData();
+
+  images.forEach((img, index) => {
+    formData.append("images", {
+      uri: img.uri,
+      name: `post_${index}.jpg`,
+      type: "image/jpeg",
+    } as any);
+  });
+
+  const res = await API.post("/upload/post", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return res.data?.data?.urls || res.data?.urls;
+};
+
 export const uploadGalleryImages = async (images: any[]) => {
   const formData = new FormData();
 
@@ -70,3 +88,16 @@ export const fetchPortfolioById = (id: string) => API.get(`/portfolio/${id}`);
 
 export const fetchSuggestions = (type: "skill" | "location", query: string) =>
   API.get("/portfolio/suggestions", { params: { type, query } });
+
+export const createPost = (data: {
+  description: string;
+  tags?: string[];
+  images?: string[];
+}) => API.post("/posts", data);
+
+export const fetchFeedPosts = (
+  params: { page?: number; limit?: number } = {},
+) => API.get("/posts", { params });
+
+export const fetchMyPosts = (params: { page?: number; limit?: number } = {}) =>
+  API.get("/posts/me", { params });

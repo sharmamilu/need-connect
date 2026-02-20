@@ -1,4 +1,5 @@
 import { Image, StyleSheet, Text, View } from "react-native";
+import { formatRelativeTime } from "../../utils/dateUtils";
 
 export default function PostHeader({ user, createdAt }) {
   return (
@@ -6,7 +7,7 @@ export default function PostHeader({ user, createdAt }) {
       <Image source={{ uri: user.avatar }} style={styles.avatar} />
       <View>
         <Text style={styles.name}>{user.name}</Text>
-        <Text style={styles.time}>{createdAt}</Text>
+        <Text style={styles.time}>{formatRelativeTime(createdAt)}</Text>
       </View>
     </View>
   );
