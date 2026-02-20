@@ -16,7 +16,7 @@ import PostImageGrid from "../post/PostImageGrid";
 
 import { deletePost } from "../../utils/apiFunctions";
 
-export default function PostCard({ post, onDeleteSuccess }) {
+export default function PostCard({ post, onDeleteSuccess, showMenu = false }) {
   const router = useRouter();
   const displayImages =
     post.images?.length > 0 ? post.images : post.image ? [post.image] : [];
@@ -55,6 +55,7 @@ export default function PostCard({ post, onDeleteSuccess }) {
           userName={post.userName}
           createdAt={post.createdAt}
           onDelete={handleDelete}
+          showMenu={showMenu}
         />
       </View>
 

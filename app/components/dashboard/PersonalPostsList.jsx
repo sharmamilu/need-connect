@@ -9,6 +9,7 @@ export default function PersonalPostsList({ posts, onDeleteSuccess }) {
           key={post._id || post.id}
           post={post}
           onDeleteSuccess={onDeleteSuccess}
+          showMenu={true}
         />
       ))}
     </View>

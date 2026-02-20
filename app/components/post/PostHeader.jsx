@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { formatRelativeTime } from "../../utils/dateUtils";
@@ -11,11 +12,30 @@ export default function PostHeader({
   userName,
   createdAt,
   onDelete,
+  showMenu = false,
 }) {
+  const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
+
   const name = userName || user?.name || "User";
   const avatarUri = userImage || user?.avatar;
   const profession = userProfession || user?.profession;
+  const userId =
+    user?._id || user?.id || (typeof user === "string" ? user : null);
+
+  const handleProfilePress = () => {
+    if (userId) {
+      router.push({
+        pathname: "/user-profile/[id]",
+        params: {
+          id: userId,
+          name: name || "",
+          avatarUri: avatarUri || "",
+          profession: profession || "",
+        },
+      });
+    }
+  };
 
   const handleMenuPress = () => {
     setMenuVisible(true);
@@ -23,32 +43,43 @@ export default function PostHeader({
 
   return (
     <View style={styles.container}>
-      {avatarUri ? (
-        <Image source={{ uri: avatarUri }} style={styles.avatar} />
-      ) : (
-        <View style={[styles.avatar, styles.placeholderAvatar]}>
-          <Text style={styles.placeholderText}>
-            {name.charAt(0).toUpperCase()}
-          </Text>
+      <TouchableOpacity
+        style={styles.profileArea}
+        onPress={handleProfilePress}
+        activeOpacity={0.8}
+      >
+        {avatarUri ? (
+          <Image source={{ uri: avatarUri }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.placeholderAvatar]}>
+            <Text style={styles.placeholderText}>
+              {name.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
+        <View style={styles.info}>
+          <Text style={styles.name}>{name}</Text>
+          {profession && <Text style={styles.profession}>{profession}</Text>}
+          <Text style={styles.time}>{formatRelativeTime(createdAt)}</Text>
         </View>
-      )}
-      <View style={styles.info}>
-        <Text style={styles.name}>{name}</Text>
-        {profession && <Text style={styles.profession}>{profession}</Text>}
-        <Text style={styles.time}>{formatRelativeTime(createdAt)}</Text>
-      </View>
-      <TouchableOpacity onPress={handleMenuPress} style={styles.menuButton}>
-        <Feather name="more-horizontal" size={20} color="#666" />
       </TouchableOpacity>
 
-      <PostMenuModal
-        visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-        onDelete={onDelete}
-        onPin={() => alert("Post pinned successfully!")}
-        onSave={() => alert("Post saved to your collection!")}
-        onCopyLink={() => alert("Post link copied!")}
-      />
+      {showMenu && (
+        <>
+          <TouchableOpacity onPress={handleMenuPress} style={styles.menuButton}>
+            <Feather name="more-horizontal" size={20} color="#666" />
+          </TouchableOpacity>
+
+          <PostMenuModal
+            visible={menuVisible}
+            onClose={() => setMenuVisible(false)}
+            onDelete={onDelete}
+            onPin={() => alert("Post pinned successfully!")}
+            onSave={() => alert("Post saved to your collection!")}
+            onCopyLink={() => alert("Post link copied!")}
+          />
+        </>
+      )}
     </View>
   );
 }
@@ -58,6 +89,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
+  },
+  profileArea: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
   },
   avatar: {
     width: 44,

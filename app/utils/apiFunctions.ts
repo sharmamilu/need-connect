@@ -102,6 +102,11 @@ export const fetchFeedPosts = (
 export const fetchMyPosts = (params: { page?: number; limit?: number } = {}) =>
   API.get("/posts/me", { params });
 
+export const fetchPostsByUser = (
+  userId: string,
+  params: { page?: number; limit?: number } = {},
+) => API.get(`/posts/user/${userId}`, { params });
+
 export const fetchMe = () => API.get("/users/me");
 
 export const deletePost = (postId: string) => API.delete(`/posts/${postId}`);

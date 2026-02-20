@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -9,57 +9,39 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import CreatePostModal from "../components/dashboard/CreatePostModal";
-import CreatePostTrigger from "../components/dashboard/CreatePostTrigger";
-import PostCard from "../components/dashboard/PostCard";
-import ProfileHeader from "../components/dashboard/ProfileHeader";
-import { fetchMe, fetchMyPortfolio, fetchMyPosts } from "../utils/apiFunctions";
+import PostCard from "../../components/dashboard/PostCard";
+import ProfileHeader from "../../components/dashboard/ProfileHeader";
+import { fetchPostsByUser } from "../../utils/apiFunctions";
 
-export default function DashboardScreen() {
+export default function UserProfileScreen() {
   const router = useRouter();
+  const { id, name, avatarUri, profession } = useLocalSearchParams();
   const [posts, setPosts] = useState([]);
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
 
   // Pagination state
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const loadDashboardData = async (pageNum = 1, isInitial = true) => {
+  const loadUserData = async (pageNum = 1, isInitial = true) => {
+    if (!id) return;
     try {
       if (pageNum === 1 && isInitial) setLoading(true);
 
-      const [postsRes, userRes, profileRes] = await Promise.all([
-        fetchMyPosts({ page: pageNum, limit: 10 }),
-        pageNum === 1 ? fetchMe().catch(() => null) : Promise.resolve(null),
-        pageNum === 1
-          ? fetchMyPortfolio().catch(() => null)
-          : Promise.resolve(null),
-      ]);
-
-      const newPosts = postsRes.data.posts || postsRes.data.data || [];
+      const postsRes = await fetchPostsByUser(id, { page: pageNum, limit: 10 });
+      const newPosts = postsRes.data?.posts || postsRes.data?.data || [];
       const pagination = postsRes.data;
 
       if (pageNum === 1) {
         setPosts(newPosts);
-        setTotalPages(pagination.totalPages || 1);
+        setTotalPages(pagination?.totalPages || 1);
       } else {
         setPosts((prev) => [...prev, ...newPosts]);
       }
-
-      if (userRes?.data?.success) {
-        setUser(userRes.data.user || userRes.data.data);
-      }
-
-      if (profileRes?.data?.success) {
-        setProfile(profileRes.data.data);
-      }
     } catch (error) {
-      console.error("Error fetching dashboard data:", error);
+      console.error("Error fetching user data:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -68,13 +50,13 @@ export default function DashboardScreen() {
   };
 
   useEffect(() => {
-    loadDashboardData(1);
-  }, []);
+    loadUserData(1);
+  }, [id]);
 
   const onRefresh = () => {
     setRefreshing(true);
     setPage(1);
-    loadDashboardData(1, false);
+    loadUserData(1, false);
   };
 
   const handleLoadMore = () => {
@@ -82,7 +64,7 @@ export default function DashboardScreen() {
       setLoadingMore(true);
       const nextPage = page + 1;
       setPage(nextPage);
-      loadDashboardData(nextPage, false);
+      loadUserData(nextPage, false);
     }
   };
 
@@ -103,6 +85,19 @@ export default function DashboardScreen() {
     );
   }
 
+  const displayUser = {
+    name: name || posts[0]?.userName || posts[0]?.user?.name || "User",
+    avatar: avatarUri || posts[0]?.userImage || posts[0]?.user?.avatar,
+    profession:
+      profession || posts[0]?.userProfession || posts[0]?.user?.profession,
+  };
+
+  const profileProps = {
+    name: displayUser.name,
+    profilePhoto: displayUser.avatar,
+    profession: displayUser.profession,
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={{ flex: 1 }}>
@@ -116,19 +111,11 @@ export default function DashboardScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           ListHeaderComponent={
-            <>
-              <ProfileHeader
-                user={user}
-                profile={profile}
-                postsCount={posts.length}
-              />
-              <CreatePostTrigger
-                user={user}
-                profile={profile}
-                onPress={() => setModalVisible(true)}
-                onProfilePress={() => router.push("/dashboard")}
-              />
-            </>
+            <ProfileHeader
+              user={displayUser}
+              profile={profileProps}
+              postsCount={posts.length}
+            />
           }
           renderItem={({ item }) => (
             <PostCard
@@ -145,18 +132,10 @@ export default function DashboardScreen() {
           ListEmptyComponent={
             <View style={{ padding: 40, alignItems: "center" }}>
               <Text style={{ color: "#666" }}>
-                You haven't posted anything yet.
+                This user hasn't posted anything yet.
               </Text>
             </View>
           }
-        />
-
-        <CreatePostModal
-          visible={modalVisible}
-          onClose={() => setModalVisible(false)}
-          onCreate={(newPost) => {
-            setPosts([newPost, ...posts]);
-          }}
         />
       </View>
     </SafeAreaView>
