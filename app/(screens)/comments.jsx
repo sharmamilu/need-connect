@@ -11,9 +11,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AddCommentInput from "./components/comments/AddCommentInput";
-import CommentItem from "./components/comments/CommentItem";
-import { mockComments } from "./data/mockComments";
+import AddCommentInput from "../components/comments/AddCommentInput";
+import CommentItem from "../components/comments/CommentItem";
+import { mockComments } from "../data/mockComments";
 
 export default function CommentsScreen() {
   const router = useRouter();

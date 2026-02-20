@@ -68,9 +68,6 @@ export default function TabsLayout() {
           }}
         />
 
-        {/* Hide sell from tab bar */}
-        <Tabs.Screen name="sell" options={{ href: null }} />
-
         {/* Profile Tab */}
         <Tabs.Screen
           name="profile"
@@ -79,14 +76,6 @@ export default function TabsLayout() {
             tabBarIcon: ({ color, size }) => (
               <Feather name="user" size={size} color={color} />
             ),
-          }}
-        />
-
-        {/* Hide CommentsScreen from tab bar */}
-        <Tabs.Screen
-          name="CommentsScreen"
-          options={{
-            href: null,
           }}
         />
       </Tabs>
