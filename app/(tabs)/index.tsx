@@ -27,15 +27,32 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const loadHomeData = async () => {
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const loadHomeData = async (pageNum = 1, isInitial = true) => {
     try {
+      if (pageNum === 1 && isInitial) setLoading(true);
+
       const [postsRes, userRes, profileRes] = await Promise.all([
-        fetchFeedPosts(),
-        fetchMe().catch(() => null),
-        fetchMyPortfolio().catch(() => null),
+        fetchFeedPosts({ page: pageNum, limit: 10 }),
+        pageNum === 1 ? fetchMe().catch(() => null) : Promise.resolve(null),
+        pageNum === 1
+          ? fetchMyPortfolio().catch(() => null)
+          : Promise.resolve(null),
       ]);
 
-      setPosts(postsRes.data.posts || postsRes.data.data || []);
+      const newPosts = postsRes.data.posts || postsRes.data.data || [];
+      const pagination = postsRes.data;
+
+      if (pageNum === 1) {
+        setPosts(newPosts);
+        setTotalPages(pagination.totalPages || 1);
+      } else {
+        setPosts((prev) => [...prev, ...newPosts]);
+      }
 
       if (userRes?.data?.success) {
         setUser(userRes.data.user || userRes.data.data);
@@ -49,16 +66,36 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    loadHomeData();
+    loadHomeData(1);
   }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadHomeData();
+    setPage(1);
+    loadHomeData(1, false);
+  };
+
+  const handleLoadMore = () => {
+    if (!loadingMore && page < totalPages) {
+      setLoadingMore(true);
+      const nextPage = page + 1;
+      setPage(nextPage);
+      loadHomeData(nextPage, false);
+    }
+  };
+
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    return (
+      <View style={{ paddingVertical: 20 }}>
+        <ActivityIndicator size="small" color="#3b5bdb" />
+      </View>
+    );
   };
 
   if (loading && !refreshing) {
@@ -73,7 +110,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <FlatList
         data={posts}
-        keyExtractor={(item) => item._id || item.id}
+        keyExtractor={(item, index) => `${item._id || item.id}-${index}`}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -85,8 +122,18 @@ export default function HomeScreen() {
             onProfilePress={() => router.push("/dashboard")}
           />
         }
-        renderItem={({ item }) => <PostCard post={item} />}
-        contentContainerStyle={{ padding: 16 }}
+        renderItem={({ item }) => (
+          <PostCard
+            post={item}
+            onDeleteSuccess={(postId: string) => {
+              setPosts(posts.filter((p) => (p._id || p.id) !== postId));
+            }}
+          />
+        )}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={{ padding: 40, alignItems: "center" }}>

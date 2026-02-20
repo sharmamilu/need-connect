@@ -1,12 +1,22 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  Platform,
+  StyleSheet,
+  Text,
+  ToastAndroid,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { POST_BACKGROUNDS } from "../../constants/postBackgrounds";
 import PostHeader from "../post/PostHeader";
 import PostImageGrid from "../post/PostImageGrid";
 
-export default function PostCard({ post }) {
+import { deletePost } from "../../utils/apiFunctions";
+
+export default function PostCard({ post, onDeleteSuccess }) {
   const router = useRouter();
   const displayImages =
     post.images?.length > 0 ? post.images : post.image ? [post.image] : [];
@@ -17,6 +27,24 @@ export default function PostCard({ post }) {
   const showBackground =
     background && background.id !== "none" && displayImages.length === 0;
 
+  const handleDelete = async () => {
+    try {
+      const postId = post._id || post.id;
+      const res = await deletePost(postId);
+      if (res.data.success) {
+        if (Platform.OS === "android") {
+          ToastAndroid.show("Post deleted successfully", ToastAndroid.SHORT);
+        } else {
+          Alert.alert("Success", "Post deleted successfully");
+        }
+        onDeleteSuccess?.(postId);
+      }
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      alert("Failed to delete post. Please try again.");
+    }
+  };
+
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -26,10 +54,8 @@ export default function PostCard({ post }) {
           userProfession={post.userProfession}
           userName={post.userName}
           createdAt={post.createdAt}
+          onDelete={handleDelete}
         />
-        <TouchableOpacity style={styles.moreBtn}>
-          <Feather name="more-horizontal" size={18} color="#888" />
-        </TouchableOpacity>
       </View>
 
       {showBackground ? (

@@ -1,5 +1,8 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { useState } from "react";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { formatRelativeTime } from "../../utils/dateUtils";
+import PostMenuModal from "./PostMenuModal";
 
 export default function PostHeader({
   user,
@@ -7,10 +10,16 @@ export default function PostHeader({
   userProfession,
   userName,
   createdAt,
+  onDelete,
 }) {
+  const [menuVisible, setMenuVisible] = useState(false);
   const name = userName || user?.name || "User";
   const avatarUri = userImage || user?.avatar;
   const profession = userProfession || user?.profession;
+
+  const handleMenuPress = () => {
+    setMenuVisible(true);
+  };
 
   return (
     <View style={styles.container}>
@@ -28,6 +37,18 @@ export default function PostHeader({
         {profession && <Text style={styles.profession}>{profession}</Text>}
         <Text style={styles.time}>{formatRelativeTime(createdAt)}</Text>
       </View>
+      <TouchableOpacity onPress={handleMenuPress} style={styles.menuButton}>
+        <Feather name="more-horizontal" size={20} color="#666" />
+      </TouchableOpacity>
+
+      <PostMenuModal
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        onDelete={onDelete}
+        onPin={() => alert("Post pinned successfully!")}
+        onSave={() => alert("Post saved to your collection!")}
+        onCopyLink={() => alert("Post link copied!")}
+      />
     </View>
   );
 }
@@ -72,5 +93,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#999",
     marginTop: 1,
+  },
+  menuButton: {
+    padding: 8,
+    marginRight: -8,
   },
 });

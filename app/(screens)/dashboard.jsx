@@ -1,8 +1,9 @@
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  FlatList,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -10,11 +11,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import CreatePostModal from "../components/dashboard/CreatePostModal";
 import CreatePostTrigger from "../components/dashboard/CreatePostTrigger";
-import PersonalPostsList from "../components/dashboard/PersonalPostsList";
+import PostCard from "../components/dashboard/PostCard";
 import ProfileHeader from "../components/dashboard/ProfileHeader";
 import { fetchMe, fetchMyPortfolio, fetchMyPosts } from "../utils/apiFunctions";
 
 export default function DashboardScreen() {
+  const router = useRouter();
   const [posts, setPosts] = useState([]);
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -22,15 +24,32 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const loadDashboardData = async () => {
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const loadDashboardData = async (pageNum = 1, isInitial = true) => {
     try {
+      if (pageNum === 1 && isInitial) setLoading(true);
+
       const [postsRes, userRes, profileRes] = await Promise.all([
-        fetchMyPosts(),
-        fetchMe().catch(() => null),
-        fetchMyPortfolio().catch(() => null),
+        fetchMyPosts({ page: pageNum, limit: 10 }),
+        pageNum === 1 ? fetchMe().catch(() => null) : Promise.resolve(null),
+        pageNum === 1
+          ? fetchMyPortfolio().catch(() => null)
+          : Promise.resolve(null),
       ]);
 
-      setPosts(postsRes.data.posts || postsRes.data.data || []);
+      const newPosts = postsRes.data.posts || postsRes.data.data || [];
+      const pagination = postsRes.data;
+
+      if (pageNum === 1) {
+        setPosts(newPosts);
+        setTotalPages(pagination.totalPages || 1);
+      } else {
+        setPosts((prev) => [...prev, ...newPosts]);
+      }
 
       if (userRes?.data?.success) {
         setUser(userRes.data.user || userRes.data.data);
@@ -44,16 +63,36 @@ export default function DashboardScreen() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    loadDashboardData();
+    loadDashboardData(1);
   }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadDashboardData();
+    setPage(1);
+    loadDashboardData(1, false);
+  };
+
+  const handleLoadMore = () => {
+    if (!loadingMore && page < totalPages) {
+      setLoadingMore(true);
+      const nextPage = page + 1;
+      setPage(nextPage);
+      loadDashboardData(nextPage, false);
+    }
+  };
+
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    return (
+      <View style={{ paddingVertical: 20 }}>
+        <ActivityIndicator size="small" color="#3b5bdb" />
+      </View>
+    );
   };
 
   if (loading && !refreshing) {
@@ -67,37 +106,49 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={{ flex: 1 }}>
-        <ScrollView
+        <FlatList
+          data={posts}
+          keyExtractor={(item, index) => `${item._id || item.id}-${index}`}
           style={styles.container}
-          showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-        >
-          <ProfileHeader
-            user={user}
-            profile={profile}
-            postsCount={posts.length}
-          />
-
-          <CreatePostTrigger
-            user={user}
-            profile={profile}
-            onPress={() => setModalVisible(true)}
-            onProfilePress={() => router.push("/dashboard")}
-          />
-
-          {posts.length === 0 ? (
+          ListHeaderComponent={
+            <>
+              <ProfileHeader
+                user={user}
+                profile={profile}
+                postsCount={posts.length}
+              />
+              <CreatePostTrigger
+                user={user}
+                profile={profile}
+                onPress={() => setModalVisible(true)}
+                onProfilePress={() => router.push("/dashboard")}
+              />
+            </>
+          }
+          renderItem={({ item }) => (
+            <PostCard
+              post={item}
+              onDeleteSuccess={(postId) => {
+                setPosts(posts.filter((p) => (p._id || p.id) !== postId));
+              }}
+            />
+          )}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={renderFooter}
+          ListEmptyComponent={
             <View style={{ padding: 40, alignItems: "center" }}>
               <Text style={{ color: "#666" }}>
                 You haven't posted anything yet.
               </Text>
             </View>
-          ) : (
-            <PersonalPostsList posts={posts} />
-          )}
-        </ScrollView>
+          }
+        />
 
         <CreatePostModal
           visible={modalVisible}
@@ -121,6 +172,6 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
 });

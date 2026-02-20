@@ -103,3 +103,5 @@ export const fetchMyPosts = (params: { page?: number; limit?: number } = {}) =>
   API.get("/posts/me", { params });
 
 export const fetchMe = () => API.get("/users/me");
+
+export const deletePost = (postId: string) => API.delete(`/posts/${postId}`);
