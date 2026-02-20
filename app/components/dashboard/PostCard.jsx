@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { formatRelativeTime } from "../../utils/dateUtils";
+import PostHeader from "../post/PostHeader";
 import PostImageGrid from "../post/PostImageGrid";
 
 export default function PostCard({ post }) {
@@ -12,8 +12,14 @@ export default function PostCard({ post }) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.time}>{formatRelativeTime(post.createdAt)}</Text>
-        <TouchableOpacity>
+        <PostHeader
+          user={post.user}
+          userImage={post.userImage}
+          userProfession={post.userProfession}
+          userName={post.userName}
+          createdAt={post.createdAt}
+        />
+        <TouchableOpacity style={styles.moreBtn}>
           <Feather name="more-horizontal" size={18} color="#888" />
         </TouchableOpacity>
       </View>
@@ -68,12 +74,11 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 4,
   },
-  time: {
-    color: "#888",
-    fontSize: 12,
+  moreBtn: {
+    padding: 4,
   },
   description: {
     marginVertical: 8,
@@ -81,17 +86,11 @@ const styles = StyleSheet.create({
     color: "#333",
     lineHeight: 20,
   },
-  image: {
-    width: "100%",
-    height: 180,
-    borderRadius: 14,
-    marginVertical: 8,
-  },
   tags: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginTop: 4,
+    marginTop: 10,
   },
   tag: {
     fontSize: 12,

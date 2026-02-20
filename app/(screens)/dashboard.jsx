@@ -12,20 +12,28 @@ import CreatePostModal from "../components/dashboard/CreatePostModal";
 import CreatePostTrigger from "../components/dashboard/CreatePostTrigger";
 import PersonalPostsList from "../components/dashboard/PersonalPostsList";
 import ProfileHeader from "../components/dashboard/ProfileHeader";
-import { fetchMyPosts } from "../utils/apiFunctions";
+import { fetchMyPortfolio, fetchMyPosts } from "../utils/apiFunctions";
 
 export default function DashboardScreen() {
   const [posts, setPosts] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const loadMyPosts = async () => {
+  const loadDashboardData = async () => {
     try {
-      const res = await fetchMyPosts();
-      setPosts(res.data.posts || res.data.data || []);
+      const [postsRes, profileRes] = await Promise.all([
+        fetchMyPosts(),
+        fetchMyPortfolio().catch(() => null), // If no portfolio exists yet
+      ]);
+
+      setPosts(postsRes.data.posts || postsRes.data.data || []);
+      if (profileRes?.data?.success) {
+        setProfile(profileRes.data.data);
+      }
     } catch (error) {
-      console.error("Error fetching my posts:", error);
+      console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -33,12 +41,12 @@ export default function DashboardScreen() {
   };
 
   useEffect(() => {
-    loadMyPosts();
+    loadDashboardData();
   }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadMyPosts();
+    loadDashboardData();
   };
 
   if (loading && !refreshing) {
@@ -60,9 +68,12 @@ export default function DashboardScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          <ProfileHeader postsCount={posts.length} />
+          <ProfileHeader user={profile} postsCount={posts.length} />
 
-          <CreatePostTrigger onPress={() => setModalVisible(true)} />
+          <CreatePostTrigger
+            user={profile}
+            onPress={() => setModalVisible(true)}
+          />
 
           {posts.length === 0 ? (
             <View style={{ padding: 40, alignItems: "center" }}>

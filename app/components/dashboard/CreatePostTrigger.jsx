@@ -1,12 +1,23 @@
 import { Feather } from "@expo/vector-icons";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-export default function CreatePostTrigger({ onPress }) {
+export default function CreatePostTrigger({ onPress, user }) {
+  const avatarUri = user?.profilePhoto;
+  const nameInitial = user?.name?.charAt(0).toUpperCase() || "";
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
-      <View style={styles.avatarPlaceholder}>
-        <Feather name="user" size={16} color="#666" />
-      </View>
+      {avatarUri ? (
+        <Image source={{ uri: avatarUri }} style={styles.avatar} />
+      ) : (
+        <View style={styles.avatarPlaceholder}>
+          {nameInitial ? (
+            <Text style={styles.initialText}>{nameInitial}</Text>
+          ) : (
+            <Feather name="user" size={16} color="#666" />
+          )}
+        </View>
+      )}
       <View style={styles.inputBar}>
         <Text style={styles.placeholder}>What's on your mind?</Text>
       </View>
@@ -31,13 +42,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#f0f2f5",
   },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
   avatarPlaceholder: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#f0f2f5",
+    backgroundColor: "#4A6CF7",
     alignItems: "center",
     justifyContent: "center",
+  },
+  initialText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "bold",
   },
   inputBar: {
     flex: 1,

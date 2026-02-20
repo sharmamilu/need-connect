@@ -2,8 +2,12 @@ import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-export default function ProfileHeader({ postsCount }) {
+export default function ProfileHeader({ user, postsCount }) {
   const router = useRouter();
+
+  const name = user?.name || "User";
+  const avatarUri = user?.profilePhoto;
+  const profession = user?.profession || "Member";
 
   return (
     <View style={styles.container}>
@@ -14,13 +18,18 @@ export default function ProfileHeader({ postsCount }) {
       </View>
 
       <View style={styles.profileInfo}>
-        <Image
-          source={{ uri: "https://randomuser.me/api/portraits/men/11.jpg" }}
-          style={styles.avatar}
-        />
+        {avatarUri ? (
+          <Image source={{ uri: avatarUri }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.placeholderAvatar]}>
+            <Text style={styles.placeholderText}>
+              {name.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
         <View style={styles.textContainer}>
-          <Text style={styles.name}>Milan Sharma</Text>
-          <Text style={styles.profession}>Full Stack Developer</Text>
+          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.profession}>{profession}</Text>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{postsCount} Posts</Text>
           </View>
@@ -60,6 +69,16 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     backgroundColor: "#f0f2f5",
+  },
+  placeholderAvatar: {
+    backgroundColor: "#4A6CF7",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  placeholderText: {
+    color: "#fff",
+    fontSize: 32,
+    fontWeight: "800",
   },
   textContainer: {
     flex: 1,

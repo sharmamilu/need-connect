@@ -11,7 +11,13 @@ export default function PostCard({ post }) {
 
   return (
     <View style={styles.card}>
-      <PostHeader user={post.user} createdAt={post.createdAt} />
+      <PostHeader
+        user={post.user}
+        userImage={post.userImage}
+        userProfession={post.userProfession}
+        userName={post.userName}
+        createdAt={post.createdAt}
+      />
       <Text style={styles.description}>{post.description}</Text>
 
       {post.tags?.length > 0 && <PostTags tags={post.tags} />}
