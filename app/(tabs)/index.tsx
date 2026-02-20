@@ -1,4 +1,3 @@
-import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -7,26 +6,46 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import CreatePostModal from "../components/dashboard/CreatePostModal";
+import CreatePostTrigger from "../components/dashboard/CreatePostTrigger";
 import PostCard from "../components/post/PostCard";
-import { fetchFeedPosts } from "../utils/apiFunctions";
+import {
+  fetchFeedPosts,
+  fetchMe,
+  fetchMyPortfolio,
+} from "../utils/apiFunctions";
 
 export default function HomeScreen() {
   const router = useRouter();
   const [posts, setPosts] = useState<any[]>([]);
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
-  const loadFeed = async () => {
+  const loadHomeData = async () => {
     try {
-      const res = await fetchFeedPosts();
-      // The backend returns { success: true, posts: [...], ... } based on typical service patterns
-      setPosts(res.data.posts || res.data.data || []);
+      const [postsRes, userRes, profileRes] = await Promise.all([
+        fetchFeedPosts(),
+        fetchMe().catch(() => null),
+        fetchMyPortfolio().catch(() => null),
+      ]);
+
+      setPosts(postsRes.data.posts || postsRes.data.data || []);
+
+      if (userRes?.data?.success) {
+        setUser(userRes.data.user || userRes.data.data);
+      }
+
+      if (profileRes?.data?.success) {
+        setProfile(profileRes.data.data);
+      }
     } catch (error) {
-      console.error("Error fetching feed:", error);
+      console.error("Error fetching home data:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -34,12 +53,12 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    loadFeed();
+    loadHomeData();
   }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadFeed();
+    loadHomeData();
   };
 
   if (loading && !refreshing) {
@@ -59,18 +78,12 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         ListHeaderComponent={
-          <TouchableOpacity
-            style={styles.createPostBox}
-            onPress={() => router.push("/dashboard")}
-          >
-            <View style={styles.avatarPlaceholderSmall}>
-              <Feather name="user" size={16} color="#666" />
-            </View>
-            <View style={styles.createPostInput}>
-              <Text style={styles.createPostText}>What's on your mind?</Text>
-            </View>
-            <Feather name="image" size={20} color="#45bd62" />
-          </TouchableOpacity>
+          <CreatePostTrigger
+            user={user}
+            profile={profile}
+            onPress={() => setModalVisible(true)}
+            onProfilePress={() => router.push("/dashboard")}
+          />
         }
         renderItem={({ item }) => <PostCard post={item} />}
         contentContainerStyle={{ padding: 16 }}
@@ -81,6 +94,14 @@ export default function HomeScreen() {
           </View>
         }
       />
+
+      <CreatePostModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onCreate={(newPost: any) => {
+          setPosts([newPost, ...posts]);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -89,36 +110,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f6fa",
-  },
-  createPostBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 16,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "#eee",
-  },
-  avatarPlaceholderSmall: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#f0f2f5",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  createPostInput: {
-    flex: 1,
-    height: 36,
-    backgroundColor: "#f0f2f5",
-    borderRadius: 18,
-    justifyContent: "center",
-    paddingHorizontal: 16,
-  },
-  createPostText: {
-    color: "#65676b",
-    fontSize: 14,
   },
 });

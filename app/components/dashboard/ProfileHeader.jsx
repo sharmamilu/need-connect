@@ -2,12 +2,12 @@ import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-export default function ProfileHeader({ user, postsCount }) {
+export default function ProfileHeader({ user, profile, postsCount }) {
   const router = useRouter();
 
-  const name = user?.name || "User";
-  const avatarUri = user?.profilePhoto;
-  const profession = user?.profession || "Member";
+  const name = user?.name || profile?.name || "User";
+  const avatarUri = profile?.profilePhoto || user?.avatar;
+  const profession = profile?.profession || "Member";
 
   return (
     <View style={styles.container}>

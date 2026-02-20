@@ -1,6 +1,8 @@
 import { Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { POST_BACKGROUNDS } from "../../constants/postBackgrounds";
 import PostHeader from "../post/PostHeader";
 import PostImageGrid from "../post/PostImageGrid";
 
@@ -8,6 +10,12 @@ export default function PostCard({ post }) {
   const router = useRouter();
   const displayImages =
     post.images?.length > 0 ? post.images : post.image ? [post.image] : [];
+
+  const background = POST_BACKGROUNDS.find(
+    (b) => b.id === post.backgroundStyle,
+  );
+  const showBackground =
+    background && background.id !== "none" && displayImages.length === 0;
 
   return (
     <View style={styles.card}>
@@ -24,7 +32,26 @@ export default function PostCard({ post }) {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.description}>{post.description}</Text>
+      {showBackground ? (
+        <LinearGradient
+          colors={background.colors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.backgroundContent}
+        >
+          <Text
+            style={[
+              styles.description,
+              styles.descriptionOnBg,
+              { color: background.textColor },
+            ]}
+          >
+            {post.description}
+          </Text>
+        </LinearGradient>
+      ) : (
+        <Text style={styles.description}>{post.description}</Text>
+      )}
 
       <PostImageGrid images={displayImages} />
 
@@ -85,6 +112,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#333",
     lineHeight: 20,
+  },
+  backgroundContent: {
+    minHeight: 220,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 14,
+    marginVertical: 10,
+    padding: 30,
+  },
+  descriptionOnBg: {
+    marginVertical: 0,
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+    lineHeight: 32,
   },
   tags: {
     flexDirection: "row",

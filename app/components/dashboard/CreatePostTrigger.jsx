@@ -1,28 +1,42 @@
 import { Feather } from "@expo/vector-icons";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-export default function CreatePostTrigger({ onPress, user }) {
-  const avatarUri = user?.profilePhoto;
-  const nameInitial = user?.name?.charAt(0).toUpperCase() || "";
+export default function CreatePostTrigger({
+  onPress,
+  onProfilePress,
+  user,
+  profile,
+}) {
+  const avatarUri = profile?.profilePhoto || user?.avatar;
+  const nameInitial =
+    user?.name?.charAt(0).toUpperCase() ||
+    profile?.name?.charAt(0).toUpperCase() ||
+    "";
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
-      {avatarUri ? (
-        <Image source={{ uri: avatarUri }} style={styles.avatar} />
-      ) : (
-        <View style={styles.avatarPlaceholder}>
-          {nameInitial ? (
-            <Text style={styles.initialText}>{nameInitial}</Text>
-          ) : (
-            <Feather name="user" size={16} color="#666" />
-          )}
-        </View>
-      )}
-      <View style={styles.inputBar}>
+    <View style={styles.card}>
+      <TouchableOpacity onPress={onProfilePress}>
+        {avatarUri ? (
+          <Image source={{ uri: avatarUri }} style={styles.avatar} />
+        ) : (
+          <View style={styles.avatarPlaceholder}>
+            {nameInitial ? (
+              <Text style={styles.initialText}>{nameInitial}</Text>
+            ) : (
+              <Feather name="user" size={16} color="#666" />
+            )}
+          </View>
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.inputBar} onPress={onPress}>
         <Text style={styles.placeholder}>What's on your mind?</Text>
-      </View>
-      <Feather name="image" size={20} color="#45bd62" />
-    </TouchableOpacity>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={onPress}>
+        <Feather name="image" size={20} color="#45bd62" />
+      </TouchableOpacity>
+    </View>
   );
 }
 

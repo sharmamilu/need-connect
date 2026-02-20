@@ -12,10 +12,11 @@ import CreatePostModal from "../components/dashboard/CreatePostModal";
 import CreatePostTrigger from "../components/dashboard/CreatePostTrigger";
 import PersonalPostsList from "../components/dashboard/PersonalPostsList";
 import ProfileHeader from "../components/dashboard/ProfileHeader";
-import { fetchMyPortfolio, fetchMyPosts } from "../utils/apiFunctions";
+import { fetchMe, fetchMyPortfolio, fetchMyPosts } from "../utils/apiFunctions";
 
 export default function DashboardScreen() {
   const [posts, setPosts] = useState([]);
+  const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -23,12 +24,18 @@ export default function DashboardScreen() {
 
   const loadDashboardData = async () => {
     try {
-      const [postsRes, profileRes] = await Promise.all([
+      const [postsRes, userRes, profileRes] = await Promise.all([
         fetchMyPosts(),
-        fetchMyPortfolio().catch(() => null), // If no portfolio exists yet
+        fetchMe().catch(() => null),
+        fetchMyPortfolio().catch(() => null),
       ]);
 
       setPosts(postsRes.data.posts || postsRes.data.data || []);
+
+      if (userRes?.data?.success) {
+        setUser(userRes.data.user || userRes.data.data);
+      }
+
       if (profileRes?.data?.success) {
         setProfile(profileRes.data.data);
       }
@@ -68,11 +75,17 @@ export default function DashboardScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          <ProfileHeader user={profile} postsCount={posts.length} />
+          <ProfileHeader
+            user={user}
+            profile={profile}
+            postsCount={posts.length}
+          />
 
           <CreatePostTrigger
-            user={profile}
+            user={user}
+            profile={profile}
             onPress={() => setModalVisible(true)}
+            onProfilePress={() => router.push("/dashboard")}
           />
 
           {posts.length === 0 ? (

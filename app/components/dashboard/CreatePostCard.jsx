@@ -1,3 +1,4 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -11,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { createPost, uploadPostImages } from "../../utils/apiFunctions";
+import BackgroundSelector from "./BackgroundSelector";
 import ImagePickerSection from "./ImagePickerSection";
 import TagSelector from "./TagSelector";
 
@@ -18,6 +20,7 @@ export default function CreatePostCard({ onSubmit }) {
   const [description, setDescription] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
   const [images, setImages] = useState([]);
+  const [background, setBackground] = useState(null);
   const [isPosting, setIsPosting] = useState(false);
 
   const handlePost = async () => {
@@ -37,6 +40,7 @@ export default function CreatePostCard({ onSubmit }) {
         description,
         tags: selectedTags,
         images: uploadedUrls, // Array of URLs
+        backgroundStyle: images.length === 0 ? background?.id : null,
       });
 
       if (res.data.success) {
@@ -45,6 +49,7 @@ export default function CreatePostCard({ onSubmit }) {
         setDescription("");
         setSelectedTags([]);
         setImages([]);
+        setBackground(null);
       }
     } catch (error) {
       console.error("Error creating post:", error);
@@ -53,6 +58,9 @@ export default function CreatePostCard({ onSubmit }) {
       setIsPosting(false);
     }
   };
+
+  const isBackgroundActive =
+    background && background.id !== "none" && images.length === 0;
 
   return (
     <KeyboardAvoidingView
@@ -64,16 +72,52 @@ export default function CreatePostCard({ onSubmit }) {
           <Text style={styles.title}>Create New Post</Text>
         </View>
 
-        <TextInput
-          placeholder="What's on your mind?"
-          multiline
-          value={description}
-          onChangeText={setDescription}
-          style={styles.input}
-          placeholderTextColor="#999"
-        />
+        <View style={styles.inputWrapper}>
+          {isBackgroundActive ? (
+            <LinearGradient
+              colors={background.colors}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.backgroundInput}
+            >
+              <TextInput
+                placeholder="What's on your mind?"
+                multiline
+                value={description}
+                onChangeText={setDescription}
+                style={[
+                  styles.input,
+                  styles.textWithBackground,
+                  { color: background.textColor },
+                ]}
+                placeholderTextColor="rgba(255,255,255,0.7)"
+                maxLength={200}
+                textAlignVertical="center"
+                scrollEnabled={false}
+              />
+            </LinearGradient>
+          ) : (
+            <TextInput
+              placeholder="What's on your mind?"
+              multiline
+              value={description}
+              onChangeText={setDescription}
+              style={styles.input}
+              placeholderTextColor="#999"
+            />
+          )}
+        </View>
 
-        <ImagePickerSection images={images} setImages={setImages} />
+        {images.length === 0 && (
+          <BackgroundSelector
+            selectedId={background?.id || "none"}
+            onSelect={setBackground}
+          />
+        )}
+
+        {(!background || background.id === "none") && (
+          <ImagePickerSection images={images} setImages={setImages} />
+        )}
 
         <TagSelector
           selectedTags={selectedTags}
@@ -111,6 +155,18 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#333",
   },
+  inputWrapper: {
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 10,
+  },
+  backgroundInput: {
+    minHeight: 220,
+    width: "100%",
+    padding: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   input: {
     fontSize: 16,
     color: "#333",
@@ -119,7 +175,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9f9f9",
     padding: 12,
     borderRadius: 12,
-    marginBottom: 20,
+  },
+  textWithBackground: {
+    width: "100%",
+    flex: 1,
+    backgroundColor: "transparent",
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+    padding: 0,
+    lineHeight: 32,
   },
   postButton: {
     backgroundColor: "#3b5bdb",
