@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -7,12 +7,15 @@ export default function ProfileHeader({
   profile,
   postsCount,
   onViewPortfolio,
+  onWriteReview,
 }) {
   const router = useRouter();
 
   const name = user?.name || profile?.name || "User";
   const avatarUri = profile?.profilePhoto || user?.avatar;
   const profession = profile?.profession || "Member";
+  const rating = profile?.rating || user?.rating || 0;
+  const isVerified = profile?.isVerified || user?.isVerified || false;
 
   return (
     <View style={styles.container}>
@@ -33,8 +36,27 @@ export default function ProfileHeader({
           </View>
         )}
         <View style={styles.textContainer}>
-          <Text style={styles.name}>{name}</Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>{name}</Text>
+            {isVerified && (
+              <Ionicons name="checkmark-circle" size={16} color="#4A6CF7" />
+            )}
+          </View>
           <Text style={styles.profession}>{profession}</Text>
+
+          <View style={styles.ratingRow}>
+            {[...Array(5)].map((_, i) => (
+              <Ionicons
+                key={i}
+                name={i < Math.floor(rating) ? "star" : "star-outline"}
+                size={14}
+                color="#FFB800"
+              />
+            ))}
+            <Text style={styles.ratingText}>
+              {rating > 0 ? rating.toFixed(1) : "New"}
+            </Text>
+          </View>
           <View style={styles.statsRow}>
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{postsCount} Posts</Text>
@@ -45,7 +67,16 @@ export default function ProfileHeader({
                 onPress={onViewPortfolio}
               >
                 <Feather name="external-link" size={12} color="#fff" />
-                <Text style={styles.portfolioBtnText}>View Portfolio</Text>
+                <Text style={styles.portfolioBtnText}>Portfolio</Text>
+              </TouchableOpacity>
+            )}
+            {onWriteReview && (
+              <TouchableOpacity
+                style={styles.reviewBtn}
+                onPress={onWriteReview}
+              >
+                <Feather name="edit-2" size={12} color="#4A6CF7" />
+                <Text style={styles.reviewBtnText}>Review</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -99,6 +130,12 @@ const styles = StyleSheet.create({
   textContainer: {
     flex: 1,
   },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 2,
+  },
   name: {
     fontSize: 20,
     fontWeight: "800",
@@ -107,7 +144,19 @@ const styles = StyleSheet.create({
   profession: {
     fontSize: 14,
     color: "#65676b",
+    marginBottom: 4,
+  },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
     marginBottom: 8,
+  },
+  ratingText: {
+    marginLeft: 4,
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#444",
   },
   badge: {
     backgroundColor: "#f2f3f5",
@@ -139,5 +188,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     color: "#fff",
+  },
+  reviewBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    gap: 4,
+    backgroundColor: "#fff",
+  },
+  reviewBtnText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#4A6CF7",
   },
 });

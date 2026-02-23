@@ -1,9 +1,10 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
+  DeviceEventEmitter,
   Platform,
   StyleSheet,
   Text,
@@ -26,8 +27,20 @@ export default function PostCard({ post, onDeleteSuccess, showMenu = false }) {
   );
   const [loadingLike, setLoadingLike] = useState(false);
   const [showLikesModal, setShowLikesModal] = useState(false);
+  const [commentCount, setCommentCount] = useState(
+    post.commentsCount || post.comments || 0,
+  );
 
   const postId = post._id || post.id;
+
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener("CommentAdded", (event) => {
+      if (event.postId === postId) {
+        setCommentCount((prev) => prev + 1);
+      }
+    });
+    return () => sub.remove();
+  }, [postId]);
 
   const displayImages =
     post.images?.length > 0 ? post.images : post.image ? [post.image] : [];
@@ -95,6 +108,8 @@ export default function PostCard({ post, onDeleteSuccess, showMenu = false }) {
           userImage={post.userImage}
           userProfession={post.userProfession}
           userName={post.userName}
+          userRating={post.user?.rating || post.userRating}
+          isVerified={post.user?.isVerified || post.isVerified}
           createdAt={post.createdAt}
           onDelete={handleDelete}
           showMenu={showMenu}
@@ -154,12 +169,12 @@ export default function PostCard({ post, onDeleteSuccess, showMenu = false }) {
 
         <TouchableOpacity
           style={styles.actionGroup}
-          onPress={() => router.push("/comments")}
+          onPress={() =>
+            router.push({ pathname: "/comments", params: { postId } })
+          }
         >
           <Feather name="message-circle" size={18} color="#666" />
-          <Text style={styles.statText}>
-            {post.commentsCount || post.comments || 0}
-          </Text>
+          <Text style={styles.statText}>{commentCount}</Text>
         </TouchableOpacity>
       </View>
 

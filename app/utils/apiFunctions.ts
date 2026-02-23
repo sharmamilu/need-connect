@@ -111,6 +111,28 @@ export const fetchMe = () => API.get("/users/me");
 
 export const deletePost = (postId: string) => API.delete(`/posts/${postId}`);
 
+/* ---------- COMMENTS ---------- */
+
+export const loadComments = async (postId: string, page = 1, limit = 20) => {
+  const params = { page, limit };
+  const res = await API.get(`/comments/${postId}`, { params });
+  return res.data;
+};
+
+export const postComment = async (
+  postId: string,
+  text: string,
+  parentCommentId: string | null = null,
+) => {
+  const res = await API.post(`/comments/${postId}`, { text, parentCommentId });
+  return res.data;
+};
+
+export const toggleCommentLike = async (commentId: string) => {
+  const res = await API.post(`/comments/${commentId}/like`);
+  return res.data;
+};
+
 /* ---------- LIKES ---------- */
 
 export const toggleLike = (postId: string) => API.post(`/likes/${postId}`);

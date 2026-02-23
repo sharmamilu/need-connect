@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -10,6 +10,8 @@ export default function PostHeader({
   userImage,
   userProfession,
   userName,
+  userRating,
+  isVerified,
   createdAt,
   onDelete,
   showMenu = false,
@@ -20,6 +22,9 @@ export default function PostHeader({
   const name = userName || user?.name || "User";
   const avatarUri = userImage || user?.avatar;
   const profession = userProfession || user?.profession;
+  const rating = userRating !== undefined ? userRating : user?.rating || 0;
+  const verified =
+    isVerified !== undefined ? isVerified : user?.isVerified || false;
   const userId =
     user?._id || user?.id || (typeof user === "string" ? user : null);
 
@@ -58,9 +63,33 @@ export default function PostHeader({
           </View>
         )}
         <View style={styles.info}>
-          <Text style={styles.name}>{name}</Text>
-          {profession && <Text style={styles.profession}>{profession}</Text>}
-          <Text style={styles.time}>{formatRelativeTime(createdAt)}</Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>{name}</Text>
+            {verified && (
+              <Ionicons name="checkmark-circle" size={14} color="#4A6CF7" />
+            )}
+            {profession && (
+              <Text style={styles.profession} numberOfLines={1}>
+                • {profession}
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.metaRow}>
+            {rating > 0 && (
+              <View style={styles.ratingRow}>
+                {[...Array(5)].map((_, i) => (
+                  <Ionicons
+                    key={i}
+                    name={i < Math.floor(rating) ? "star" : "star-outline"}
+                    size={12}
+                    color="#FFB800"
+                  />
+                ))}
+              </View>
+            )}
+            <Text style={styles.time}>{formatRelativeTime(createdAt)}</Text>
+          </View>
         </View>
       </TouchableOpacity>
 
@@ -115,20 +144,35 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
   },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 2,
+  },
   name: {
     fontWeight: "700",
     fontSize: 15,
     color: "#1a1a1a",
   },
   profession: {
-    fontSize: 12,
+    fontSize: 13,
     color: "#666",
-    marginTop: 1,
+    flex: 1,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 1,
   },
   time: {
-    fontSize: 11,
+    fontSize: 12,
     color: "#999",
-    marginTop: 1,
   },
   menuButton: {
     padding: 8,

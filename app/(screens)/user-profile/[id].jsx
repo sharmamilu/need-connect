@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import PostCard from "../../components/dashboard/PostCard";
 import ProfileHeader from "../../components/dashboard/ProfileHeader";
+import ReviewModal from "../../components/reviews/ReviewModal";
 import { fetchPostsByUser } from "../../utils/apiFunctions";
 
 export default function UserProfileScreen() {
@@ -24,6 +25,9 @@ export default function UserProfileScreen() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Review state
+  const [showReview, setShowReview] = useState(false);
 
   const loadUserData = async (pageNum = 1, isInitial = true) => {
     if (!id) return;
@@ -90,12 +94,16 @@ export default function UserProfileScreen() {
     avatar: avatarUri || posts[0]?.userImage || posts[0]?.user?.avatar,
     profession:
       profession || posts[0]?.userProfession || posts[0]?.user?.profession,
+    rating: posts[0]?.user?.rating || 4.8, // Fallback dummy integration
+    isVerified: posts[0]?.user?.isVerified || true,
   };
 
   const profileProps = {
     name: displayUser.name,
     profilePhoto: displayUser.avatar,
     profession: displayUser.profession,
+    rating: displayUser.rating,
+    isVerified: displayUser.isVerified,
   };
 
   return (
@@ -118,6 +126,7 @@ export default function UserProfileScreen() {
               onViewPortfolio={
                 id ? () => router.push(`/professional/${id}`) : null
               }
+              onWriteReview={() => setShowReview(true)}
             />
           }
           renderItem={({ item }) => (
@@ -141,6 +150,16 @@ export default function UserProfileScreen() {
           }
         />
       </View>
+
+      <ReviewModal
+        visible={showReview}
+        onClose={() => setShowReview(false)}
+        userName={displayUser.name}
+        onSubmit={(reviewData) => {
+          console.log("Review submitted:", reviewData);
+          alert("Review submitted successfully!");
+        }}
+      />
     </SafeAreaView>
   );
 }

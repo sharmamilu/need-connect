@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function PostActions({
+  postId,
   likes,
   comments,
   isLiked,
@@ -28,7 +29,9 @@ export default function PostActions({
 
       <TouchableOpacity
         style={styles.action}
-        onPress={() => router.push("/comments")}
+        onPress={() =>
+          router.push({ pathname: "/comments", params: { postId } })
+        }
       >
         <Feather name="message-circle" size={20} color="#666" />
         <Text style={styles.text}>{comments}</Text>

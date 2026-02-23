@@ -1,7 +1,9 @@
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  DeviceEventEmitter,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -13,43 +15,53 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import AddCommentInput from "../components/comments/AddCommentInput";
 import CommentItem from "../components/comments/CommentItem";
-import { mockComments } from "../data/mockComments";
+import { fetchMe, loadComments, postComment } from "../utils/apiFunctions";
 
 export default function CommentsScreen() {
   const router = useRouter();
-  const [comments, setComments] = useState(mockComments);
+  const { postId } = useLocalSearchParams();
+  const [comments, setComments] = useState([]);
   const [replyingTo, setReplyingTo] = useState(null); // { id, name }
+  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
 
-  const handleAddComment = (text) => {
-    const newComment = {
-      id: Date.now().toString(),
-      user: {
-        name: "You",
-        avatar: "https://i.pravatar.cc/150?img=15",
-      },
-      text,
-      createdAt: "Just now",
-      likes: 0,
-      replies: [],
+  useEffect(() => {
+    fetchMe()
+      .then((res) => setCurrentUser(res.data?.data || res.data))
+      .catch(console.error);
+
+    const fetchInitialComments = async () => {
+      if (!postId) return;
+      try {
+        setLoading(true);
+        const data = await loadComments(postId);
+        // Expecting data to return paginated array. E.g data.data or directly data
+        setComments(data?.data || data?.comments || data);
+      } catch (error) {
+        console.error("Failed to load comments:", error);
+      } finally {
+        setLoading(false);
+      }
     };
+    fetchInitialComments();
+  }, [postId]);
 
-    if (replyingTo) {
-      // Find the parent and add to its replies
-      const addReplyToNode = (list, parentId) => {
-        return list.map((item) => {
-          if (item.id === parentId) {
-            return { ...item, replies: [...(item.replies || []), newComment] };
-          }
-          if (item.replies?.length > 0) {
-            return { ...item, replies: addReplyToNode(item.replies, parentId) };
-          }
-          return item;
-        });
-      };
-      setComments(addReplyToNode(comments, replyingTo.id));
+  const handleAddComment = async (text) => {
+    try {
+      const response = await postComment(postId, text, replyingTo?.id || null);
+
+      // Successfully posted comment!
+      // To ensure profile photos, names, and deeper nested structures are 100% accurate,
+      // we'll fetch the full updated array from the API instead of manually building it.
+      const data = await loadComments(postId);
+      setComments(data?.data || data?.comments || data);
+
       setReplyingTo(null);
-    } else {
-      setComments([newComment, ...comments]);
+
+      DeviceEventEmitter.emit("CommentAdded", { postId });
+    } catch (error) {
+      console.error("Failed to post comment:", error);
+      alert("Failed to post comment. Please try again.");
     }
   };
 
@@ -75,15 +87,32 @@ export default function CommentsScreen() {
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
-        <FlatList
-          data={comments}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <CommentItem comment={item} onReply={handleReply} />
-          )}
-          contentContainerStyle={{ padding: 16 }}
-          showsVerticalScrollIndicator={false}
-        />
+        {loading ? (
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          >
+            <ActivityIndicator size="large" color="#4A6CF7" />
+          </View>
+        ) : (
+          <FlatList
+            data={comments}
+            keyExtractor={(item, index) =>
+              item._id || item.id || index.toString()
+            }
+            renderItem={({ item }) => (
+              <CommentItem comment={item} onReply={handleReply} />
+            )}
+            contentContainerStyle={{ padding: 16 }}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={{ padding: 40, alignItems: "center" }}>
+                <Text style={{ color: "#888" }}>
+                  No comments yet. Be the first!
+                </Text>
+              </View>
+            }
+          />
+        )}
 
         <AddCommentInput
           onSubmit={handleAddComment}

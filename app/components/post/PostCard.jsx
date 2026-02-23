@@ -1,7 +1,8 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
+  DeviceEventEmitter,
   Platform,
   StyleSheet,
   Text,
@@ -34,8 +35,20 @@ export default function PostCard({ post, onDeleteSuccess }) {
   );
   const [loadingLike, setLoadingLike] = useState(false);
   const [showLikesModal, setShowLikesModal] = useState(false);
+  const [commentCount, setCommentCount] = useState(
+    post.commentsCount || post.comments || 0,
+  );
 
   const postId = post._id || post.id;
+
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener("CommentAdded", (event) => {
+      if (event.postId === postId) {
+        setCommentCount((prev) => prev + 1);
+      }
+    });
+    return () => sub.remove();
+  }, [postId]);
 
   const handleDelete = async () => {
     try {
@@ -92,6 +105,8 @@ export default function PostCard({ post, onDeleteSuccess }) {
         userImage={post.userImage}
         userProfession={post.userProfession}
         userName={post.userName}
+        userRating={post.user?.rating || post.userRating}
+        isVerified={post.user?.isVerified || post.isVerified}
         createdAt={post.createdAt}
         onDelete={handleDelete}
       />
@@ -122,8 +137,9 @@ export default function PostCard({ post, onDeleteSuccess }) {
       <PostImageGrid images={displayImages} />
 
       <PostActions
+        postId={postId}
         likes={likeCount}
-        comments={post.commentsCount || post.comments || 0}
+        comments={commentCount}
         isLiked={isLiked}
         onLikeToggle={handleLikeToggle}
         onLikesPress={() => setShowLikesModal(true)}

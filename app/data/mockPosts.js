@@ -4,6 +4,9 @@ export const mockPosts = [
     user: {
       name: "Rahul Sharma",
       avatar: "https://i.pravatar.cc/150?img=3",
+      profession: "Senior React Developer",
+      isVerified: true,
+      rating: 4.8,
     },
     createdAt: "1h ago",
     description:
@@ -18,6 +21,9 @@ export const mockPosts = [
     user: {
       name: "Priya Mehta",
       avatar: "https://i.pravatar.cc/150?img=5",
+      profession: "Full Stack Engineer",
+      isVerified: false,
+      rating: 5,
     },
     createdAt: "4h ago",
     description:

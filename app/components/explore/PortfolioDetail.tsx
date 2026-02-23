@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { fetchPortfolioById } from "../../utils/apiFunctions";
 import ExperienceSection from "../portfolio/ExperienceSection";
+import ReviewModal from "../reviews/ReviewModal";
 
 export default function PortfolioDetail() {
   const { portfolioId } = useLocalSearchParams();
@@ -24,6 +25,7 @@ export default function PortfolioDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [showReview, setShowReview] = useState(false);
   const router = useRouter();
 
   const gallery: string[] = portfolio?.gallery ?? [];
@@ -143,9 +145,40 @@ export default function PortfolioDetail() {
                 </Text>
               </View>
             )}
-            <Text style={styles.name}>{portfolio.name}</Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.name}>{portfolio.name}</Text>
+              {(portfolio.isVerified || portfolio.user?.isVerified || true) && (
+                <Ionicons name="checkmark-circle" size={18} color="#4A6CF7" />
+              )}
+            </View>
             <Text style={styles.profession}>{portfolio.profession}</Text>
+
+            <View style={styles.ratingRow}>
+              {[...Array(5)].map((_, i) => {
+                const rat = portfolio.rating || portfolio.user?.rating || 4.8;
+                return (
+                  <Ionicons
+                    key={i}
+                    name={i < Math.floor(rat) ? "star" : "star-outline"}
+                    size={14}
+                    color="#FFB800"
+                  />
+                );
+              })}
+              <Text style={styles.ratingText}>
+                {portfolio.rating || portfolio.user?.rating || 4.8}
+              </Text>
+            </View>
+
             <Text style={styles.location}>{portfolio.location}</Text>
+
+            <TouchableOpacity
+              style={styles.reviewBtn}
+              onPress={() => setShowReview(true)}
+            >
+              <Feather name="edit-2" size={14} color="#4A6CF7" />
+              <Text style={styles.reviewBtnText}>Write a Review</Text>
+            </TouchableOpacity>
           </View>
 
           {/* BIO */}
@@ -175,6 +208,7 @@ export default function PortfolioDetail() {
               experiences={portfolio.experience}
               setExperiences={() => {}}
               mode="view"
+              error={null}
             />
           )}
 
@@ -382,6 +416,16 @@ export default function PortfolioDetail() {
           </View>
         )}
       </View>
+
+      <ReviewModal
+        visible={showReview}
+        onClose={() => setShowReview(false)}
+        userName={portfolio?.name || "User"}
+        onSubmit={(reviewData: any) => {
+          console.log("Portfolio Review submitted:", reviewData);
+          alert("Review submitted successfully!");
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -452,21 +496,53 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   name: {
     fontSize: 20,
     fontWeight: "700",
   },
-
   profession: {
     fontSize: 14,
     color: "#4A6CF7",
     marginTop: 4,
   },
-
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  ratingText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#555",
+  },
   location: {
     fontSize: 13,
     color: "#777",
-    marginTop: 2,
+  },
+  reviewBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    gap: 6,
+    backgroundColor: "#fff",
+    marginTop: 12,
+  },
+  reviewBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#4A6CF7",
   },
 
   section: {
