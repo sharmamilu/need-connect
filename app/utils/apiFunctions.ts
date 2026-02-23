@@ -133,6 +133,11 @@ export const toggleCommentLike = async (commentId: string) => {
   return res.data;
 };
 
+export const deleteComment = async (commentId: string) => {
+  const res = await API.delete(`/comments/${commentId}`);
+  return res.data;
+};
+
 /* ---------- LIKES ---------- */
 
 export const toggleLike = (postId: string) => API.post(`/likes/${postId}`);

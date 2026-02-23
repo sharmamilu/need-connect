@@ -15,11 +15,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import AddCommentInput from "../components/comments/AddCommentInput";
 import CommentItem from "../components/comments/CommentItem";
-import { fetchMe, loadComments, postComment } from "../utils/apiFunctions";
+import {
+  deleteComment,
+  fetchMe,
+  loadComments,
+  postComment,
+} from "../utils/apiFunctions";
 
 export default function CommentsScreen() {
   const router = useRouter();
-  const { postId } = useLocalSearchParams();
+  const { postId, postAdminId } = useLocalSearchParams();
   const [comments, setComments] = useState([]);
   const [replyingTo, setReplyingTo] = useState(null); // { id, name }
   const [loading, setLoading] = useState(true);
@@ -27,7 +32,9 @@ export default function CommentsScreen() {
 
   useEffect(() => {
     fetchMe()
-      .then((res) => setCurrentUser(res.data?.data || res.data))
+      .then((res) =>
+        setCurrentUser(res.data?.user || res.data?.data || res.data),
+      )
       .catch(console.error);
 
     const fetchInitialComments = async () => {
@@ -69,6 +76,22 @@ export default function CommentsScreen() {
     setReplyingTo({ id: commentId, name });
   };
 
+  const handleDeleteComment = async (commentId) => {
+    try {
+      const res = await deleteComment(commentId);
+      if (res?.success || res?.message) {
+        // Reload from backend to cleanly remove from tree
+        const data = await loadComments(postId);
+        setComments(data?.data || data?.comments || data);
+        // Emit an event (optional) to let other parts know count might have decreased
+        DeviceEventEmitter.emit("CommentAdded", { postId, deleted: true });
+      }
+    } catch (e) {
+      console.error("Failed to delete comment:", e);
+      alert("Failed to delete comment.");
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <View style={styles.header}>
@@ -100,7 +123,13 @@ export default function CommentsScreen() {
               item._id || item.id || index.toString()
             }
             renderItem={({ item }) => (
-              <CommentItem comment={item} onReply={handleReply} />
+              <CommentItem
+                comment={item}
+                onReply={handleReply}
+                onDelete={handleDeleteComment}
+                currentUser={currentUser}
+                postAdminId={postAdminId}
+              />
             )}
             contentContainerStyle={{ padding: 16 }}
             showsVerticalScrollIndicator={false}

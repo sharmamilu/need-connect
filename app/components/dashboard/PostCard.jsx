@@ -36,7 +36,11 @@ export default function PostCard({ post, onDeleteSuccess, showMenu = false }) {
   useEffect(() => {
     const sub = DeviceEventEmitter.addListener("CommentAdded", (event) => {
       if (event.postId === postId) {
-        setCommentCount((prev) => prev + 1);
+        if (event.deleted) {
+          setCommentCount((prev) => Math.max(0, prev - 1));
+        } else {
+          setCommentCount((prev) => prev + 1);
+        }
       }
     });
     return () => sub.remove();
@@ -170,7 +174,17 @@ export default function PostCard({ post, onDeleteSuccess, showMenu = false }) {
         <TouchableOpacity
           style={styles.actionGroup}
           onPress={() =>
-            router.push({ pathname: "/comments", params: { postId } })
+            router.push({
+              pathname: "/comments",
+              params: {
+                postId,
+                postAdminId:
+                  post.userId ||
+                  post.user?._id ||
+                  post.user?.id ||
+                  (typeof post.user === "string" ? post.user : null),
+              },
+            })
           }
         >
           <Feather name="message-circle" size={18} color="#666" />

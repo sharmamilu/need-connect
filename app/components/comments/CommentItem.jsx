@@ -1,10 +1,24 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { toggleCommentLike } from "../../utils/apiFunctions";
 import { formatRelativeTime } from "../../utils/dateUtils";
 
-export default function CommentItem({ comment, onReply, depth = 0 }) {
+export default function CommentItem({
+  comment,
+  onReply,
+  onDelete,
+  currentUser,
+  postAdminId,
+  depth = 0,
+}) {
   const [showReplies, setShowReplies] = useState(true);
   const [isLiked, setIsLiked] = useState(
     comment.liked || comment.isLiked || false,
@@ -52,6 +66,45 @@ export default function CommentItem({ comment, onReply, depth = 0 }) {
       setLikesCount((prev) => (!newIsLiked ? prev + 1 : prev - 1));
     }
   };
+
+  const handleConfirmDelete = () => {
+    Alert.alert(
+      "Delete Comment",
+      "Are you sure you want to delete this comment?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => onDelete?.(id),
+        },
+      ],
+    );
+  };
+
+  const isAuthor = Boolean(
+    currentUser &&
+    ((comment.user &&
+      (comment.user === currentUser._id || comment.user === currentUser.id)) ||
+      (comment.user?._id &&
+        (comment.user._id === currentUser._id ||
+          comment.user._id === currentUser.id)) ||
+      (comment.userId &&
+        (comment.userId === currentUser._id ||
+          comment.userId === currentUser.id)) ||
+      (comment.userName &&
+        currentUser.name &&
+        comment.userName === currentUser.name) ||
+      (comment.userName &&
+        currentUser.userName &&
+        comment.userName === currentUser.userName)),
+  );
+
+  const isPostAdmin = Boolean(
+    currentUser &&
+    postAdminId &&
+    (postAdminId === currentUser._id || postAdminId === currentUser.id),
+  );
 
   return (
     <View
@@ -140,6 +193,15 @@ export default function CommentItem({ comment, onReply, depth = 0 }) {
                   <Text style={styles.likeCount}>{likesCount}</Text>
                 </View>
               )}
+
+              {(isAuthor || isPostAdmin) && (
+                <TouchableOpacity
+                  onPress={handleConfirmDelete}
+                  style={[styles.actionBtn, { marginLeft: "auto" }]}
+                >
+                  <Ionicons name="trash-outline" size={14} color="#FF4757" />
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
@@ -181,6 +243,9 @@ export default function CommentItem({ comment, onReply, depth = 0 }) {
               key={reply._id || reply.id || index}
               comment={reply}
               onReply={onReply}
+              onDelete={onDelete}
+              currentUser={currentUser}
+              postAdminId={postAdminId}
               depth={depth + 1}
             />
           ))}

@@ -44,7 +44,11 @@ export default function PostCard({ post, onDeleteSuccess }) {
   useEffect(() => {
     const sub = DeviceEventEmitter.addListener("CommentAdded", (event) => {
       if (event.postId === postId) {
-        setCommentCount((prev) => prev + 1);
+        if (event.deleted) {
+          setCommentCount((prev) => Math.max(0, prev - 1));
+        } else {
+          setCommentCount((prev) => prev + 1);
+        }
       }
     });
     return () => sub.remove();
@@ -138,6 +142,12 @@ export default function PostCard({ post, onDeleteSuccess }) {
 
       <PostActions
         postId={postId}
+        postAdminId={
+          post.userId ||
+          post.user?._id ||
+          post.user?.id ||
+          (typeof post.user === "string" ? post.user : null)
+        }
         likes={likeCount}
         comments={commentCount}
         isLiked={isLiked}
