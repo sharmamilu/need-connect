@@ -10,12 +10,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ExperienceSection from "../../components/portfolio/ExperienceSection";
 import GallerySection from "../../components/portfolio/GallerySection";
 import PortfolioActions from "../../components/portfolio/PortfolioActions";
 import ProfileSection from "../../components/portfolio/ProfileSection";
 import ServicesSection from "../../components/portfolio/ServicesSection";
 import SkillsSection from "../../components/portfolio/SkillsSection";
 import SocialLinksSection from "../../components/portfolio/SocialLinksSection";
+
 import { usePortfolio } from "../../hooks/usePortfolio";
 import {
   createPortfolio,
@@ -32,12 +34,34 @@ export default function EditPortfolio() {
     error,
   } = usePortfolio();
   const [saveLoading, setSaveLoading] = useState(false);
+  const [experienceError, setExperienceError] = useState("");
 
   const handleSubmit = async () => {
     if (saveLoading) return;
 
     if (!portfolio.contact?.phone) {
       Alert.alert("Required Field", "Please add a contact phone number.");
+      return;
+    }
+
+    setExperienceError("");
+    if (!portfolio.experience || portfolio.experience.length < 1) {
+      setExperienceError("Please add your experience details.");
+      return;
+    }
+
+    const hasInvalidExp = portfolio.experience.some(
+      (exp: any) =>
+        !exp.role?.trim() ||
+        !exp.company?.trim() ||
+        !exp.startDate?.trim() ||
+        (!exp.currentlyWorking && !exp.endDate?.trim()),
+    );
+
+    if (hasInvalidExp) {
+      setExperienceError(
+        "Please fill out completely your experience details (Role, Company, Dates) or remove empty ones.",
+      );
       return;
     }
 
@@ -88,6 +112,7 @@ export default function EditPortfolio() {
           ...portfolio.contact,
           phone: portfolio.contact?.phone?.trim(),
         },
+        experience: portfolio.experience || [],
         profilePhoto: profilePhotoUrl,
         gallery: galleryUrls,
       };
@@ -170,6 +195,15 @@ export default function EditPortfolio() {
             skills={portfolio.skills}
             onChange={(skills) => setPortfolio({ ...portfolio, skills })}
             mode="edit"
+          />
+          <ExperienceSection
+            experiences={portfolio.experience || []}
+            setExperiences={(experience: any[]) => {
+              setExperienceError("");
+              setPortfolio({ ...portfolio, experience });
+            }}
+            mode="edit"
+            error={experienceError}
           />
           <GallerySection
             images={portfolio.gallery}

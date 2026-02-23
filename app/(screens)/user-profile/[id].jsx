@@ -115,6 +115,9 @@ export default function UserProfileScreen() {
               user={displayUser}
               profile={profileProps}
               postsCount={posts.length}
+              onViewPortfolio={
+                id ? () => router.push(`/professional/${id}`) : null
+              }
             />
           }
           renderItem={({ item }) => (

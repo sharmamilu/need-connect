@@ -1,16 +1,30 @@
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-export default function PostActions({ likes, comments }) {
+export default function PostActions({
+  likes,
+  comments,
+  isLiked,
+  onLikeToggle,
+  onLikesPress,
+}) {
   const router = useRouter();
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.action}>
-        <Feather name="heart" size={20} color="#666" />
-        <Text style={styles.text}>{likes}</Text>
-      </TouchableOpacity>
+      <View style={styles.actionGroup}>
+        <TouchableOpacity style={styles.actionIcon} onPress={onLikeToggle}>
+          <Ionicons
+            name={isLiked ? "heart" : "heart-outline"}
+            size={20}
+            color={isLiked ? "#FF4757" : "#666"}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onLikesPress}>
+          <Text style={styles.text}>{likes}</Text>
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity
         style={styles.action}
@@ -45,5 +59,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     fontWeight: "500",
+  },
+  actionGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 24,
+  },
+  actionIcon: {
+    paddingRight: 4,
   },
 });

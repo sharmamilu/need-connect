@@ -1,4 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
+import { useState } from "react";
 import {
   Alert,
   Platform,
@@ -8,12 +9,13 @@ import {
   View,
 } from "react-native";
 import { POST_BACKGROUNDS } from "../../constants/postBackgrounds";
+import LikedUsersModal from "./LikedUsersModal";
 import PostActions from "./PostActions";
 import PostHeader from "./PostHeader";
 import PostImageGrid from "./PostImageGrid";
 import PostTags from "./PostTags";
 
-import { deletePost } from "../../utils/apiFunctions";
+import { deletePost, toggleLike } from "../../utils/apiFunctions";
 
 export default function PostCard({ post, onDeleteSuccess }) {
   // Use images array if available, otherwise wrap single image in an array
@@ -26,9 +28,17 @@ export default function PostCard({ post, onDeleteSuccess }) {
   const showBackground =
     background && background.id !== "none" && displayImages.length === 0;
 
+  const [isLiked, setIsLiked] = useState(post.liked || post.isLiked || false);
+  const [likeCount, setLikeCount] = useState(
+    post.likesCount || post.likes || 0,
+  );
+  const [loadingLike, setLoadingLike] = useState(false);
+  const [showLikesModal, setShowLikesModal] = useState(false);
+
+  const postId = post._id || post.id;
+
   const handleDelete = async () => {
     try {
-      const postId = post._id || post.id;
       const res = await deletePost(postId);
       if (res.data.success) {
         if (Platform.OS === "android") {
@@ -41,6 +51,37 @@ export default function PostCard({ post, onDeleteSuccess }) {
     } catch (error) {
       console.error("Error deleting post:", error);
       alert("Failed to delete post. Please try again.");
+    }
+  };
+
+  const handleLikeToggle = async () => {
+    if (loadingLike) return;
+    setLoadingLike(true);
+
+    // Optimistic update
+    const newIsLiked = !isLiked;
+    setIsLiked(newIsLiked);
+    setLikeCount((prev) => (newIsLiked ? prev + 1 : prev - 1));
+
+    try {
+      const res = await toggleLike(postId);
+      if (res.data?.success) {
+        setIsLiked(res.data.liked);
+        if (res.data.likeCount !== undefined) {
+          setLikeCount(res.data.likeCount);
+        }
+      } else {
+        // Revert on failure
+        setIsLiked(!newIsLiked);
+        setLikeCount((prev) => (!newIsLiked ? prev + 1 : prev - 1));
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      // Revert on error
+      setIsLiked(!newIsLiked);
+      setLikeCount((prev) => (!newIsLiked ? prev + 1 : prev - 1));
+    } finally {
+      setLoadingLike(false);
     }
   };
 
@@ -81,9 +122,21 @@ export default function PostCard({ post, onDeleteSuccess }) {
       <PostImageGrid images={displayImages} />
 
       <PostActions
-        likes={post.likesCount || post.likes || 0}
+        likes={likeCount}
         comments={post.commentsCount || post.comments || 0}
+        isLiked={isLiked}
+        onLikeToggle={handleLikeToggle}
+        onLikesPress={() => setShowLikesModal(true)}
       />
+
+      {/* Liked Users Modal */}
+      {showLikesModal && (
+        <LikedUsersModal
+          visible={showLikesModal}
+          onClose={() => setShowLikesModal(false)}
+          postId={postId}
+        />
+      )}
     </View>
   );
 }

@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getToken } from "./storage";
 
-const BASE_URL = "http://192.168.1.5:5000/api";
+const BASE_URL = "http://192.168.1.4:5000/api";
 
 const API = axios.create({
   baseURL: BASE_URL,
@@ -110,3 +110,12 @@ export const fetchPostsByUser = (
 export const fetchMe = () => API.get("/users/me");
 
 export const deletePost = (postId: string) => API.delete(`/posts/${postId}`);
+
+/* ---------- LIKES ---------- */
+
+export const toggleLike = (postId: string) => API.post(`/likes/${postId}`);
+
+export const fetchPostLikes = (
+  postId: string,
+  params: { page?: number; limit?: number } = {},
+) => API.get(`/likes/${postId}`, { params });

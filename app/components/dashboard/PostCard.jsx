@@ -1,6 +1,7 @@
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import {
   Alert,
   Platform,
@@ -14,10 +15,20 @@ import { POST_BACKGROUNDS } from "../../constants/postBackgrounds";
 import PostHeader from "../post/PostHeader";
 import PostImageGrid from "../post/PostImageGrid";
 
-import { deletePost } from "../../utils/apiFunctions";
+import { deletePost, toggleLike } from "../../utils/apiFunctions";
+import LikedUsersModal from "../post/LikedUsersModal";
 
 export default function PostCard({ post, onDeleteSuccess, showMenu = false }) {
   const router = useRouter();
+  const [isLiked, setIsLiked] = useState(post.liked || post.isLiked || false);
+  const [likeCount, setLikeCount] = useState(
+    post.likesCount || post.likes || 0,
+  );
+  const [loadingLike, setLoadingLike] = useState(false);
+  const [showLikesModal, setShowLikesModal] = useState(false);
+
+  const postId = post._id || post.id;
+
   const displayImages =
     post.images?.length > 0 ? post.images : post.image ? [post.image] : [];
 
@@ -42,6 +53,37 @@ export default function PostCard({ post, onDeleteSuccess, showMenu = false }) {
     } catch (error) {
       console.error("Error deleting post:", error);
       alert("Failed to delete post. Please try again.");
+    }
+  };
+
+  const handleLikeToggle = async () => {
+    if (loadingLike) return;
+    setLoadingLike(true);
+
+    // Optimistic UI update
+    const newIsLiked = !isLiked;
+    setIsLiked(newIsLiked);
+    setLikeCount((prev) => (newIsLiked ? prev + 1 : prev - 1));
+
+    try {
+      const res = await toggleLike(postId);
+      if (res.data?.success) {
+        setIsLiked(res.data.liked);
+        if (res.data.likeCount !== undefined) {
+          setLikeCount(res.data.likeCount);
+        }
+      } else {
+        // Revert on failure
+        setIsLiked(!newIsLiked);
+        setLikeCount((prev) => (!newIsLiked ? prev + 1 : prev - 1));
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      // Revert on error
+      setIsLiked(!newIsLiked);
+      setLikeCount((prev) => (!newIsLiked ? prev + 1 : prev - 1));
+    } finally {
+      setLoadingLike(false);
     }
   };
 
@@ -93,23 +135,42 @@ export default function PostCard({ post, onDeleteSuccess, showMenu = false }) {
       )}
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.stat}>
-          <Feather name="heart" size={14} color="#666" />
-          <Text style={styles.statText}>
-            {post.likesCount || post.likes || 0}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.actionGroup}>
+          <TouchableOpacity
+            style={styles.stat}
+            onPress={handleLikeToggle}
+            disabled={loadingLike}
+          >
+            <Ionicons
+              name={isLiked ? "heart" : "heart-outline"}
+              size={18}
+              color={isLiked ? "#FF4757" : "#666"}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowLikesModal(true)}>
+            <Text style={styles.statText}>{likeCount}</Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
-          style={styles.stat}
+          style={styles.actionGroup}
           onPress={() => router.push("/comments")}
         >
-          <Feather name="message-circle" size={14} color="#666" />
+          <Feather name="message-circle" size={18} color="#666" />
           <Text style={styles.statText}>
             {post.commentsCount || post.comments || 0}
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Liked Users Modal */}
+      {showLikesModal && (
+        <LikedUsersModal
+          visible={showLikesModal}
+          onClose={() => setShowLikesModal(false)}
+          postId={postId}
+        />
+      )}
     </View>
   );
 }
@@ -183,5 +244,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
     fontWeight: "600",
+  },
+  actionGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
 });

@@ -16,6 +16,7 @@ export const usePortfolio = (initial?: Portfolio) => {
     email: "",
     services: [],
     skills: [],
+    experience: [] as any[],
     gallery: [],
     links: {},
   };

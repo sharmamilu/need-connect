@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ExperienceSection from "../../components/portfolio/ExperienceSection";
 import GallerySection from "../../components/portfolio/GallerySection";
 import PortfolioActions from "../../components/portfolio/PortfolioActions";
 import ProfileSection from "../../components/portfolio/ProfileSection";
@@ -27,6 +28,7 @@ import {
 export default function CreatePortfolio() {
   const { portfolio, setPortfolio, loading: fetchLoading } = usePortfolio();
   const [saveLoading, setSaveLoading] = useState(false);
+  const [experienceError, setExperienceError] = useState("");
 
   const validate = (): boolean => {
     if (!portfolio.name?.trim()) {
@@ -64,6 +66,27 @@ export default function CreatePortfolio() {
       Alert.alert("Required Field", "Please add at least 1 skill.");
       return false;
     }
+    setExperienceError("");
+    if (!portfolio.experience || portfolio.experience.length < 1) {
+      setExperienceError("Please add your experience details.");
+      return false;
+    }
+
+    const hasInvalidExp = portfolio.experience.some(
+      (exp: any) =>
+        !exp.role?.trim() ||
+        !exp.company?.trim() ||
+        !exp.startDate?.trim() ||
+        (!exp.currentlyWorking && !exp.endDate?.trim()),
+    );
+
+    if (hasInvalidExp) {
+      setExperienceError(
+        "Please fill out completely your experience details (Role, Company, Dates) or remove empty ones.",
+      );
+      return false;
+    }
+
     return true;
   };
 
@@ -120,6 +143,7 @@ export default function CreatePortfolio() {
           countryCode: portfolio.contact?.countryCode || "+1",
           phone: portfolio.contact?.phone?.trim() || "",
         },
+        experience: portfolio.experience || [],
         links: portfolio.links || {},
         profilePhoto: profilePhotoUrl,
         gallery: galleryUrls,
@@ -183,6 +207,15 @@ export default function CreatePortfolio() {
             skills={portfolio.skills}
             onChange={(skills) => setPortfolio({ ...portfolio, skills })}
             mode="create"
+          />
+          <ExperienceSection
+            experiences={portfolio.experience || []}
+            setExperiences={(experience: any[]) => {
+              setExperienceError("");
+              setPortfolio({ ...portfolio, experience });
+            }}
+            mode="create"
+            error={experienceError}
           />
           <GallerySection
             images={portfolio.gallery}

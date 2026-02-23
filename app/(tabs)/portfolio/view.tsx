@@ -2,6 +2,7 @@
 import { router } from "expo-router";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ExperienceSection from "../../components/portfolio/ExperienceSection";
 import GallerySection from "../../components/portfolio/GallerySection";
 import PortfolioActions from "../../components/portfolio/PortfolioActions";
 import ProfileSection from "../../components/portfolio/ProfileSection";
@@ -96,6 +97,11 @@ export default function ViewPortfolio() {
         <SkillsSection
           skills={portfolio.skills}
           onChange={() => {}}
+          mode="view"
+        />
+        <ExperienceSection
+          experiences={portfolio.experience || []}
+          setExperiences={() => {}}
           mode="view"
         />
         <GallerySection

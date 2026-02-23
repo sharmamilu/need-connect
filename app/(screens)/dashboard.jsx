@@ -121,6 +121,11 @@ export default function DashboardScreen() {
                 user={user}
                 profile={profile}
                 postsCount={posts.length}
+                onViewPortfolio={
+                  profile?._id
+                    ? () => router.push(`/professional/${profile._id}`)
+                    : null
+                }
               />
               <CreatePostTrigger
                 user={user}

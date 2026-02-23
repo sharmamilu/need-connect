@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { fetchPortfolioById } from "../../utils/apiFunctions";
+import ExperienceSection from "../portfolio/ExperienceSection";
 
 export default function PortfolioDetail() {
   const { portfolioId } = useLocalSearchParams();
@@ -166,6 +167,15 @@ export default function PortfolioDetail() {
             <Section title="Skills">
               <TagList data={portfolio.skills} />
             </Section>
+          )}
+
+          {/* EXPERIENCE */}
+          {portfolio.experience?.length > 0 && (
+            <ExperienceSection
+              experiences={portfolio.experience}
+              setExperiences={() => {}}
+              mode="view"
+            />
           )}
 
           {/* GALLERY */}

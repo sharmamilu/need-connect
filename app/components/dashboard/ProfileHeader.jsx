@@ -2,7 +2,12 @@ import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-export default function ProfileHeader({ user, profile, postsCount }) {
+export default function ProfileHeader({
+  user,
+  profile,
+  postsCount,
+  onViewPortfolio,
+}) {
   const router = useRouter();
 
   const name = user?.name || profile?.name || "User";
@@ -30,8 +35,19 @@ export default function ProfileHeader({ user, profile, postsCount }) {
         <View style={styles.textContainer}>
           <Text style={styles.name}>{name}</Text>
           <Text style={styles.profession}>{profession}</Text>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{postsCount} Posts</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{postsCount} Posts</Text>
+            </View>
+            {onViewPortfolio && (
+              <TouchableOpacity
+                style={styles.portfolioBtn}
+                onPress={onViewPortfolio}
+              >
+                <Feather name="external-link" size={12} color="#fff" />
+                <Text style={styles.portfolioBtnText}>View Portfolio</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
@@ -104,5 +120,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     color: "#3b5bdb",
+  },
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  portfolioBtn: {
+    backgroundColor: "#4A6CF7",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    gap: 4,
+  },
+  portfolioBtnText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#fff",
   },
 });
