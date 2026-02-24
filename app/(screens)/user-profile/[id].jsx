@@ -12,7 +12,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import PostCard from "../../components/dashboard/PostCard";
 import ProfileHeader from "../../components/dashboard/ProfileHeader";
 import ReviewModal from "../../components/reviews/ReviewModal";
-import { fetchPostsByUser } from "../../utils/apiFunctions";
+import {
+  fetchPostsByUser,
+  fetchReviewStats,
+  postReview,
+} from "../../utils/apiFunctions";
+import { useAuth } from "../../utils/AuthContext";
 
 export default function UserProfileScreen() {
   const router = useRouter();
@@ -20,6 +25,8 @@ export default function UserProfileScreen() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [stats, setStats] = useState({ averageRating: 0, totalReviews: 0 });
+  const { user: currentUser } = useAuth();
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -41,6 +48,16 @@ export default function UserProfileScreen() {
       if (pageNum === 1) {
         setPosts(newPosts);
         setTotalPages(pagination?.totalPages || 1);
+
+        // Fetch fresh stats for the user
+        try {
+          const statsRes = await fetchReviewStats(id);
+          if (statsRes.data?.success) {
+            setStats(statsRes.data.data);
+          }
+        } catch (sErr) {
+          console.error("Stats fetch failed:", sErr);
+        }
       } else {
         setPosts((prev) => [...prev, ...newPosts]);
       }
@@ -94,9 +111,12 @@ export default function UserProfileScreen() {
     avatar: avatarUri || posts[0]?.userImage || posts[0]?.user?.avatar,
     profession:
       profession || posts[0]?.userProfession || posts[0]?.user?.profession,
-    rating: posts[0]?.user?.rating || 4.8, // Fallback dummy integration
+    rating: stats.averageRating || posts[0]?.user?.rating || 0,
+    totalReviews: stats.totalReviews || 0,
     isVerified: posts[0]?.user?.isVerified || true,
   };
+
+  const isOwner = currentUser?.id === id || currentUser?._id === id;
 
   const profileProps = {
     name: displayUser.name,
@@ -123,10 +143,20 @@ export default function UserProfileScreen() {
               user={displayUser}
               profile={profileProps}
               postsCount={posts.length}
+              isOwner={isOwner}
               onViewPortfolio={
                 id ? () => router.push(`/professional/${id}`) : null
               }
-              onWriteReview={() => setShowReview(true)}
+              onWriteReview={isOwner ? null : () => setShowReview(true)}
+              onViewReviews={
+                id
+                  ? () =>
+                      router.push({
+                        pathname: "/user-reviews",
+                        params: { userId: id, userName: displayUser.name },
+                      })
+                  : null
+              }
             />
           }
           renderItem={({ item }) => (
@@ -155,9 +185,16 @@ export default function UserProfileScreen() {
         visible={showReview}
         onClose={() => setShowReview(false)}
         userName={displayUser.name}
-        onSubmit={(reviewData) => {
-          console.log("Review submitted:", reviewData);
-          alert("Review submitted successfully!");
+        reviewedUserId={id}
+        onSubmit={async (reviewData) => {
+          try {
+            await postReview(reviewData);
+            alert("Review submitted successfully!");
+            setShowReview(false);
+          } catch (err) {
+            console.error("Review failed:", err);
+            alert(err?.response?.data?.message || "Failed to submit review.");
+          }
         }}
       />
     </SafeAreaView>

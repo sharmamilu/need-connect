@@ -13,7 +13,12 @@ import CreatePostModal from "../components/dashboard/CreatePostModal";
 import CreatePostTrigger from "../components/dashboard/CreatePostTrigger";
 import PostCard from "../components/dashboard/PostCard";
 import ProfileHeader from "../components/dashboard/ProfileHeader";
-import { fetchMe, fetchMyPortfolio, fetchMyPosts } from "../utils/apiFunctions";
+import {
+  fetchMe,
+  fetchMyPortfolio,
+  fetchMyPosts,
+  fetchReviewStats,
+} from "../utils/apiFunctions";
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -23,6 +28,7 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [stats, setStats] = useState({ averageRating: 0, totalReviews: 0 });
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -47,6 +53,25 @@ export default function DashboardScreen() {
       if (pageNum === 1) {
         setPosts(newPosts);
         setTotalPages(pagination.totalPages || 1);
+
+        // Fetch fresh stats for current user
+        if (userRes?.data?.success) {
+          const uId =
+            userRes.data.user?._id ||
+            userRes.data.user?.id ||
+            userRes.data.data?._id ||
+            userRes.data.data?.id;
+          if (uId) {
+            try {
+              const statsRes = await fetchReviewStats(uId);
+              if (statsRes.data?.success) {
+                setStats(statsRes.data.data);
+              }
+            } catch (sErr) {
+              console.error("Dashboard stats fetch failed:", sErr);
+            }
+          }
+        }
       } else {
         setPosts((prev) => [...prev, ...newPosts]);
       }
@@ -119,12 +144,22 @@ export default function DashboardScreen() {
             <>
               <ProfileHeader
                 user={user}
-                profile={profile}
+                profile={{ ...profile, rating: stats.averageRating }}
                 postsCount={posts.length}
+                isOwner={true}
                 onViewPortfolio={
                   profile?._id
                     ? () => router.push(`/professional/${profile._id}`)
                     : null
+                }
+                onViewReviews={() =>
+                  router.push({
+                    pathname: "/user-reviews",
+                    params: {
+                      userId: user?._id || user?.id,
+                      userName: user?.name,
+                    },
+                  })
                 }
               />
               <CreatePostTrigger

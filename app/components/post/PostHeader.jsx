@@ -15,6 +15,7 @@ export default function PostHeader({
   createdAt,
   onDelete,
   showMenu = false,
+  userId: userIdProp,
 }) {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
@@ -26,7 +27,10 @@ export default function PostHeader({
   const verified =
     isVerified !== undefined ? isVerified : user?.isVerified || false;
   const userId =
-    user?._id || user?.id || (typeof user === "string" ? user : null);
+    userIdProp ||
+    user?._id ||
+    user?.id ||
+    (typeof user === "string" ? user : null);
 
   const handleProfilePress = () => {
     if (userId) {

@@ -8,6 +8,8 @@ export default function ProfileHeader({
   postsCount,
   onViewPortfolio,
   onWriteReview,
+  onViewReviews,
+  isOwner,
 }) {
   const router = useRouter();
 
@@ -16,6 +18,7 @@ export default function ProfileHeader({
   const profession = profile?.profession || "Member";
   const rating = profile?.rating || user?.rating || 0;
   const isVerified = profile?.isVerified || user?.isVerified || false;
+  const isLowRating = rating > 0 && rating < 2.5;
 
   return (
     <View style={styles.container}>
@@ -27,9 +30,18 @@ export default function ProfileHeader({
 
       <View style={styles.profileInfo}>
         {avatarUri ? (
-          <Image source={{ uri: avatarUri }} style={styles.avatar} />
+          <Image
+            source={{ uri: avatarUri }}
+            style={[styles.avatar, isLowRating && styles.lowRatingAvatar]}
+          />
         ) : (
-          <View style={[styles.avatar, styles.placeholderAvatar]}>
+          <View
+            style={[
+              styles.avatar,
+              styles.placeholderAvatar,
+              isLowRating && styles.lowRatingAvatar,
+            ]}
+          >
             <Text style={styles.placeholderText}>
               {name.charAt(0).toUpperCase()}
             </Text>
@@ -44,7 +56,11 @@ export default function ProfileHeader({
           </View>
           <Text style={styles.profession}>{profession}</Text>
 
-          <View style={styles.ratingRow}>
+          <TouchableOpacity
+            style={styles.ratingRow}
+            onPress={onViewReviews}
+            activeOpacity={onViewReviews ? 0.7 : 1}
+          >
             {[...Array(5)].map((_, i) => (
               <Ionicons
                 key={i}
@@ -53,10 +69,20 @@ export default function ProfileHeader({
                 color="#FFB800"
               />
             ))}
-            <Text style={styles.ratingText}>
+            <Text
+              style={[styles.ratingText, isLowRating && styles.lowRatingText]}
+            >
               {rating > 0 ? rating.toFixed(1) : "New"}
             </Text>
-          </View>
+            {onViewReviews && (
+              <Feather
+                name="chevron-right"
+                size={12}
+                color="#999"
+                style={{ marginLeft: 2 }}
+              />
+            )}
+          </TouchableOpacity>
           <View style={styles.statsRow}>
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{postsCount} Posts</Text>
@@ -82,6 +108,16 @@ export default function ProfileHeader({
           </View>
         </View>
       </View>
+
+      {isOwner && isLowRating && (
+        <View style={styles.warningBanner}>
+          <Ionicons name="warning-outline" size={18} color="#FF4757" />
+          <Text style={styles.warningText}>
+            Your rating is low ({rating.toFixed(1)}). Please maintain a high
+            quality of work and good communication to improve your standing.
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -204,5 +240,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     color: "#4A6CF7",
+  },
+  lowRatingAvatar: {
+    borderWidth: 2,
+    borderColor: "#FF4757",
+  },
+  lowRatingText: {
+    color: "#FF4757",
+  },
+  warningBanner: {
+    marginHorizontal: 16,
+    marginTop: 10,
+    padding: 12,
+    backgroundColor: "#FFF5F5",
+    borderRadius: 12,
+    flexDirection: "row",
+    gap: 10,
+    borderWidth: 1,
+    borderColor: "#FFE0E0",
+  },
+  warningText: {
+    flex: 1,
+    fontSize: 12,
+    color: "#C53030",
+    lineHeight: 18,
+    fontWeight: "500",
   },
 });

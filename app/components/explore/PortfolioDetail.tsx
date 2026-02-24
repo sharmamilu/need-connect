@@ -15,7 +15,11 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { fetchPortfolioById } from "../../utils/apiFunctions";
+import {
+  fetchPortfolioById,
+  fetchReviewStats,
+  postReview,
+} from "../../utils/apiFunctions";
 import ExperienceSection from "../portfolio/ExperienceSection";
 import ReviewModal from "../reviews/ReviewModal";
 
@@ -26,6 +30,7 @@ export default function PortfolioDetail() {
   const [error, setError] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [showReview, setShowReview] = useState(false);
+  const [stats, setStats] = useState({ averageRating: 0, totalReviews: 0 });
   const router = useRouter();
 
   const gallery: string[] = portfolio?.gallery ?? [];
@@ -48,6 +53,24 @@ export default function PortfolioDetail() {
         const res = await fetchPortfolioById(portfolioId as string);
         // Backend sends the portfolio object directly via res.json(portfolio)
         setPortfolio(res.data);
+
+        // Fetch rating stats
+        const uId =
+          res.data?.user?._id ||
+          res.data?.user?.id ||
+          res.data?.user ||
+          res.data?.userId ||
+          portfolioId;
+        if (uId) {
+          try {
+            const statsRes = await fetchReviewStats(uId);
+            if (statsRes.data?.success) {
+              setStats(statsRes.data.data);
+            }
+          } catch (sErr) {
+            console.error("Stats fetch failed:", sErr);
+          }
+        }
       } catch (err: any) {
         const message =
           err?.response?.data?.message ||
@@ -136,10 +159,23 @@ export default function PortfolioDetail() {
             {portfolio.profilePhoto ? (
               <Image
                 source={{ uri: portfolio.profilePhoto }}
-                style={styles.avatar}
+                style={[
+                  styles.avatar,
+                  stats.averageRating > 0 &&
+                    stats.averageRating < 2.5 &&
+                    styles.lowRatingAvatar,
+                ]}
               />
             ) : (
-              <View style={[styles.avatar, styles.placeholderAvatar]}>
+              <View
+                style={[
+                  styles.avatar,
+                  styles.placeholderAvatar,
+                  stats.averageRating > 0 &&
+                    stats.averageRating < 2.5 &&
+                    styles.lowRatingAvatar,
+                ]}
+              >
                 <Text style={styles.placeholderText}>
                   {portfolio.name?.charAt(0).toUpperCase() || "?"}
                 </Text>
@@ -153,9 +189,28 @@ export default function PortfolioDetail() {
             </View>
             <Text style={styles.profession}>{portfolio.profession}</Text>
 
-            <View style={styles.ratingRow}>
+            <TouchableOpacity
+              style={styles.ratingRow}
+              onPress={() =>
+                router.push({
+                  pathname: "/user-reviews" as any,
+                  params: {
+                    userId:
+                      portfolio?.user?._id ||
+                      portfolio?.user?.id ||
+                      portfolio?.user ||
+                      portfolio?.userId,
+                    userName: portfolio?.name,
+                  },
+                })
+              }
+            >
               {[...Array(5)].map((_, i) => {
-                const rat = portfolio.rating || portfolio.user?.rating || 4.8;
+                const rat =
+                  stats.averageRating ||
+                  portfolio.rating ||
+                  portfolio.user?.rating ||
+                  0;
                 return (
                   <Ionicons
                     key={i}
@@ -165,10 +220,25 @@ export default function PortfolioDetail() {
                   />
                 );
               })}
-              <Text style={styles.ratingText}>
-                {portfolio.rating || portfolio.user?.rating || 4.8}
+              <Text
+                style={[
+                  styles.ratingText,
+                  stats.averageRating > 0 &&
+                    stats.averageRating < 2.5 &&
+                    styles.lowRatingText,
+                ]}
+              >
+                {stats.averageRating > 0
+                  ? stats.averageRating.toFixed(1)
+                  : portfolio.rating || portfolio.user?.rating || "New"}
               </Text>
-            </View>
+              <Feather
+                name="chevron-right"
+                size={12}
+                color="#999"
+                style={{ marginLeft: 4 }}
+              />
+            </TouchableOpacity>
 
             <Text style={styles.location}>{portfolio.location}</Text>
 
@@ -421,9 +491,23 @@ export default function PortfolioDetail() {
         visible={showReview}
         onClose={() => setShowReview(false)}
         userName={portfolio?.name || "User"}
-        onSubmit={(reviewData: any) => {
-          console.log("Portfolio Review submitted:", reviewData);
-          alert("Review submitted successfully!");
+        reviewedUserId={
+          portfolio?.user?._id ||
+          portfolio?.user?.id ||
+          portfolio?.user ||
+          portfolio?.userId ||
+          portfolioId ||
+          "UNKNOWN_ID"
+        }
+        onSubmit={async (reviewData: any) => {
+          try {
+            await postReview(reviewData);
+            alert("Review submitted successfully!");
+            setShowReview(false);
+          } catch (err: any) {
+            console.error("Review failed:", err);
+            alert(err?.response?.data?.message || "Failed to submit review.");
+          }
         }}
       />
     </SafeAreaView>
@@ -522,6 +606,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: "#555",
+  },
+  lowRatingAvatar: {
+    borderWidth: 2,
+    borderColor: "#FF4757",
+  },
+  lowRatingText: {
+    color: "#FF4757",
   },
   location: {
     fontSize: 13,

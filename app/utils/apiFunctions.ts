@@ -146,3 +146,15 @@ export const fetchPostLikes = (
   postId: string,
   params: { page?: number; limit?: number } = {},
 ) => API.get(`/likes/${postId}`, { params });
+
+/* ---------- REVIEWS ---------- */
+
+export const postReview = (data: any) => API.post("/reviews", data);
+
+export const fetchReviews = (
+  userId: string,
+  params: { page?: number; limit?: number } = {},
+) => API.get(`/reviews/${userId}`, { params });
+
+export const fetchReviewStats = (userId: string) =>
+  API.get(`/reviews/${userId}/stats`);

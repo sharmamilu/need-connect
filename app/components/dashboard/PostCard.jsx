@@ -109,6 +109,7 @@ export default function PostCard({ post, onDeleteSuccess, showMenu = false }) {
       <View style={styles.cardHeader}>
         <PostHeader
           user={post.user}
+          userId={post.userId || post.user?._id || post.user?.id}
           userImage={post.userImage}
           userProfession={post.userProfession}
           userName={post.userName}

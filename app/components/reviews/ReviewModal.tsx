@@ -17,6 +17,7 @@ interface ReviewModalProps {
   onClose: () => void;
   onSubmit: (data: any) => void;
   userName: string;
+  reviewedUserId: string;
 }
 
 export default function ReviewModal({
@@ -24,6 +25,7 @@ export default function ReviewModal({
   onClose,
   onSubmit,
   userName,
+  reviewedUserId,
 }: ReviewModalProps) {
   const [relation, setRelation] = useState("worked_with"); // 'worked_with' or 'work_done_for'
   const [rating, setRating] = useState(0);
@@ -109,11 +111,27 @@ export default function ReviewModal({
       alert("Please provide a star rating.");
       return;
     }
-    onSubmit({
+
+    const formattedQuestions = currentQuestions.map((q) => ({
+      question: q.label,
+      answer: answers[q.id] || "",
+    }));
+
+    const parsedReferToOthers = answers.q6 === "Yes";
+
+    const payload = {
+      reviewedUserId,
       relation,
       rating,
-      answers,
-    });
+      referToOthers: parsedReferToOthers,
+      questions: formattedQuestions,
+    };
+
+    console.log("----- BACKEND REVIEW PAYLOAD (COPY START) -----");
+    console.log(JSON.stringify(payload, null, 2));
+    console.log("----- BACKEND REVIEW PAYLOAD (COPY END) -----");
+
+    onSubmit(payload);
     // reset form
     setRating(0);
     setAnswers({ q1: "", q2: "", q3: "", q4: "", q5: "", q6: "" });

@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { router } from "expo-router";
@@ -172,6 +172,39 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
               {data.profession || "Profession not set"}
             </Text>
           </View>
+
+          <TouchableOpacity
+            style={styles.ratingRow}
+            onPress={() =>
+              router.push({
+                pathname: "/user-reviews" as any,
+                params: {
+                  userId: data.userId || data._id || (data as any).id,
+                  userName: data.name,
+                },
+              })
+            }
+          >
+            {[...Array(5)].map((_, i) => (
+              <Ionicons
+                key={i}
+                name={
+                  i < Math.floor(data.rating || 0) ? "star" : "star-outline"
+                }
+                size={14}
+                color="#FFB800"
+              />
+            ))}
+            <Text style={styles.ratingText}>
+              {data.rating ? data.rating.toFixed(1) : "New"}
+            </Text>
+            <Feather
+              name="chevron-right"
+              size={12}
+              color="#999"
+              style={{ marginLeft: 4 }}
+            />
+          </TouchableOpacity>
 
           {data.location ? (
             <View style={styles.viewLocationBadge}>
@@ -585,6 +618,18 @@ const styles = StyleSheet.create({
     color: "#555",
     flex: 1,
     fontStyle: "italic",
+  },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    marginTop: 8,
+  },
+  ratingText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#555",
   },
 
   // --- Edit Mode Styles ---

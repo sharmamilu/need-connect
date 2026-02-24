@@ -17,6 +17,9 @@ export type Portfolio = {
 
   services: string[];
   skills: string[];
+  id?: string;
+  userId?: string;
+  rating?: number;
   experience?: any[];
   gallery: (string | PortfolioLocalImage)[];
 
