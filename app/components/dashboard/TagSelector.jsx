@@ -53,6 +53,24 @@ export default function TagSelector({ selectedTags, setSelectedTags }) {
     }
   };
 
+  const handleAddCustomTag = () => {
+    const newTag = searchQuery.trim().toLowerCase();
+    if (newTag && !selectedTags.includes(newTag)) {
+      setSelectedTags([...selectedTags, newTag]);
+    }
+    // Also add to allTags locally so it stays in the list during this session
+    if (newTag && !allTags.includes(newTag)) {
+      setAllTags([...allTags, newTag]);
+    }
+    setSearchQuery("");
+  };
+
+  const showAddCustomTag =
+    searchQuery.trim().length > 0 &&
+    !allTags.some(
+      (tag) => tag.toLowerCase() === searchQuery.trim().toLowerCase(),
+    );
+
   if (loading) {
     return (
       <ActivityIndicator
@@ -93,7 +111,7 @@ export default function TagSelector({ selectedTags, setSelectedTags }) {
           const active = selectedTags.includes(tag);
           return (
             <TouchableOpacity
-              key={tag}
+              key={`tag-${tag}`}
               style={[styles.tag, active && styles.activeTag]}
               onPress={() => toggleTag(tag)}
             >
@@ -103,7 +121,21 @@ export default function TagSelector({ selectedTags, setSelectedTags }) {
             </TouchableOpacity>
           );
         })}
-        {filteredTags.length === 0 && (
+        {showAddCustomTag && (
+          <TouchableOpacity
+            style={[styles.tag, styles.customTagButton]}
+            onPress={handleAddCustomTag}
+          >
+            <Feather
+              name="plus"
+              size={14}
+              color="#3b5bdb"
+              style={{ marginRight: 4 }}
+            />
+            <Text style={styles.customTagText}>Add "{searchQuery.trim()}"</Text>
+          </TouchableOpacity>
+        )}
+        {filteredTags.length === 0 && !showAddCustomTag && (
           <Text style={styles.noTags}>No tags found</Text>
         )}
       </View>
@@ -171,6 +203,18 @@ const styles = StyleSheet.create({
   },
   activeTagText: {
     color: "#fff",
+    fontWeight: "600",
+  },
+  customTagButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#e8f0fe",
+    borderColor: "#d2e3fc",
+    borderStyle: "dashed",
+  },
+  customTagText: {
+    color: "#3b5bdb",
+    fontSize: 12,
     fontWeight: "600",
   },
   noTags: {

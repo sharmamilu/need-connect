@@ -20,6 +20,7 @@ import {
   fetchReviewStats,
   postReview,
 } from "../../utils/apiFunctions";
+import { useAuth } from "../../utils/AuthContext";
 import ExperienceSection from "../portfolio/ExperienceSection";
 import ReviewModal from "../reviews/ReviewModal";
 
@@ -31,6 +32,7 @@ export default function PortfolioDetail() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [showReview, setShowReview] = useState(false);
   const [stats, setStats] = useState({ averageRating: 0, totalReviews: 0 });
+  const { user: currentUser } = useAuth();
   const router = useRouter();
 
   const gallery: string[] = portfolio?.gallery ?? [];
@@ -139,6 +141,12 @@ export default function PortfolioDetail() {
     );
   }
 
+  const isOwner =
+    currentUser?.id === portfolio?.user?._id ||
+    currentUser?._id === portfolio?.user?._id ||
+    currentUser?.id === portfolio?.userId ||
+    currentUser?._id === portfolio?.userId;
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={{ flex: 1, backgroundColor: "#F8F9FA" }}>
@@ -183,7 +191,7 @@ export default function PortfolioDetail() {
             )}
             <View style={styles.nameRow}>
               <Text style={styles.name}>{portfolio.name}</Text>
-              {(portfolio.isVerified || portfolio.user?.isVerified || true) && (
+              {(portfolio.isVerified || portfolio.user?.isVerified) && (
                 <Ionicons name="checkmark-circle" size={18} color="#4A6CF7" />
               )}
             </View>
@@ -242,13 +250,27 @@ export default function PortfolioDetail() {
 
             <Text style={styles.location}>{portfolio.location}</Text>
 
-            <TouchableOpacity
-              style={styles.reviewBtn}
-              onPress={() => setShowReview(true)}
-            >
-              <Feather name="edit-2" size={14} color="#4A6CF7" />
-              <Text style={styles.reviewBtnText}>Write a Review</Text>
-            </TouchableOpacity>
+            {isOwner &&
+              stats.averageRating > 0 &&
+              stats.averageRating < 2.5 && (
+                <View style={styles.warningBanner}>
+                  <Ionicons name="warning-outline" size={16} color="#FF4757" />
+                  <Text style={styles.warningText}>
+                    Your rating is low ({stats.averageRating.toFixed(1)}).
+                    Please improve your standing.
+                  </Text>
+                </View>
+              )}
+
+            {!isOwner && (
+              <TouchableOpacity
+                style={styles.reviewBtn}
+                onPress={() => setShowReview(true)}
+              >
+                <Feather name="edit-2" size={14} color="#4A6CF7" />
+                <Text style={styles.reviewBtnText}>Write a Review</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* BIO */}
@@ -617,6 +639,24 @@ const styles = StyleSheet.create({
   location: {
     fontSize: 13,
     color: "#777",
+  },
+  warningBanner: {
+    marginTop: 12,
+    padding: 10,
+    backgroundColor: "#FFF5F5",
+    borderRadius: 12,
+    flexDirection: "row",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "#FFE0E0",
+    width: "100%",
+  },
+  warningText: {
+    flex: 1,
+    fontSize: 12,
+    color: "#C53030",
+    lineHeight: 16,
+    fontWeight: "500",
   },
   reviewBtn: {
     flexDirection: "row",

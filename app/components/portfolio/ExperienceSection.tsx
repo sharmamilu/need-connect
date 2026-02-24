@@ -8,19 +8,40 @@ import {
   View,
 } from "react-native";
 
+interface Experience {
+  id?: string;
+  role: string;
+  company: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+  currentlyWorking: boolean;
+}
+
+interface ExperienceSectionProps {
+  experiences: Experience[];
+  setExperiences: (experiences: Experience[]) => void;
+  mode?: "edit" | "create" | "view";
+  error?: string | null;
+}
+
 const ExperienceSection = ({
-  experiences,
+  experiences = [],
   setExperiences,
   mode = "edit",
   error,
-}) => {
-  const handleChange = (index, field, value) => {
+}: ExperienceSectionProps) => {
+  const handleChange = (
+    index: number,
+    field: keyof Experience,
+    value: string,
+  ) => {
     const updated = [...experiences];
-    updated[index][field] = value;
+    (updated[index] as any)[field] = value;
     setExperiences(updated);
   };
 
-  const toggleCurrent = (index, value) => {
+  const toggleCurrent = (index: number, value: boolean) => {
     const updated = [...experiences];
     updated[index].currentlyWorking = value;
 

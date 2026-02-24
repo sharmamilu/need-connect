@@ -1,46 +1,231 @@
-import { Feather } from "@expo/vector-icons";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Feather, Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { fetchReviewStats } from "../utils/apiFunctions";
 import { useAuth } from "../utils/AuthContext";
 
 export default function ProfileScreen() {
   const { logout, user } = useAuth();
+  const router = useRouter();
+  const [stats, setStats] = useState({
+    averageRating: 0,
+    totalReviews: 0,
+    profilePhoto: "",
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      // Use both possible ID fields
+      const uId = user?._id || user?.id;
+      if (!uId) {
+        setLoadingStats(false);
+        return;
+      }
+
+      try {
+        const res = await fetchReviewStats(uId);
+        if (res.data?.success) {
+          setStats(res.data.data);
+        }
+      } catch (err) {
+        console.error("Failed to load stats:", err);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    loadStats();
+  }, [user]);
 
   const handleLogout = async () => {
     await logout();
   };
 
+  const getInitials = (name?: string) => {
+    if (!name) return "?";
+    return name.charAt(0).toUpperCase();
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <Feather name="user" size={60} color="#4A6CF7" />
-        </View>
-        <Text style={styles.title}>My Profile 👤</Text>
-        <Text style={styles.subtitle}>
-          Manage your account, listings, and preferences.
-        </Text>
-      </View>
-
-      <View style={styles.content}>
-        {user && (
-          <View style={styles.userInfo}>
-            <Text style={styles.label}>Name:</Text>
-            <Text style={styles.value}>{user.name || "Not set"}</Text>
-
-            <Text style={styles.label}>Phone:</Text>
-            <Text style={styles.value}>{user.phone || "Not set"}</Text>
-
-            <Text style={styles.label}>Email:</Text>
-            <Text style={styles.value}>{user.email || "Not set"}</Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Section */}
+        <View style={styles.header}>
+          <View style={styles.avatarWrapper}>
+            {stats.profilePhoto || user?.avatar ? (
+              <Image
+                source={{ uri: stats.profilePhoto || user?.avatar }}
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={styles.placeholderAvatar}>
+                <Text style={styles.placeholderText}>
+                  {getInitials(user?.name)}
+                </Text>
+              </View>
+            )}
+            {/* Show verified badge if available */}
+            {user?.isVerified !== false && (
+              <View style={styles.verifiedBadge}>
+                <Ionicons name="checkmark-circle" size={24} color="#4A6CF7" />
+                <View style={styles.verifiedBadgeBg} />
+              </View>
+            )}
           </View>
-        )}
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Feather name="log-out" size={20} color="#fff" />
-          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.name}>{user?.name || "Member"}</Text>
+          {user?.profession && (
+            <Text style={styles.profession}>{user.profession}</Text>
+          )}
+
+          {/* Stats Analytics */}
+          <View style={styles.statsContainer}>
+            <TouchableOpacity
+              style={styles.statBox}
+              activeOpacity={0.7}
+              onPress={() => {
+                const uId = user?._id || user?.id;
+                if (uId) {
+                  router.push({
+                    pathname: "/user-reviews",
+                    params: { userId: uId, userName: user?.name },
+                  });
+                }
+              }}
+            >
+              <Text style={styles.statNumber}>
+                {loadingStats ? "-" : stats.totalReviews}
+              </Text>
+              <Text style={styles.statLabel}>Reviews</Text>
+            </TouchableOpacity>
+
+            <View style={styles.statDivider} />
+
+            <TouchableOpacity
+              style={styles.statBox}
+              activeOpacity={0.7}
+              onPress={() => {
+                const uId = user?._id || user?.id;
+                if (uId) {
+                  router.push({
+                    pathname: "/user-reviews",
+                    params: { userId: uId, userName: user?.name },
+                  });
+                }
+              }}
+            >
+              <View style={styles.ratingRow}>
+                <Text style={styles.statNumber}>
+                  {loadingStats
+                    ? "-"
+                    : stats.averageRating > 0
+                      ? stats.averageRating.toFixed(1)
+                      : "New"}
+                </Text>
+                <Ionicons
+                  name="star"
+                  size={16}
+                  color="#FFB800"
+                  style={{ marginLeft: 4, marginTop: -2 }}
+                />
+              </View>
+              <Text style={styles.statLabel}>Avg Rating</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Contact Information */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Contact Information</Text>
+
+          <View style={styles.infoRow}>
+            <View style={styles.iconCircle}>
+              <Feather name="mail" size={16} color="#4A6CF7" />
+            </View>
+            <View style={styles.infoTextContainer}>
+              <Text style={styles.infoLabel}>Email</Text>
+              <Text style={styles.infoValue}>{user?.email || "Not set"}</Text>
+            </View>
+          </View>
+
+          <View style={styles.infoRow}>
+            <View style={styles.iconCircle}>
+              <Feather name="phone" size={16} color="#4A6CF7" />
+            </View>
+            <View style={styles.infoTextContainer}>
+              <Text style={styles.infoLabel}>Phone</Text>
+              <Text style={styles.infoValue}>{user?.phone || "Not set"}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Options / Settings Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account Settings</Text>
+
+          <TouchableOpacity
+            style={styles.optionRow}
+            onPress={() => router.push("/portfolio/view")}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[styles.optionIconCircle, { backgroundColor: "#F3E8FF" }]}
+            >
+              <Feather name="briefcase" size={18} color="#9333EA" />
+            </View>
+            <View style={styles.optionTextContainer}>
+              <Text style={styles.optionText}>My Portfolio</Text>
+              <Text style={styles.optionSubtext}>
+                View your professional profile
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={20} color="#CCC" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.optionRow}
+            onPress={() => router.push("/(screens)/preferences")}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[styles.optionIconCircle, { backgroundColor: "#E0F2FE" }]}
+            >
+              <Feather name="sliders" size={18} color="#0284C7" />
+            </View>
+            <View style={styles.optionTextContainer}>
+              <Text style={styles.optionText}>Preferences</Text>
+              <Text style={styles.optionSubtext}>
+                Feed, Matches & Discovery
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={20} color="#CCC" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Logout Button */}
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <Feather name="log-out" size={20} color="#E53935" />
+          <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
-      </View>
+
+        <Text style={styles.versionText}>Need Connect v1.0.0</Text>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -48,69 +233,218 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#F8F9FA",
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   header: {
     alignItems: "center",
-    paddingVertical: 30,
     backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    paddingTop: 40,
+    paddingBottom: 24,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 15,
+    elevation: 4,
+    marginBottom: 24,
   },
-  avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#f0f4ff",
-    alignItems: "center",
-    justifyContent: "center",
+  avatarWrapper: {
+    position: "relative",
     marginBottom: 16,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 8,
+  avatar: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 4,
+    borderColor: "#F8F9FA",
   },
-  subtitle: {
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-    paddingHorizontal: 40,
+  placeholderAvatar: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: "#4A6CF7",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 4,
+    borderColor: "#F8F9FA",
+    shadowColor: "#4A6CF7",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
   },
-  content: {
-    flex: 1,
-    padding: 20,
+  placeholderText: {
+    fontSize: 40,
+    fontWeight: "800",
+    color: "#fff",
   },
-  userInfo: {
+  verifiedBadge: {
+    position: "absolute",
+    bottom: 0,
+    right: 4,
+    zIndex: 2,
+  },
+  verifiedBadgeBg: {
+    position: "absolute",
+    width: 14,
+    height: 14,
     backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: 7,
+    top: 5,
+    left: 5,
+    zIndex: -1,
   },
-  label: {
-    fontSize: 12,
-    color: "#999",
-    marginTop: 12,
+  name: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#1c1e21",
     marginBottom: 4,
   },
-  value: {
-    fontSize: 16,
-    color: "#333",
+  profession: {
+    fontSize: 15,
+    color: "#4A6CF7",
     fontWeight: "600",
+    marginBottom: 20,
   },
-  logoutButton: {
+  statsContainer: {
+    flexDirection: "row",
+    backgroundColor: "#F8F9FA",
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    width: "85%",
+  },
+  statBox: {
+    flex: 1,
+    alignItems: "center",
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#1c1e21",
+  },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#65676b",
+    marginTop: 4,
+    fontWeight: "500",
+  },
+  statDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: "#E0E0E0",
+  },
+  section: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    marginHorizontal: 16,
+    marginBottom: 20,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#999",
+    marginBottom: 16,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#EDF1FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  infoTextContainer: {
+    flex: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F3F6",
+    paddingBottom: 16,
+  },
+  infoLabel: {
+    fontSize: 12,
+    color: "#65676b",
+    marginBottom: 2,
+  },
+  infoValue: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#333",
+  },
+  optionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F3F6",
+    paddingBottom: 16,
+  },
+  optionIconCircle: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  optionTextContainer: {
+    flex: 1,
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 2,
+  },
+  optionSubtext: {
+    fontSize: 13,
+    color: "#888",
+  },
+  logoutBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E53935",
+    backgroundColor: "#FEF2F2",
+    marginHorizontal: 16,
     paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#FEE2E2",
+    marginBottom: 24,
   },
   logoutText: {
-    color: "#fff",
+    color: "#E53935",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
+    marginLeft: 8,
+  },
+  versionText: {
+    textAlign: "center",
+    color: "#BBB",
+    fontSize: 12,
+    fontWeight: "500",
   },
 });

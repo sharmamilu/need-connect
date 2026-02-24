@@ -17,9 +17,13 @@ import {
 
 type User = {
   id: string;
+  _id?: string;
   name: string;
   phone: string;
   email: string;
+  avatar?: string;
+  profession?: string;
+  isVerified?: boolean;
 };
 
 type AuthContextType = {

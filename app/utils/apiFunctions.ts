@@ -109,6 +109,10 @@ export const fetchPostsByUser = (
 
 export const fetchMe = () => API.get("/users/me");
 
+export const fetchPreferences = () => API.get("/users/preferences");
+export const updatePreferences = (data: any) =>
+  API.post("/users/preferences", data);
+
 export const deletePost = (postId: string) => API.delete(`/posts/${postId}`);
 
 /* ---------- COMMENTS ---------- */
