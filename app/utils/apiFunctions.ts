@@ -115,6 +115,16 @@ export const updatePreferences = (data: any) =>
 
 export const deletePost = (postId: string) => API.delete(`/posts/${postId}`);
 
+export const togglePinPost = (postId: string) =>
+  API.put(`/posts/${postId}/pin`);
+
+export const toggleSavePost = (postId: string) =>
+  API.post(`/posts/${postId}/save`);
+
+export const fetchSavedPosts = (
+  params: { page?: number; limit?: number } = {},
+) => API.get(`/posts/saved`, { params });
+
 /* ---------- COMMENTS ---------- */
 
 export const loadComments = async (postId: string, page = 1, limit = 20) => {

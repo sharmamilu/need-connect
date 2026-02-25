@@ -212,6 +212,23 @@ export default function ProfileScreen() {
             </View>
             <Feather name="chevron-right" size={20} color="#CCC" />
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.optionRow}
+            onPress={() => router.push("/(screens)/saved-posts")}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[styles.optionIconCircle, { backgroundColor: "#DCFCE7" }]}
+            >
+              <Feather name="bookmark" size={18} color="#16A34A" />
+            </View>
+            <View style={styles.optionTextContainer}>
+              <Text style={styles.optionText}>Saved Posts</Text>
+              <Text style={styles.optionSubtext}>Content you've saved</Text>
+            </View>
+            <Feather name="chevron-right" size={20} color="#CCC" />
+          </TouchableOpacity>
         </View>
 
         {/* Logout Button */}

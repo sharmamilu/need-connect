@@ -1,4 +1,4 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -16,6 +16,13 @@ export default function PostHeader({
   onDelete,
   showMenu = false,
   userId: userIdProp,
+  isOwner = false,
+  isPinned = false,
+  isSaved = false,
+  onPin,
+  onSave,
+  onCopyLink,
+  hidePin = false,
 }) {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
@@ -77,6 +84,14 @@ export default function PostHeader({
                 • {profession}
               </Text>
             )}
+            {isPinned && !hidePin && (
+              <MaterialCommunityIcons
+                name="pin"
+                size={14}
+                color="#E53935"
+                style={{ marginLeft: 6 }}
+              />
+            )}
           </View>
 
           <View style={styles.metaRow}>
@@ -107,9 +122,12 @@ export default function PostHeader({
             visible={menuVisible}
             onClose={() => setMenuVisible(false)}
             onDelete={onDelete}
-            onPin={() => alert("Post pinned successfully!")}
-            onSave={() => alert("Post saved to your collection!")}
-            onCopyLink={() => alert("Post link copied!")}
+            onPin={onPin}
+            onSave={onSave}
+            onCopyLink={onCopyLink || (() => alert("Post link copied!"))}
+            isOwner={isOwner && !hidePin}
+            isPinned={isPinned}
+            isSaved={isSaved}
           />
         </>
       )}

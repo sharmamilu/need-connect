@@ -16,7 +16,13 @@ import PostHeader from "./PostHeader";
 import PostImageGrid from "./PostImageGrid";
 import PostTags from "./PostTags";
 
-import { deletePost, toggleLike } from "../../utils/apiFunctions";
+import {
+  deletePost,
+  toggleLike,
+  togglePinPost,
+  toggleSavePost,
+} from "../../utils/apiFunctions";
+import { useAuth } from "../../utils/AuthContext";
 
 export default function PostCard({ post, onDeleteSuccess }) {
   // Use images array if available, otherwise wrap single image in an array
@@ -38,6 +44,18 @@ export default function PostCard({ post, onDeleteSuccess }) {
   const [commentCount, setCommentCount] = useState(
     post.commentsCount || post.comments || 0,
   );
+
+  const [isSaved, setIsSaved] = useState(post.saved || false);
+  const [isPinned, setIsPinned] = useState(post.isPinned || false);
+
+  const { user: currentUser } = useAuth();
+  const postAdminId =
+    post.userId ||
+    post.user?._id ||
+    post.user?.id ||
+    (typeof post.user === "string" ? post.user : null);
+  const currentUserId = currentUser?._id || currentUser?.id;
+  const isOwner = currentUserId && currentUserId === postAdminId;
 
   const postId = post._id || post.id;
 
@@ -102,6 +120,40 @@ export default function PostCard({ post, onDeleteSuccess }) {
     }
   };
 
+  const handlePinToggle = async () => {
+    // Optimistic
+    setIsPinned(!isPinned);
+    try {
+      const res = await togglePinPost(postId);
+      if (res.data?.success !== undefined && !res.data.success) {
+        setIsPinned(isPinned);
+      } else if (res.data?.isPinned !== undefined) {
+        setIsPinned(res.data.isPinned);
+      }
+    } catch (err) {
+      console.error(err);
+      setIsPinned(isPinned);
+      alert("Failed to pin/unpin post.");
+    }
+  };
+
+  const handleSaveToggle = async () => {
+    // Optimistic
+    setIsSaved(!isSaved);
+    try {
+      const res = await toggleSavePost(postId);
+      if (res.data?.success !== undefined && !res.data.success) {
+        setIsSaved(isSaved);
+      } else if (res.data?.saved !== undefined) {
+        setIsSaved(res.data.saved);
+      }
+    } catch (err) {
+      console.error(err);
+      setIsSaved(isSaved);
+      alert("Failed to save/unsave post.");
+    }
+  };
+
   return (
     <View style={styles.card}>
       <PostHeader
@@ -114,6 +166,12 @@ export default function PostCard({ post, onDeleteSuccess }) {
         isVerified={post.user?.isVerified || post.isVerified}
         createdAt={post.createdAt}
         onDelete={handleDelete}
+        showMenu={true}
+        isOwner={isOwner}
+        isPinned={isPinned}
+        isSaved={isSaved}
+        onPin={handlePinToggle}
+        onSave={handleSaveToggle}
       />
 
       {showBackground ? (

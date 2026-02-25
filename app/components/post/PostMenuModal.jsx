@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   Dimensions,
   Modal,
@@ -18,6 +18,9 @@ export default function PostMenuModal({
   onPin,
   onSave,
   onCopyLink,
+  isOwner,
+  isPinned,
+  isSaved,
 }) {
   return (
     <Modal
@@ -33,18 +36,30 @@ export default function PostMenuModal({
               <View style={styles.indicator} />
 
               <View style={styles.section}>
-                <MenuOption
-                  icon="pin"
-                  title="Pin post"
-                  onPress={() => {
-                    onPin?.();
-                    onClose();
-                  }}
-                />
+                {isOwner && (
+                  <MenuOption
+                    icon={isPinned ? "pin-off-outline" : "pin-outline"}
+                    iconFamily="MaterialCommunityIcons"
+                    title={isPinned ? "Unpin post" : "Pin post"}
+                    subtitle={
+                      isPinned
+                        ? "Remove this from the top of your profile."
+                        : "Pin this post to the top of your profile."
+                    }
+                    onPress={() => {
+                      onPin?.();
+                      onClose();
+                    }}
+                  />
+                )}
                 <MenuOption
                   icon="bookmark"
-                  title="Save post"
-                  subtitle="Add this to your saved items."
+                  title={isSaved ? "Unsave post" : "Save post"}
+                  subtitle={
+                    isSaved
+                      ? "Remove from your saved items."
+                      : "Add this to your saved items."
+                  }
                   onPress={() => {
                     onSave?.();
                     onClose();
@@ -62,17 +77,19 @@ export default function PostMenuModal({
 
               <View style={styles.separator} />
 
-              <View style={styles.section}>
-                <MenuOption
-                  icon="trash-2"
-                  title="Delete post"
-                  destructive
-                  onPress={() => {
-                    onDelete?.();
-                    onClose();
-                  }}
-                />
-              </View>
+              {isOwner && onDelete && (
+                <View style={styles.section}>
+                  <MenuOption
+                    icon="trash-2"
+                    title="Delete post"
+                    destructive
+                    onPress={() => {
+                      onDelete?.();
+                      onClose();
+                    }}
+                  />
+                </View>
+              )}
             </View>
           </TouchableWithoutFeedback>
         </View>
@@ -81,11 +98,20 @@ export default function PostMenuModal({
   );
 }
 
-function MenuOption({ icon, title, subtitle, onPress, destructive }) {
+function MenuOption({
+  icon,
+  iconFamily = "Feather",
+  title,
+  subtitle,
+  onPress,
+  destructive,
+}) {
+  const IconComponent =
+    iconFamily === "MaterialCommunityIcons" ? MaterialCommunityIcons : Feather;
   return (
     <TouchableOpacity style={styles.option} onPress={onPress}>
       <View style={styles.iconContainer}>
-        <Feather
+        <IconComponent
           name={icon}
           size={22}
           color={destructive ? "#ff4d4d" : "#1c1e21"}

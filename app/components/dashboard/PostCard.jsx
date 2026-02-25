@@ -16,10 +16,16 @@ import { POST_BACKGROUNDS } from "../../constants/postBackgrounds";
 import PostHeader from "../post/PostHeader";
 import PostImageGrid from "../post/PostImageGrid";
 
-import { deletePost, toggleLike } from "../../utils/apiFunctions";
+import {
+  deletePost,
+  toggleLike,
+  togglePinPost,
+  toggleSavePost,
+} from "../../utils/apiFunctions";
+import { useAuth } from "../../utils/AuthContext";
 import LikedUsersModal from "../post/LikedUsersModal";
 
-export default function PostCard({ post, onDeleteSuccess, showMenu = false }) {
+export default function PostCard({ post, onDeleteSuccess, showMenu = true }) {
   const router = useRouter();
   const [isLiked, setIsLiked] = useState(post.liked || post.isLiked || false);
   const [likeCount, setLikeCount] = useState(
@@ -30,6 +36,18 @@ export default function PostCard({ post, onDeleteSuccess, showMenu = false }) {
   const [commentCount, setCommentCount] = useState(
     post.commentsCount || post.comments || 0,
   );
+
+  const [isSaved, setIsSaved] = useState(post.saved || false);
+  const [isPinned, setIsPinned] = useState(post.isPinned || false);
+
+  const { user: currentUser } = useAuth();
+  const postAdminId =
+    post.userId ||
+    post.user?._id ||
+    post.user?.id ||
+    (typeof post.user === "string" ? post.user : null);
+  const currentUserId = currentUser?._id || currentUser?.id;
+  const isOwner = currentUserId && currentUserId === postAdminId;
 
   const postId = post._id || post.id;
 
@@ -104,6 +122,38 @@ export default function PostCard({ post, onDeleteSuccess, showMenu = false }) {
     }
   };
 
+  const handlePinToggle = async () => {
+    setIsPinned(!isPinned);
+    try {
+      const res = await togglePinPost(postId);
+      if (res.data?.success !== undefined && !res.data.success) {
+        setIsPinned(isPinned);
+      } else if (res.data?.isPinned !== undefined) {
+        setIsPinned(res.data.isPinned);
+      }
+    } catch (err) {
+      console.error(err);
+      setIsPinned(isPinned);
+      alert("Failed to pin/unpin post.");
+    }
+  };
+
+  const handleSaveToggle = async () => {
+    setIsSaved(!isSaved);
+    try {
+      const res = await toggleSavePost(postId);
+      if (res.data?.success !== undefined && !res.data.success) {
+        setIsSaved(isSaved);
+      } else if (res.data?.saved !== undefined) {
+        setIsSaved(res.data.saved);
+      }
+    } catch (err) {
+      console.error(err);
+      setIsSaved(isSaved);
+      alert("Failed to save/unsave post.");
+    }
+  };
+
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -118,6 +168,11 @@ export default function PostCard({ post, onDeleteSuccess, showMenu = false }) {
           createdAt={post.createdAt}
           onDelete={handleDelete}
           showMenu={showMenu}
+          isOwner={isOwner}
+          isPinned={isPinned}
+          isSaved={isSaved}
+          onPin={handlePinToggle}
+          onSave={handleSaveToggle}
         />
       </View>
 
