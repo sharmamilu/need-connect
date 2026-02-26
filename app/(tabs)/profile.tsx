@@ -229,6 +229,25 @@ export default function ProfileScreen() {
             </View>
             <Feather name="chevron-right" size={20} color="#CCC" />
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.optionRow}
+            onPress={() => router.push("/(screens)/saved-profiles")}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[styles.optionIconCircle, { backgroundColor: "#FEF3C7" }]}
+            >
+              <Feather name="users" size={18} color="#D97706" />
+            </View>
+            <View style={styles.optionTextContainer}>
+              <Text style={styles.optionText}>Saved Profiles</Text>
+              <Text style={styles.optionSubtext}>
+                Professionals you've bookmarked
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={20} color="#CCC" />
+          </TouchableOpacity>
         </View>
 
         {/* Logout Button */}

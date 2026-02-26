@@ -1,8 +1,27 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { toggleSavePortfolio } from "../../utils/apiFunctions";
 
 export default function ProfessionalCard({ data }: any) {
   const router = useRouter();
+  const [isSaved, setIsSaved] = useState(data.saved || data.isSaved || false);
+
+  const handleSaveToggle = async () => {
+    setIsSaved(!isSaved);
+    try {
+      const res = await toggleSavePortfolio(data._id);
+      if (res.data?.success !== undefined && !res.data.success) {
+        setIsSaved(isSaved);
+      } else if (res.data?.saved !== undefined) {
+        setIsSaved(res.data.saved);
+      }
+    } catch (err) {
+      console.error(err);
+      setIsSaved(isSaved);
+    }
+  };
 
   return (
     <TouchableOpacity
@@ -20,8 +39,21 @@ export default function ProfessionalCard({ data }: any) {
       )}
 
       <View style={{ flex: 1 }}>
-        <Text style={styles.name}>{data.name}</Text>
-        <Text style={styles.profession}>{data.profession}</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.name} numberOfLines={1}>
+            {data.name}
+          </Text>
+          <TouchableOpacity onPress={handleSaveToggle} style={styles.saveBtn}>
+            <Ionicons
+              name={isSaved ? "bookmark" : "bookmark-outline"}
+              size={20}
+              color={isSaved ? "#16A34A" : "#CCC"}
+            />
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.profession} numberOfLines={1}>
+          {data.profession}
+        </Text>
 
         <View style={styles.skills}>
           {data.skills.slice(0, 3).map((skill: any) => (
@@ -63,6 +95,17 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 15,
     fontWeight: "700",
+    flex: 1,
+    paddingRight: 8,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  saveBtn: {
+    padding: 4,
+    marginRight: -4,
   },
   profession: {
     fontSize: 13,

@@ -89,6 +89,13 @@ export const fetchPortfolioById = (id: string) => API.get(`/portfolio/${id}`);
 export const fetchSuggestions = (type: "skill" | "location", query: string) =>
   API.get("/portfolio/suggestions", { params: { type, query } });
 
+export const toggleSavePortfolio = (id: string) =>
+  API.post(`/portfolio/${id}/save`);
+
+export const fetchSavedPortfolios = (
+  params: { page?: number; limit?: number } = {},
+) => API.get(`/portfolio/saved`, { params });
+
 export const createPost = (data: {
   description: string;
   tags?: string[];
