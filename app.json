@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "p2p-marketplace",
-    "slug": "p2p-marketplace",
+    "name": "Need Connect",
+    "slug": "need-connect",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -39,7 +39,8 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

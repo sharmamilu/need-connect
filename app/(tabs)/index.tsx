@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import UserGuide from "../components/common/UserGuide";
 import CreatePostModal from "../components/dashboard/CreatePostModal";
 import CreatePostTrigger from "../components/dashboard/CreatePostTrigger";
 import PostCard from "../components/post/PostCard";
@@ -153,6 +154,7 @@ export default function HomeScreen() {
           setPosts([newPost, ...posts]);
         }}
       />
+      <UserGuide />
     </SafeAreaView>
   );
 }

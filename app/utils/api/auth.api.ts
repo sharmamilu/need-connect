@@ -6,6 +6,8 @@ export const registerApi = (payload: {
   email?: string;
   password: string;
   role: string;
+  dateOfBirth?: string;
+  countryCode?: string;
 }) => {
   return apiClient("/auth/register", {
     method: "POST",

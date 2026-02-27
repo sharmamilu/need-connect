@@ -1,3 +1,4 @@
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Link, router } from "expo-router";
 import { useRef, useState } from "react";
 import {
@@ -17,9 +18,11 @@ import { Image } from "expo-image";
 import AuthHeader from "../components/auth/AuthHeader";
 import AppButton from "../components/common/AppButton";
 import AppInput from "../components/common/AppInput";
+import CountryCodePicker from "../components/portfolio/CountryCodePicker";
 import { colors } from "../constants/colors";
 import { useAlert } from "../utils/AlertManager";
 import { registerApi } from "../utils/api/auth.api";
+import { CountryData } from "../utils/countryHelper";
 
 type RegisterForm = {
   name: string;
@@ -27,6 +30,8 @@ type RegisterForm = {
   email: string;
   password: string;
   confirmPassword: string;
+  dateOfBirth: string;
+  countryCode: string;
 };
 
 type FormErrors = Partial<Record<keyof RegisterForm, string>>;
@@ -39,6 +44,8 @@ export default function RegisterScreen() {
     email: "",
     password: "",
     confirmPassword: "",
+    dateOfBirth: "",
+    countryCode: "+1",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -46,12 +53,24 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<CountryData>({
+    name: "United States",
+    code: "+1",
+    flag: "🇺🇸",
+    cca2: "US",
+  });
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dateOfBirthObject, setDateOfBirthObject] = useState<Date | null>(null);
+
   // Animation refs for each field
   const nameShakeAnimation = useRef(new Animated.Value(0)).current;
   const phoneShakeAnimation = useRef(new Animated.Value(0)).current;
   const emailShakeAnimation = useRef(new Animated.Value(0)).current;
   const passwordShakeAnimation = useRef(new Animated.Value(0)).current;
   const confirmPasswordShakeAnimation = useRef(new Animated.Value(0)).current;
+  const dobShakeAnimation = useRef(new Animated.Value(0)).current;
 
   const updateField = (key: keyof RegisterForm, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -75,6 +94,9 @@ export default function RegisterScreen() {
         break;
       case "confirmPassword":
         animation = confirmPasswordShakeAnimation;
+        break;
+      case "dateOfBirth":
+        animation = dobShakeAnimation;
         break;
       default:
         return;
@@ -131,6 +153,10 @@ export default function RegisterScreen() {
       newErrors.email = "Enter a valid email address";
     }
 
+    if (!form.dateOfBirth.trim()) {
+      newErrors.dateOfBirth = "Date of Birth is required";
+    }
+
     if (!form.password) {
       newErrors.password = "Password is required";
     } else if (form.password.length < 6) {
@@ -158,13 +184,35 @@ export default function RegisterScreen() {
     if (newErrors.email) shakeField("email");
     if (newErrors.password) shakeField("password");
     if (newErrors.confirmPassword) shakeField("confirmPassword");
+    if (newErrors.dateOfBirth) shakeField("dateOfBirth");
 
     return Object.keys(newErrors).length === 0 && accepted;
   };
 
+  const getPasswordStrength = (pwd: string) => {
+    if (!pwd) return { label: "", color: "transparent", width: "0%" };
+    if (pwd.length < 6)
+      return { label: "Weak", color: "#E53935", width: "33%" };
+    if (
+      pwd.length >= 8 &&
+      /[A-Z]/.test(pwd) &&
+      /[0-9]/.test(pwd) &&
+      /[^A-Za-z0-9]/.test(pwd)
+    ) {
+      return { label: "Strong", color: "#4CAF50", width: "100%" };
+    }
+    if (pwd.length >= 6) {
+      return { label: "Medium", color: "#FFB300", width: "66%" };
+    }
+    return { label: "Weak", color: "#E53935", width: "33%" };
+  };
+
+  const strength = getPasswordStrength(form.password);
+
   const isFormValid =
     form.name.trim() !== "" &&
     form.phone.trim() !== "" &&
+    form.dateOfBirth.trim() !== "" &&
     form.password.trim() !== "" &&
     form.confirmPassword.trim() !== "" &&
     accepted;
@@ -182,6 +230,8 @@ export default function RegisterScreen() {
         email: "",
         password: "",
         confirmPassword: "",
+        dateOfBirth: "",
+        countryCode: "+1",
       });
 
       router.replace("/login");
@@ -217,6 +267,18 @@ export default function RegisterScreen() {
 
   const toggleShowConfirmPassword = () => {
     setShowConfirmPassword(!showConfirmPassword);
+  };
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setDateOfBirthObject(selectedDate);
+      // Format as DD/MM/YYYY
+      const day = String(selectedDate.getDate()).padStart(2, "0");
+      const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+      const year = selectedDate.getFullYear();
+      updateField("dateOfBirth", `${day}/${month}/${year}`);
+    }
   };
 
   return (
@@ -279,11 +341,51 @@ export default function RegisterScreen() {
                 )}
               </View>
 
+              {/* DOB */}
+              <View>
+                <Animated.View
+                  style={[
+                    styles.inputWrapper,
+                    {
+                      transform: [{ translateX: dobShakeAnimation }],
+                    },
+                  ]}
+                >
+                  <TouchableOpacity
+                    style={[styles.inputWithIcon, styles.datePickerButton]}
+                    onPress={() => setShowDatePicker(true)}
+                  >
+                    <Text
+                      style={[
+                        styles.datePickerText,
+                        !form.dateOfBirth && styles.datePickerPlaceholder,
+                      ]}
+                    >
+                      {form.dateOfBirth || "Date of Birth (DD/MM/YYYY)"}
+                    </Text>
+                    <Feather name="calendar" size={20} color="#999" />
+                  </TouchableOpacity>
+                </Animated.View>
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={dateOfBirthObject || new Date()}
+                    mode="date"
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    onChange={handleDateChange}
+                    maximumDate={new Date()} // User cannot be born in the future
+                  />
+                )}
+                {errors.dateOfBirth && (
+                  <Text style={styles.errorText}>{errors.dateOfBirth}</Text>
+                )}
+              </View>
+
               {/* PHONE */}
               <View>
                 <Animated.View
                   style={[
                     styles.inputWrapper,
+                    styles.phoneRow,
                     {
                       transform: [
                         {
@@ -293,19 +395,34 @@ export default function RegisterScreen() {
                     },
                   ]}
                 >
-                  <AppInput
-                    placeholder="Phone Number"
-                    keyboardType="phone-pad"
-                    value={form.phone}
-                    onChangeText={(v: string) => updateField("phone", v)}
-                    style={styles.inputWithIcon}
-                  />
-                  <Feather
-                    name="phone"
-                    size={20}
-                    color="#999"
-                    style={styles.inputIcon}
-                  />
+                  <TouchableOpacity
+                    style={styles.countryPickerButton}
+                    onPress={() => setPickerVisible(true)}
+                  >
+                    <Text style={styles.countryFlag}>
+                      {selectedCountry.flag}
+                    </Text>
+                    <Text style={styles.countryCodeText}>
+                      {selectedCountry.code}
+                    </Text>
+                    <Feather name="chevron-down" size={14} color="#666" />
+                  </TouchableOpacity>
+
+                  <View style={{ flex: 1, position: "relative" }}>
+                    <AppInput
+                      placeholder="Phone Number"
+                      keyboardType="phone-pad"
+                      value={form.phone}
+                      onChangeText={(v: string) => updateField("phone", v)}
+                      style={[styles.inputWithIcon, { paddingLeft: 12 }]}
+                    />
+                    <Feather
+                      name="phone"
+                      size={20}
+                      color="#999"
+                      style={styles.inputIcon}
+                    />
+                  </View>
                 </Animated.View>
                 {errors.phone && (
                   <Text style={styles.errorText}>{errors.phone}</Text>
@@ -378,6 +495,28 @@ export default function RegisterScreen() {
                     />
                   </TouchableOpacity>
                 </Animated.View>
+
+                {form.password.length > 0 && (
+                  <View style={styles.strengthContainer}>
+                    <View style={styles.strengthBarBg}>
+                      <View
+                        style={[
+                          styles.strengthBarFill,
+                          {
+                            width: strength.width as any,
+                            backgroundColor: strength.color,
+                          },
+                        ]}
+                      />
+                    </View>
+                    <Text
+                      style={[styles.strengthText, { color: strength.color }]}
+                    >
+                      {strength.label}
+                    </Text>
+                  </View>
+                )}
+
                 {errors.password && (
                   <Text style={styles.errorText}>{errors.password}</Text>
                 )}
@@ -433,11 +572,11 @@ export default function RegisterScreen() {
 
                 <Text style={styles.checkboxText}>
                   I agree to the{" "}
-                  <Link href="/login">
+                  <Link href={"/terms" as any} asChild>
                     <Text style={styles.link}>Terms & Conditions</Text>
                   </Link>{" "}
                   and{" "}
-                  <Link href="/login">
+                  <Link href={"/policy" as any} asChild>
                     <Text style={styles.link}>Privacy Policy</Text>
                   </Link>
                 </Text>
@@ -460,6 +599,14 @@ export default function RegisterScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <CountryCodePicker
+        visible={pickerVisible}
+        onClose={() => setPickerVisible(false)}
+        onSelect={(country) => {
+          setSelectedCountry(country);
+          updateField("countryCode", country.code);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -517,22 +664,40 @@ const styles = StyleSheet.create({
   },
 
   inputWithIcon: {
-    paddingRight: 40, // Make room for the icon
+    paddingRight: 10, // Make room for the icon
+  },
+
+  datePickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#F0F0F0",
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: "#FAFAFA",
+    marginBottom: 12,
+  },
+  datePickerText: {
+    fontSize: 15,
+    color: "#333",
+    flex: 1,
+  },
+  datePickerPlaceholder: {
+    color: "#aaa",
   },
 
   inputIcon: {
     position: "absolute",
     right: 12,
-    top: "38%",
-    transform: [{ translateY: -10 }],
+    top: 13,
     zIndex: 1,
   },
 
   passwordIcon: {
     position: "absolute",
     right: 8,
-    top: "35%",
-    transform: [{ translateY: -10 }],
+    top: 8,
     zIndex: 1,
     padding: 5, // Makes touch area larger
   },
@@ -599,5 +764,53 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#4A6CF7",
+  },
+  phoneRow: {
+    flexDirection: "row",
+    gap: 10,
+    width: "100%",
+    alignItems: "center",
+  },
+  countryPickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FAFAFA",
+    borderWidth: 1.5,
+    borderColor: "#F0F0F0",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    gap: 6,
+    marginBottom: 12,
+  },
+  countryFlag: {
+    fontSize: 18,
+  },
+  countryCodeText: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#333",
+  },
+  strengthContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+    paddingHorizontal: 4,
+    gap: 10,
+  },
+  strengthBarBg: {
+    flex: 1,
+    height: 4,
+    backgroundColor: "#F0F0F0",
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  strengthBarFill: {
+    height: "100%",
+    borderRadius: 2,
+  },
+  strengthText: {
+    fontSize: 11,
+    fontWeight: "700",
   },
 });
