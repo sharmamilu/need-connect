@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import CreatePostModal from "../components/dashboard/CreatePostModal";
 import CreatePostTrigger from "../components/dashboard/CreatePostTrigger";
 import PostCard from "../components/post/PostCard";
+import { useAuth } from "../utils/AuthContext";
 import {
   fetchFeedPosts,
   fetchMe,
@@ -20,6 +21,7 @@ import {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { updateUser } = useAuth();
   const [posts, setPosts] = useState<any[]>([]);
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -55,7 +57,9 @@ export default function HomeScreen() {
       }
 
       if (userRes?.data?.success) {
-        setUser(userRes.data.user || userRes.data.data);
+        const freshUser = userRes.data.user || userRes.data.data;
+        setUser(freshUser);
+        updateUser(freshUser); // Syncs new roles to global context immediately
       }
 
       if (profileRes?.data?.success) {

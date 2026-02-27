@@ -24,6 +24,7 @@ type User = {
   avatar?: string;
   profession?: string;
   isVerified?: boolean;
+  userRole?: string;
 };
 
 type AuthContextType = {
@@ -33,6 +34,7 @@ type AuthContextType = {
   login: (token: string, userData: User) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  updateUser: (userData: User) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -78,6 +80,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     router.replace("/(auth)/login" as any);
   };
 
+  const updateUser = async (userData: User) => {
+    await saveUser(userData);
+    setUser(userData);
+  };
+
   useEffect(() => {
     checkAuth();
   }, []);
@@ -86,7 +93,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, isAuthenticated, login, logout, checkAuth }}
+      value={{
+        user,
+        isLoading,
+        isAuthenticated,
+        login,
+        logout,
+        checkAuth,
+        updateUser,
+      }}
     >
       {children}
     </AuthContext.Provider>

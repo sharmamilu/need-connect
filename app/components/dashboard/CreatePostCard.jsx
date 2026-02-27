@@ -44,6 +44,11 @@ export default function CreatePostCard({ onSubmit }) {
       });
 
       if (res.data.success) {
+        alert(
+          "Post submitted for review! It will be visible once approved by an Admin.",
+        );
+        res.data.data.status = "pending";
+        // We trigger onSubmit locally so the UI updates or can navigate
         onSubmit(res.data.data);
         // Reset fields
         setDescription("");

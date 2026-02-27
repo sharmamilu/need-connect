@@ -99,7 +99,10 @@ export default function CreateListing() {
 
       // Create the listing
       await createListing(payload);
-      Alert.alert("Success", "Listing created successfully!");
+      Alert.alert(
+        "Success",
+        "Listing submitted for review! It will be visible once approved by an Admin.",
+      );
       router.back();
     } catch (error: any) {
       console.log("Create API error", error);

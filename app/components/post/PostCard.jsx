@@ -1,3 +1,4 @@
+import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
 import {
@@ -7,6 +8,7 @@ import {
   StyleSheet,
   Text,
   ToastAndroid,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { POST_BACKGROUNDS } from "../../constants/postBackgrounds";
@@ -174,6 +176,38 @@ export default function PostCard({ post, onDeleteSuccess }) {
         onSave={handleSaveToggle}
       />
 
+      {/* STATUS BANNERS */}
+      {(post.status === "Pending" ||
+        (post.status && post.status.toLowerCase() === "pending")) &&
+        isOwner && (
+          <View style={[styles.statusBanner, styles.pendingBanner]}>
+            <Feather name="clock" size={16} color="#B45309" />
+            <Text style={styles.pendingText}>
+              This post is currently in review.
+            </Text>
+          </View>
+        )}
+
+      {(post.status === "Rejected" ||
+        (post.status && post.status.toLowerCase() === "rejected")) &&
+        isOwner && (
+          <View style={[styles.statusBanner, styles.rejectedBanner]}>
+            <View style={styles.rejectedHeader}>
+              <Feather name="alert-circle" size={16} color="#E53935" />
+              <Text style={styles.rejectedTitle}>Post Rejected</Text>
+            </View>
+            <Text style={styles.rejectedReason}>
+              {post.rejectionReason || "No exact reason provided by admin."}
+            </Text>
+            <TouchableOpacity
+              style={styles.rejectedDeleteBtn}
+              onPress={handleDelete}
+            >
+              <Text style={styles.rejectedDeleteText}>Delete Post</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
       {showBackground ? (
         <LinearGradient
           colors={background.colors}
@@ -256,5 +290,54 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     lineHeight: 30,
+  },
+  statusBanner: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  pendingBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEF3C7", // amber-100
+    gap: 8,
+  },
+  pendingText: {
+    color: "#B45309", // amber-700
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  rejectedBanner: {
+    backgroundColor: "#FEF2F2", // red-50
+    borderLeftWidth: 4,
+    borderLeftColor: "#E53935",
+  },
+  rejectedHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 4,
+  },
+  rejectedTitle: {
+    color: "#E53935",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  rejectedReason: {
+    color: "#7F1D1D", // red-900
+    fontSize: 13,
+    marginBottom: 10,
+  },
+  rejectedDeleteBtn: {
+    alignSelf: "flex-start",
+    backgroundColor: "#E53935",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  rejectedDeleteText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
   },
 });

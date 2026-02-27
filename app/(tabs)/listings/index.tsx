@@ -203,7 +203,16 @@ export default function ListingsFeed() {
             <FlatList
               data={listings}
               keyExtractor={(item) => item._id}
-              renderItem={({ item }) => <ListingCard data={item} />}
+              renderItem={({ item }) => (
+                <ListingCard
+                  data={item}
+                  onDeleteSuccess={(deletedId: string) => {
+                    setListings((prevListings) =>
+                      prevListings.filter((l) => l._id !== deletedId),
+                    );
+                  }}
+                />
+              )}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.listContent}
               onEndReached={handleLoadMore}

@@ -2,8 +2,10 @@ import { Feather } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { Platform } from "react-native";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
+import { useAuth } from "../utils/AuthContext";
 
 export default function TabsLayout() {
+  const { user } = useAuth();
   return (
     <ProtectedRoute>
       <Tabs
@@ -86,6 +88,19 @@ export default function TabsLayout() {
             title: "Profile",
             tabBarIcon: ({ color, size }) => (
               <Feather name="user" size={size} color={color} />
+            ),
+          }}
+        />
+
+        {/* Admin Tab (Hidden from non-admins) */}
+        <Tabs.Screen
+          name="admin"
+          options={{
+            title: "Admin",
+            href:
+              (user as any)?.userRole === "admin" ? ("/admin" as any) : null,
+            tabBarIcon: ({ color, size }) => (
+              <Feather name="shield" size={size} color={color} />
             ),
           }}
         />

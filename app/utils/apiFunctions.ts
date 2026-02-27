@@ -212,3 +212,27 @@ export const fetchListings = (
 ) => API.get("/listings", { params });
 
 export const fetchListingById = (id: string) => API.get(`/listings/${id}`);
+
+export const deleteListing = (id: string) => API.delete(`/listings/${id}`);
+
+/* ---------- ADMIN ---------- */
+
+export const fetchAdminPosts = (
+  params: { page?: number; limit?: number; status?: string } = {},
+) => API.get("/admin/posts", { params });
+
+export const fetchAdminListings = (
+  params: { page?: number; limit?: number; status?: string } = {},
+) => API.get("/admin/listings", { params });
+
+export const approvePost = (postId: string) =>
+  API.patch(`/admin/posts/${postId}/approve`);
+
+export const rejectPost = (postId: string, rejectionReason: string) =>
+  API.patch(`/admin/posts/${postId}/reject`, { rejectionReason });
+
+export const approveListing = (listingId: string) =>
+  API.patch(`/admin/listings/${listingId}/approve`);
+
+export const rejectListing = (listingId: string, rejectionReason: string) =>
+  API.patch(`/admin/listings/${listingId}/reject`, { rejectionReason });
