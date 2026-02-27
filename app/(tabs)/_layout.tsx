@@ -57,6 +57,17 @@ export default function TabsLayout() {
           }}
         />
 
+        {/* Listings Tab */}
+        <Tabs.Screen
+          name="listings"
+          options={{
+            title: "Listings",
+            tabBarIcon: ({ color, size }) => (
+              <Feather name="tag" size={size} color={color} />
+            ),
+          }}
+        />
+
         {/* Portfolio Tab Group */}
         <Tabs.Screen
           name="portfolio"

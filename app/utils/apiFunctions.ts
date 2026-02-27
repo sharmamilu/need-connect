@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getToken } from "./storage";
 
-const BASE_URL = "https://need-connect-backend.onrender.com/api";
+const BASE_URL = "http://192.168.1.2:5000/api";
 
 const API = axios.create({
   baseURL: BASE_URL,
@@ -179,3 +179,36 @@ export const fetchReviews = (
 
 export const fetchReviewStats = (userId: string) =>
   API.get(`/reviews/${userId}/stats`);
+
+/* ---------- LISTINGS ---------- */
+
+export const uploadListingImages = async (images: any[]) => {
+  const formData = new FormData();
+
+  images.forEach((img, index) => {
+    formData.append("images", {
+      uri: img.uri,
+      name: `listing_${index}.jpg`,
+      type: "image/jpeg",
+    } as any);
+  });
+
+  const res = await API.post("/upload/listing", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return res.data?.data?.urls || res.data?.urls;
+};
+
+export const createListing = (data: any) => API.post("/listings", data);
+
+export const fetchListings = (
+  params: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    search?: string;
+  } = {},
+) => API.get("/listings", { params });
+
+export const fetchListingById = (id: string) => API.get(`/listings/${id}`);
