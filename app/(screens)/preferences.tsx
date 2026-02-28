@@ -128,7 +128,7 @@ export default function PreferencesScreen() {
           <Feather name="arrow-left" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Feed Preferences</Text>
-        <View style={{ width: 40 }} /> {/* spacer */}
+        <View style={{ width: 40 }} />
       </View>
 
       <KeyboardAvoidingView
@@ -201,7 +201,7 @@ export default function PreferencesScreen() {
 
           {/* Desired Skills */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Skills I'm looking for</Text>
+            <Text style={styles.sectionTitle}>Skills I&apos;m looking for</Text>
             <Text style={styles.sectionSub}>
               e.g., Python, Graphic Design, Legal Advice
             </Text>

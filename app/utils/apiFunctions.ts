@@ -213,6 +213,11 @@ export const fetchListings = (
 
 export const fetchListingById = (id: string) => API.get(`/listings/${id}`);
 
+export const fetchUserListings = (
+  userId: string,
+  params: { page?: number; limit?: number } = {},
+) => API.get(`/listings/user/${userId}`, { params });
+
 export const deleteListing = (id: string) => API.delete(`/listings/${id}`);
 
 /* ---------- ADMIN ---------- */

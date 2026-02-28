@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     position: "absolute",
-    top: 40, // rough safe area inset offset if needed, but we're in SafeAreaView
+    top: 16,
     left: 0,
     right: 0,
     zIndex: 10,

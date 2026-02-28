@@ -67,6 +67,15 @@ export default function ListingCard({ data, onDeleteSuccess }: any) {
         </View>
       )}
 
+      {isOwner && (
+        <TouchableOpacity
+          style={styles.deleteFloatBtn}
+          onPress={() => handleDelete()}
+        >
+          <Feather name="trash-2" size={18} color="#E53935" />
+        </TouchableOpacity>
+      )}
+
       {/* STATUS BANNERS */}
       {(data.status === "Pending" ||
         (data.status && data.status.toLowerCase() === "pending")) &&
@@ -90,12 +99,6 @@ export default function ListingCard({ data, onDeleteSuccess }: any) {
             <Text style={styles.rejectedReason}>
               {data.rejectionReason || "No exact reason provided by admin."}
             </Text>
-            <TouchableOpacity
-              style={styles.rejectedDeleteBtn}
-              onPress={handleDelete}
-            >
-              <Text style={styles.rejectedDeleteText}>Delete Listing</Text>
-            </TouchableOpacity>
           </View>
         )}
 
@@ -210,6 +213,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#aaa",
   },
+  deleteFloatBtn: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
   statusBanner: {
     padding: 12,
     borderBottomWidth: 1,
@@ -245,18 +265,6 @@ const styles = StyleSheet.create({
   rejectedReason: {
     color: "#7F1D1D", // red-900
     fontSize: 13,
-    marginBottom: 10,
-  },
-  rejectedDeleteBtn: {
-    alignSelf: "flex-start",
-    backgroundColor: "#E53935",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  rejectedDeleteText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
+    marginBottom: 4,
   },
 });

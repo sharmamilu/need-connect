@@ -5,12 +5,12 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import ProfessionalCard from "../components/explore/ProfessionalCard";
 import { fetchSavedPortfolios } from "../utils/apiFunctions";
 
@@ -59,7 +59,7 @@ export default function SavedPortfoliosScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.back()}

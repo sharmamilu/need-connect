@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -11,30 +11,35 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import PostCard from "../components/dashboard/PostCard";
-import { fetchSavedPosts } from "../utils/apiFunctions";
+import ListingCard from "../components/listings/ListingCard";
+import { fetchUserListings } from "../utils/apiFunctions";
 
-export default function SavedPostsScreen() {
+export default function UserListingsScreen() {
   const router = useRouter();
-  const [posts, setPosts] = useState<any[]>([]);
+  const { userId, userName } = useLocalSearchParams();
+  const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  const loadPosts = async (pageNum = 1, isRefresh = false) => {
+  const loadListings = async (pageNum = 1, isRefresh = false) => {
+    if (!userId) return;
     try {
       if (isRefresh) setRefreshing(true);
-      const res = await fetchSavedPosts({ page: pageNum, limit: 10 });
-      const newPosts = res.data.posts || res.data.data || [];
+      const res = await fetchUserListings(userId as string, {
+        page: pageNum,
+        limit: 10,
+      });
+      const newListings = res.data.data || res.data.listings || [];
 
       if (pageNum === 1) {
-        setPosts(newPosts);
+        setListings(newListings);
       } else {
-        setPosts((prev) => [...prev, ...newPosts]);
+        setListings((prev) => [...prev, ...newListings]);
       }
 
-      setHasMore(newPosts.length === 10);
+      setHasMore(newListings.length === 10);
       setPage(pageNum);
     } catch (err) {
       console.error(err);
@@ -45,16 +50,16 @@ export default function SavedPostsScreen() {
   };
 
   useEffect(() => {
-    loadPosts(1);
-  }, []);
+    loadListings(1);
+  }, [userId]);
 
   const handleRefresh = () => {
-    loadPosts(1, true);
+    loadListings(1, true);
   };
 
   const handleLoadMore = () => {
     if (!loading && !refreshing && hasMore) {
-      loadPosts(page + 1);
+      loadListings(page + 1);
     }
   };
 
@@ -67,38 +72,41 @@ export default function SavedPostsScreen() {
         >
           <Feather name="arrow-left" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Saved Posts</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>
+          {userName ? `${userName}'s` : "My"} Listings
+        </Text>
+        <View style={{ width: 40 }} />
       </View>
 
       {loading && page === 1 ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color="#4A6CF7" />
         </View>
-      ) : posts.length === 0 ? (
+      ) : listings.length === 0 ? (
         <View style={styles.centerBox}>
           <Feather
-            name="bookmark"
+            name="shopping-bag"
             size={48}
             color="#ccc"
             style={{ marginBottom: 16 }}
           />
-          <Text style={styles.emptyTitle}>No saved posts yet</Text>
+          <Text style={styles.emptyTitle}>No listings yet.</Text>
           <Text style={styles.emptySub}>
-            When you save posts they will appear here.
+            Any marketplace items created will appear here.
           </Text>
         </View>
       ) : (
         <FlatList
-          data={posts}
+          data={listings}
           keyExtractor={(item) => (item._id || item.id).toString()}
           renderItem={({ item }) => (
             <View style={styles.postWrapper}>
-              <PostCard
-                post={item}
-                showMenu={true}
-                onDeleteSuccess={(postId: string) => {
-                  setPosts(posts.filter((p) => (p._id || p.id) !== postId));
+              <ListingCard
+                data={item}
+                onDeleteSuccess={(listingId: string) => {
+                  setListings((prev) =>
+                    prev.filter((l) => (l._id || l.id) !== listingId),
+                  );
                 }}
               />
             </View>
@@ -109,7 +117,7 @@ export default function SavedPostsScreen() {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={
-            hasMore && posts.length > 0 ? (
+            hasMore && listings.length > 0 ? (
               <ActivityIndicator
                 size="small"
                 color="#4A6CF7"

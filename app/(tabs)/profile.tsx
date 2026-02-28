@@ -223,6 +223,33 @@ export default function ProfileScreen() {
 
           <TouchableOpacity
             style={styles.optionRow}
+            onPress={() => {
+              const uId = user?._id || user?.id;
+              if (uId) {
+                router.push({
+                  pathname: "/(screens)/user-listings",
+                  params: { userId: uId, userName: user?.name },
+                });
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[styles.optionIconCircle, { backgroundColor: "#FFEDD5" }]}
+            >
+              <Feather name="shopping-bag" size={18} color="#EA580C" />
+            </View>
+            <View style={styles.optionTextContainer}>
+              <Text style={styles.optionText}>My Listings</Text>
+              <Text style={styles.optionSubtext}>
+                Manage your marketplace items
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={20} color="#CCC" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.optionRow}
             onPress={() => router.push("/(screens)/preferences")}
             activeOpacity={0.7}
           >
