@@ -276,7 +276,9 @@ export default function Login() {
 
             {/* REGISTER LINK */}
             <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>Don't have an account? </Text>
+              <Text style={styles.registerText}>
+                Don&apos;t have an account?{" "}
+              </Text>
               <Link href="/register">
                 <Text style={styles.registerLink}>Register</Text>
               </Link>
@@ -319,14 +321,16 @@ const styles = StyleSheet.create({
   },
 
   logoText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#7e7878",
+    fontSize: 24,
+    fontWeight: "900",
+    color: "#4A6CF7",
+    letterSpacing: 0.5,
+    marginTop: 6,
   },
 
   logo: {
-    width: 80,
-    height: 80,
+    width: 64,
+    height: 64,
     resizeMode: "contain",
   },
 

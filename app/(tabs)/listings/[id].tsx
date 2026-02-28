@@ -3,7 +3,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   Image,
   ScrollView,
@@ -58,17 +57,6 @@ export default function ListingDetails() {
     }
   }, [id]);
 
-  const handleContact = () => {
-    Alert.alert(
-      "Contact",
-      `Initiate chat with ${listing?.author?.name || "Seller"}`,
-    );
-  };
-
-  const handleReport = () => {
-    Alert.alert("Report", "Report this listing to moderation?");
-  };
-
   const onScroll = (e: any) => {
     const slide = Math.round(e.nativeEvent.contentOffset.x / width);
     if (slide !== activeImage) {
@@ -106,9 +94,6 @@ export default function ListingDetails() {
       <View style={styles.header}>
         <TouchableOpacity style={styles.iconBtn} onPress={() => router.back()}>
           <Feather name="arrow-left" size={24} color="#2D3436" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconBtn} onPress={handleReport}>
-          <Feather name="flag" size={20} color="#FF6B6B" />
         </TouchableOpacity>
       </View>
 
@@ -225,14 +210,6 @@ export default function ListingDetails() {
           </View>
         </View>
       </ScrollView>
-
-      {/* Floating Bottom Bar (Contact) */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.contactBtn} onPress={handleContact}>
-          <Feather name="message-circle" size={20} color="#fff" />
-          <Text style={styles.contactBtnText}>Message Seller</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
@@ -437,36 +414,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#16A34A",
     fontWeight: "500",
-  },
-  bottomBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#fff",
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    paddingBottom: 32, // safe area padding
-    borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  contactBtn: {
-    flexDirection: "row",
-    backgroundColor: "#4A6CF7",
-    height: 54,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  contactBtnText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
   },
 });

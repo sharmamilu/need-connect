@@ -91,8 +91,10 @@ export default function UserGuide() {
 
   const checkGuideStatus = async () => {
     try {
-      // Force it to show every time for testing purposes (ignores cache)
-      setTimeout(() => setVisible(true), 500);
+      const hasSeen = await AsyncStorage.getItem(GUIDE_KEY);
+      if (hasSeen !== "true") {
+        setTimeout(() => setVisible(true), 500);
+      }
     } catch (e) {
       console.log("Error checking guide status:", e);
     }

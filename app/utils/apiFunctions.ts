@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getToken } from "./storage";
 
-const BASE_URL = "http://192.168.1.2:5000/api";
+const BASE_URL = "http://192.168.1.7:5000/api";
 
 const API = axios.create({
   baseURL: BASE_URL,
@@ -115,7 +115,7 @@ export const fetchPostsByUser = (
 ) => API.get(`/posts/user/${userId}`, { params });
 
 export const fetchMe = () => API.get("/users/me");
-
+export const deleteMyAccount = () => API.delete("/users/me");
 export const fetchPreferences = () => API.get("/users/preferences");
 export const updatePreferences = (data: any) =>
   API.post("/users/preferences", data);

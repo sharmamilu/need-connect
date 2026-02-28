@@ -2,6 +2,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -10,7 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { fetchReviewStats } from "../utils/apiFunctions";
+import { deleteMyAccount, fetchReviewStats } from "../utils/apiFunctions";
 import { useAuth } from "../utils/AuthContext";
 
 export default function ProfileScreen() {
@@ -48,6 +49,32 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     await logout();
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to permanently delete your account? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteMyAccount();
+              await logout();
+            } catch (err) {
+              console.error("Failed to delete account:", err);
+              Alert.alert(
+                "Error",
+                "Could not delete your account. Please try again.",
+              );
+            }
+          },
+        },
+      ],
+    );
   };
 
   const getInitials = (name?: string) => {
@@ -225,7 +252,9 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.optionTextContainer}>
               <Text style={styles.optionText}>Saved Posts</Text>
-              <Text style={styles.optionSubtext}>Content you've saved</Text>
+              <Text style={styles.optionSubtext}>
+                Content you&apos;ve saved
+              </Text>
             </View>
             <Feather name="chevron-right" size={20} color="#CCC" />
           </TouchableOpacity>
@@ -243,7 +272,7 @@ export default function ProfileScreen() {
             <View style={styles.optionTextContainer}>
               <Text style={styles.optionText}>Saved Profiles</Text>
               <Text style={styles.optionSubtext}>
-                Professionals you've bookmarked
+                Professionals you&apos;ve bookmarked
               </Text>
             </View>
             <Feather name="chevron-right" size={20} color="#CCC" />
@@ -258,6 +287,16 @@ export default function ProfileScreen() {
         >
           <Feather name="log-out" size={20} color="#E53935" />
           <Text style={styles.logoutText}>Log Out</Text>
+        </TouchableOpacity>
+
+        {/* Delete Account Button */}
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          onPress={handleDeleteAccount}
+          activeOpacity={0.8}
+        >
+          <Feather name="trash-2" size={20} color="#E53935" />
+          <Text style={styles.deleteText}>Delete Account</Text>
         </TouchableOpacity>
 
         <Text style={styles.versionText}>Need Connect v1.0.0</Text>
@@ -469,9 +508,26 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#FEE2E2",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   logoutText: {
+    color: "#E53935",
+    fontSize: 16,
+    fontWeight: "700",
+    marginLeft: 8,
+  },
+  deleteBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 16,
+    paddingVertical: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#FEE2E2",
+    marginBottom: 24,
+  },
+  deleteText: {
     color: "#E53935",
     fontSize: 16,
     fontWeight: "700",

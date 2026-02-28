@@ -642,14 +642,16 @@ const styles = StyleSheet.create({
   },
 
   logoText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#7e7878",
+    fontSize: 24,
+    fontWeight: "900",
+    color: "#4A6CF7",
+    letterSpacing: 0.5,
+    marginTop: 6,
   },
 
   logo: {
-    width: 80,
-    height: 80,
+    width: 64,
+    height: 64,
     resizeMode: "contain",
   },
 
