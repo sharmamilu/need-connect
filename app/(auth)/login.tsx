@@ -24,7 +24,7 @@ import { loginApi } from "../utils/api/auth.api";
 import { useAuth } from "../utils/AuthContext";
 
 type LoginForm = {
-  phone: string;
+  email: string;
   password: string;
 };
 
@@ -34,7 +34,7 @@ export default function Login() {
   const { showAlert } = useAlert();
   const { login } = useAuth();
   const [form, setForm] = useState<LoginForm>({
-    phone: "",
+    email: "",
     password: "",
   });
 
@@ -43,7 +43,7 @@ export default function Login() {
   const [isUserLogged, setIsUserLogged] = useState(false);
 
   // Animation refs for each field
-  const phoneShakeAnimation = useRef(new Animated.Value(0)).current;
+  const emailShakeAnimation = useRef(new Animated.Value(0)).current;
   const passwordShakeAnimation = useRef(new Animated.Value(0)).current;
 
   const updateField = (key: keyof LoginForm, value: string) => {
@@ -53,7 +53,7 @@ export default function Login() {
 
   const shakeField = (field: keyof LoginForm) => {
     const animation =
-      field === "phone" ? phoneShakeAnimation : passwordShakeAnimation;
+      field === "email" ? emailShakeAnimation : passwordShakeAnimation;
 
     Animated.sequence([
       Animated.timing(animation, {
@@ -103,10 +103,10 @@ export default function Login() {
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!form.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^[0-9]{8,15}$/.test(form.phone)) {
-      newErrors.phone = "Enter a valid phone number";
+    if (!form.email.trim()) {
+      newErrors.email = "Email address is required";
+    } else if (!/^\S+@\S+\.\S+$/.test(form.email)) {
+      newErrors.email = "Enter a valid email address";
     }
 
     if (!form.password) {
@@ -116,8 +116,8 @@ export default function Login() {
     setErrors(newErrors);
 
     // Trigger shake animation for fields with errors
-    if (newErrors.phone) {
-      shakeField("phone");
+    if (newErrors.email) {
+      shakeField("email");
     }
     if (newErrors.password) {
       shakeField("password");
@@ -126,7 +126,7 @@ export default function Login() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const isFormValid = form.phone.trim() !== "" && form.password.trim() !== "";
+  const isFormValid = form.email.trim() !== "" && form.password.trim() !== "";
 
   const handleLogin = async () => {
     if (!validate()) return;
@@ -145,9 +145,9 @@ export default function Login() {
       // Check if error is related to specific fields
       const errorMessage = err.message?.toLowerCase() || "";
 
-      if (errorMessage.includes("phone") || errorMessage.includes("number")) {
-        setErrors((prev) => ({ ...prev, phone: err.message }));
-        shakeField("phone");
+      if (errorMessage.includes("email")) {
+        setErrors((prev) => ({ ...prev, email: err.message }));
+        shakeField("email");
       } else if (errorMessage.includes("password")) {
         setErrors((prev) => ({ ...prev, password: err.message }));
         shakeField("password");
@@ -186,11 +186,11 @@ export default function Login() {
 
             <AuthHeader
               title="Welcome Back"
-              subtitle="Login using your phone number"
+              subtitle="Login using your email address"
             />
 
             <View style={styles.form}>
-              {/* PHONE NUMBER */}
+              {/* EMAIL */}
               <View>
                 <Animated.View
                   style={[
@@ -198,28 +198,29 @@ export default function Login() {
                     {
                       transform: [
                         {
-                          translateX: phoneShakeAnimation,
+                          translateX: emailShakeAnimation,
                         },
                       ],
                     },
                   ]}
                 >
                   <AppInput
-                    placeholder="Phone Number"
-                    keyboardType="phone-pad"
-                    value={form.phone}
-                    onChangeText={(v: string) => updateField("phone", v)}
+                    placeholder="Email Address"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={form.email}
+                    onChangeText={(v: string) => updateField("email", v)}
                     style={styles.inputWithIcon}
                   />
                   <Feather
-                    name="phone"
+                    name="mail"
                     size={20}
                     color="#999"
                     style={styles.inputIcon}
                   />
                 </Animated.View>
-                {errors.phone && (
-                  <Text style={styles.errorText}>{errors.phone}</Text>
+                {errors.email && (
+                  <Text style={styles.errorText}>{errors.email}</Text>
                 )}
               </View>
 

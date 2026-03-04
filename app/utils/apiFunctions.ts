@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getToken } from "./storage";
 
-const BASE_URL = "http://192.168.1.7:5000/api";
+const BASE_URL = "http://192.168.1.5:5000/api";
 
 const API = axios.create({
   baseURL: BASE_URL,
@@ -241,3 +241,17 @@ export const approveListing = (listingId: string) =>
 
 export const rejectListing = (listingId: string, rejectionReason: string) =>
   API.patch(`/admin/listings/${listingId}/reject`, { rejectionReason });
+
+/* ---------- DOCUMENTS ---------- */
+
+export const generateDocument = (data: any) => API.post("/documents", data);
+
+export const fetchDocumentById = (documentId: string) =>
+  API.get(`/documents/${documentId}`);
+
+export const fetchMyDocuments = (
+  params: { page?: number; limit?: number } = {},
+) => API.get("/documents", { params });
+
+export const deleteDocument = (documentId: string) =>
+  API.delete(`/documents/${documentId}`);

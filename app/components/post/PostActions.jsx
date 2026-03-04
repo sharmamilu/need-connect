@@ -40,10 +40,6 @@ export default function PostActions({
         <Feather name="message-circle" size={20} color="#666" />
         <Text style={styles.text}>{comments}</Text>
       </TouchableOpacity>
-
-      <TouchableOpacity style={styles.action}>
-        <Feather name="share-2" size={20} color="#666" />
-      </TouchableOpacity>
     </View>
   );
 }

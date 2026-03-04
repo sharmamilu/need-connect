@@ -223,6 +223,25 @@ export default function ProfileScreen() {
 
           <TouchableOpacity
             style={styles.optionRow}
+            onPress={() => router.push("/(screens)/templates")}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[styles.optionIconCircle, { backgroundColor: "#FCE7F3" }]}
+            >
+              <Feather name="layout" size={18} color="#DB2777" />
+            </View>
+            <View style={styles.optionTextContainer}>
+              <Text style={styles.optionText}>Utilities & Templates</Text>
+              <Text style={styles.optionSubtext}>
+                Invoices, proposals & more
+              </Text>
+            </View>
+            <Feather name="chevron-right" size={20} color="#CCC" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.optionRow}
             onPress={() => {
               const uId = user?._id || user?.id;
               if (uId) {

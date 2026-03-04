@@ -2,12 +2,10 @@ import { apiClient } from "./apiClient";
 
 export const registerApi = (payload: {
   name: string;
-  phone: string;
-  email?: string;
+  email: string;
   password: string;
-  role: string;
+  role?: string;
   dateOfBirth?: string;
-  countryCode?: string;
 }) => {
   return apiClient("/auth/register", {
     method: "POST",
@@ -16,7 +14,7 @@ export const registerApi = (payload: {
   });
 };
 
-export const loginApi = (payload: { phone: string; password: string }) => {
+export const loginApi = (payload: { email: string; password: string }) => {
   return apiClient("/auth/login", {
     method: "POST",
     body: payload,

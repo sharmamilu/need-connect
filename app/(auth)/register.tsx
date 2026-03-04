@@ -18,20 +18,16 @@ import { Image } from "expo-image";
 import AuthHeader from "../components/auth/AuthHeader";
 import AppButton from "../components/common/AppButton";
 import AppInput from "../components/common/AppInput";
-import CountryCodePicker from "../components/portfolio/CountryCodePicker";
 import { colors } from "../constants/colors";
 import { useAlert } from "../utils/AlertManager";
 import { registerApi } from "../utils/api/auth.api";
-import { CountryData } from "../utils/countryHelper";
 
 type RegisterForm = {
   name: string;
-  phone: string;
   email: string;
   password: string;
   confirmPassword: string;
   dateOfBirth: string;
-  countryCode: string;
 };
 
 type FormErrors = Partial<Record<keyof RegisterForm, string>>;
@@ -40,12 +36,10 @@ export default function RegisterScreen() {
   const { showAlert } = useAlert();
   const [form, setForm] = useState<RegisterForm>({
     name: "",
-    phone: "",
     email: "",
     password: "",
     confirmPassword: "",
     dateOfBirth: "",
-    countryCode: "+1",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -53,20 +47,11 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [pickerVisible, setPickerVisible] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState<CountryData>({
-    name: "United States",
-    code: "+1",
-    flag: "🇺🇸",
-    cca2: "US",
-  });
-
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateOfBirthObject, setDateOfBirthObject] = useState<Date | null>(null);
 
   // Animation refs for each field
   const nameShakeAnimation = useRef(new Animated.Value(0)).current;
-  const phoneShakeAnimation = useRef(new Animated.Value(0)).current;
   const emailShakeAnimation = useRef(new Animated.Value(0)).current;
   const passwordShakeAnimation = useRef(new Animated.Value(0)).current;
   const confirmPasswordShakeAnimation = useRef(new Animated.Value(0)).current;
@@ -82,9 +67,6 @@ export default function RegisterScreen() {
     switch (field) {
       case "name":
         animation = nameShakeAnimation;
-        break;
-      case "phone":
-        animation = phoneShakeAnimation;
         break;
       case "email":
         animation = emailShakeAnimation;
@@ -143,13 +125,9 @@ export default function RegisterScreen() {
       newErrors.name = "Full name is required";
     }
 
-    if (!form.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^[0-9]{8,15}$/.test(form.phone)) {
-      newErrors.phone = "Enter a valid phone number";
-    }
-
-    if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) {
+    if (!form.email.trim()) {
+      newErrors.email = "Email address is required";
+    } else if (!/^\S+@\S+\.\S+$/.test(form.email)) {
       newErrors.email = "Enter a valid email address";
     }
 
@@ -180,7 +158,6 @@ export default function RegisterScreen() {
 
     // Trigger shake animation for fields with errors
     if (newErrors.name) shakeField("name");
-    if (newErrors.phone) shakeField("phone");
     if (newErrors.email) shakeField("email");
     if (newErrors.password) shakeField("password");
     if (newErrors.confirmPassword) shakeField("confirmPassword");
@@ -211,7 +188,7 @@ export default function RegisterScreen() {
 
   const isFormValid =
     form.name.trim() !== "" &&
-    form.phone.trim() !== "" &&
+    form.email.trim() !== "" &&
     form.dateOfBirth.trim() !== "" &&
     form.password.trim() !== "" &&
     form.confirmPassword.trim() !== "" &&
@@ -223,15 +200,12 @@ export default function RegisterScreen() {
     try {
       await registerApi(form as any);
       showAlert("Registration successful!", "success");
-      // clear form
       setForm({
         name: "",
-        phone: "",
         email: "",
         password: "",
         confirmPassword: "",
         dateOfBirth: "",
-        countryCode: "+1",
       });
 
       router.replace("/login");
@@ -242,12 +216,6 @@ export default function RegisterScreen() {
       if (errorMessage.includes("name")) {
         setErrors((prev) => ({ ...prev, name: err.message }));
         shakeField("name");
-      } else if (
-        errorMessage.includes("phone") ||
-        errorMessage.includes("number")
-      ) {
-        setErrors((prev) => ({ ...prev, phone: err.message }));
-        shakeField("phone");
       } else if (errorMessage.includes("email")) {
         setErrors((prev) => ({ ...prev, email: err.message }));
         shakeField("email");
@@ -380,55 +348,6 @@ export default function RegisterScreen() {
                 )}
               </View>
 
-              {/* PHONE */}
-              <View>
-                <Animated.View
-                  style={[
-                    styles.inputWrapper,
-                    styles.phoneRow,
-                    {
-                      transform: [
-                        {
-                          translateX: phoneShakeAnimation,
-                        },
-                      ],
-                    },
-                  ]}
-                >
-                  <TouchableOpacity
-                    style={styles.countryPickerButton}
-                    onPress={() => setPickerVisible(true)}
-                  >
-                    <Text style={styles.countryFlag}>
-                      {selectedCountry.flag}
-                    </Text>
-                    <Text style={styles.countryCodeText}>
-                      {selectedCountry.code}
-                    </Text>
-                    <Feather name="chevron-down" size={14} color="#666" />
-                  </TouchableOpacity>
-
-                  <View style={{ flex: 1, position: "relative" }}>
-                    <AppInput
-                      placeholder="Phone Number"
-                      keyboardType="phone-pad"
-                      value={form.phone}
-                      onChangeText={(v: string) => updateField("phone", v)}
-                      style={[styles.inputWithIcon, { paddingLeft: 12 }]}
-                    />
-                    <Feather
-                      name="phone"
-                      size={20}
-                      color="#999"
-                      style={styles.inputIcon}
-                    />
-                  </View>
-                </Animated.View>
-                {errors.phone && (
-                  <Text style={styles.errorText}>{errors.phone}</Text>
-                )}
-              </View>
-
               {/* EMAIL */}
               <View>
                 <Animated.View
@@ -444,7 +363,7 @@ export default function RegisterScreen() {
                   ]}
                 >
                   <AppInput
-                    placeholder="Email (optional)"
+                    placeholder="Email Address"
                     keyboardType="email-address"
                     autoCapitalize="none"
                     value={form.email}
@@ -599,14 +518,6 @@ export default function RegisterScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <CountryCodePicker
-        visible={pickerVisible}
-        onClose={() => setPickerVisible(false)}
-        onSelect={(country) => {
-          setSelectedCountry(country);
-          updateField("countryCode", country.code);
-        }}
-      />
     </SafeAreaView>
   );
 }
