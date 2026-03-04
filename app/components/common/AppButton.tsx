@@ -1,6 +1,7 @@
 import { colors } from "@/app/constants/colors";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   StyleSheet,
   Text,
   TextStyle,
@@ -12,12 +13,14 @@ type AppButtonProps = {
   title: string;
   onPress: () => void;
   disabled?: boolean;
+  isLoading?: boolean;
 };
 
 export default function AppButton({
   title,
   onPress,
   disabled = false,
+  isLoading = false,
 }: AppButtonProps) {
   const [pressed, setPressed] = useState(false);
 
@@ -27,14 +30,18 @@ export default function AppButton({
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
       onPress={onPress}
-      disabled={disabled}
+      disabled={disabled || isLoading}
       style={[
         styles.button,
         pressed && styles.pressed,
-        disabled && styles.disabled,
+        (disabled || isLoading) && styles.disabled,
       ]}
     >
-      <Text style={styles.text}>{title}</Text>
+      {isLoading ? (
+        <ActivityIndicator color="#fff" />
+      ) : (
+        <Text style={styles.text}>{title}</Text>
+      )}
     </TouchableOpacity>
   );
 }

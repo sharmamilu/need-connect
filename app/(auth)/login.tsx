@@ -263,8 +263,10 @@ export default function Login() {
 
               {/* FORGOT PASSWORD LINK */}
               <View style={styles.forgotContainer}>
-                <Link href="/login">
-                  <Text style={styles.forgotLink}>Forgot Password?</Text>
+                <Link href="/forgot-password" asChild>
+                  <TouchableOpacity>
+                    <Text style={styles.forgotLink}>Forgot Password?</Text>
+                  </TouchableOpacity>
                 </Link>
               </View>
 
