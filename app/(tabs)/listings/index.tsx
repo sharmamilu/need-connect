@@ -1,8 +1,10 @@
 import { Feather } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Keyboard,
   StyleSheet,
@@ -40,6 +42,15 @@ export default function ListingsFeed() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [locationText, setLocationText] = useState("");
+  const locationDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [locationFilter, setLocationFilter] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadListings = useCallback(
@@ -47,6 +58,8 @@ export default function ListingsFeed() {
       pageNum: number,
       searchQuery: string,
       categoryFilter: string,
+      locObj: { lat: number; lng: number } | null,
+      locText: string,
       replace: boolean,
     ) => {
       try {
@@ -58,8 +71,24 @@ export default function ListingsFeed() {
         }
 
         const params: any = { page: pageNum, limit: 10 };
-        if (searchQuery) params.search = searchQuery;
+
+        // Combine the main query and location text for backend text index
+        const combinedSearch = [searchQuery, locText]
+          .filter(
+            (text) =>
+              text && text.trim() !== "" && text !== "My Current Location",
+          )
+          .join(" ");
+
+        if (combinedSearch) params.search = combinedSearch;
         if (categoryFilter !== "All") params.category = categoryFilter;
+
+        // If Near Me is active, attach lat/lng
+        if (locObj) {
+          params.lat = locObj.lat;
+          params.lng = locObj.lng;
+          params.radius = 50; // 50km default radius
+        }
 
         const res = await fetchListings(params);
         const { data, pagination } = res.data;
@@ -85,22 +114,74 @@ export default function ListingsFeed() {
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
-      loadListings(1, query, activeCategory, true);
+      loadListings(
+        1,
+        query,
+        activeCategory,
+        locationFilter,
+        locationText,
+        true,
+      );
       return;
     }
     if (searchDebounce.current) clearTimeout(searchDebounce.current);
     searchDebounce.current = setTimeout(() => {
-      loadListings(1, query, activeCategory, true);
+      loadListings(
+        1,
+        query,
+        activeCategory,
+        locationFilter,
+        locationText,
+        true,
+      );
     }, 500);
 
     return () => {
       if (searchDebounce.current) clearTimeout(searchDebounce.current);
     };
-  }, [query, activeCategory, loadListings]);
+  }, [query, activeCategory, locationFilter, locationText, loadListings]);
+
+  const toggleLocationFilter = async () => {
+    if (locationFilter && locationText === "My Current Location") {
+      setLocationFilter(null);
+      setLocationText("");
+      return;
+    }
+
+    setLocationLoading(true);
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission",
+          "Please allow location access to find nearby listings.",
+        );
+        return;
+      }
+      let loc = await Location.getCurrentPositionAsync({});
+      setLocationText("My Current Location");
+      setLocationFilter({
+        lat: loc.coords.latitude,
+        lng: loc.coords.longitude,
+      });
+    } catch (e) {
+      Alert.alert("Error", "Could not fetch your location.");
+      setLocationText("");
+    } finally {
+      setLocationLoading(false);
+    }
+  };
 
   const handleLoadMore = () => {
     if (!loadingMore && page < totalPages) {
-      loadListings(page + 1, query, activeCategory, false);
+      loadListings(
+        page + 1,
+        query,
+        activeCategory,
+        locationFilter,
+        locationText,
+        false,
+      );
     }
   };
 
@@ -125,20 +206,77 @@ export default function ListingsFeed() {
         <View style={styles.container}>
           {/* Search Section */}
           <View style={styles.searchSection}>
-            <View style={styles.searchBar}>
-              <Feather name="search" size={18} color="#7C7C7C" />
-              <TextInput
-                placeholder="Search listings..."
-                value={query}
-                onChangeText={handleSearchChange}
-                style={styles.input}
-                placeholderTextColor="#999"
-              />
-              {query.length > 0 && (
-                <TouchableOpacity onPress={() => setQuery("")}>
-                  <Feather name="x" size={16} color="#999" />
-                </TouchableOpacity>
-              )}
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <View style={styles.searchBar}>
+                <Feather name="search" size={18} color="#7C7C7C" />
+                <TextInput
+                  placeholder="Search listings..."
+                  value={query}
+                  onChangeText={handleSearchChange}
+                  style={styles.input}
+                  placeholderTextColor="#999"
+                />
+                {query.length > 0 && (
+                  <TouchableOpacity onPress={() => setQuery("")}>
+                    <Feather name="x" size={16} color="#999" />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Location Toggle Button */}
+              <TouchableOpacity
+                style={[
+                  styles.nearMeBtn,
+                  locationFilter && styles.nearMeBtnActive,
+                ]}
+                onPress={toggleLocationFilter}
+                disabled={locationLoading}
+              >
+                {locationLoading ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={locationFilter ? "#fff" : "#4A6CF7"}
+                  />
+                ) : (
+                  <Feather
+                    name="navigation"
+                    size={20}
+                    color={locationFilter ? "#fff" : "#4A6CF7"}
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Custom Location Search */}
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <View style={[styles.searchBar, { flex: 1 }]}>
+                <Feather name="map-pin" size={18} color="#7C7C7C" />
+                <TextInput
+                  placeholder="Where? (e.g. New York, London)"
+                  value={locationText}
+                  onChangeText={(text) => {
+                    // Prevent editing if it's auto-selected to current location to avoid confusion
+                    if (locationText === "My Current Location" && text !== "") {
+                      setLocationText("");
+                      setLocationFilter(null);
+                    } else {
+                      setLocationText(text);
+                    }
+                  }}
+                  style={styles.input}
+                  placeholderTextColor="#999"
+                />
+                {locationText.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setLocationText("");
+                      setLocationFilter(null);
+                    }}
+                  >
+                    <Feather name="x" size={16} color="#999" />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
 
             {/* Categories */}
@@ -186,7 +324,16 @@ export default function ListingsFeed() {
               </Text>
               <TouchableOpacity
                 style={styles.retryButton}
-                onPress={() => loadListings(1, query, activeCategory, true)}
+                onPress={() =>
+                  loadListings(
+                    1,
+                    query,
+                    activeCategory,
+                    locationFilter,
+                    locationText,
+                    true,
+                  )
+                }
               >
                 <Text style={styles.retryText}>Retry</Text>
               </TouchableOpacity>
@@ -276,6 +423,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   searchBar: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
@@ -288,6 +436,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 3,
+  },
+  nearMeBtn: {
+    width: 48,
+    height: 48,
+    backgroundColor: "#EDF1FF",
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+  },
+  nearMeBtnActive: {
+    backgroundColor: "#4A6CF7",
   },
   input: {
     flex: 1,

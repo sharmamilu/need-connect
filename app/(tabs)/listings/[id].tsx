@@ -95,6 +95,10 @@ export default function ListingDetails() {
         <TouchableOpacity style={styles.iconBtn} onPress={() => router.back()}>
           <Feather name="arrow-left" size={24} color="#2D3436" />
         </TouchableOpacity>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          Listing Details
+        </Text>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -224,26 +228,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    position: "absolute",
-    top: 16,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    backgroundColor: "transparent",
+    paddingVertical: 14,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333",
   },
   iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    padding: 8,
+    marginLeft: -8,
   },
   centered: {
     flex: 1,

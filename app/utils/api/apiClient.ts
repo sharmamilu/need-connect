@@ -1,6 +1,6 @@
 import { getToken } from "../storage";
 
-const BASE_URL = "http://192.168.1.5:5000/api";
+const BASE_URL = "https://need-connect-backend.onrender.com/api";
 
 type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "DELETE";

@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -42,8 +43,11 @@ export default function CreateListing() {
   const [contactInfo, setContactInfo] = useState("");
   const [condition, setCondition] = useState(CONDITIONS[0]);
   const [images, setImages] = useState<any[]>([]);
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
 
   const [loading, setLoading] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
 
   const pickImage = async () => {
     try {
@@ -66,6 +70,50 @@ export default function CreateListing() {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const useCurrentLocation = async () => {
+    setLocationLoading(true);
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Denied",
+          "Allow location access to use this feature.",
+        );
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      setLat(location.coords.latitude);
+      setLng(location.coords.longitude);
+
+      let [geocode] = await Location.reverseGeocodeAsync({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+
+      if (geocode) {
+        const anyGeocode = geocode as any;
+        if (anyGeocode.formattedAddress) {
+          setAddress(anyGeocode.formattedAddress);
+        } else {
+          const addressParts = [
+            geocode.streetNumber,
+            geocode.street,
+            geocode.city,
+            geocode.region,
+            geocode.country,
+          ].filter(Boolean);
+          setAddress(addressParts.join(", "));
+        }
+      }
+    } catch (error) {
+      console.log("Location Error", error);
+      Alert.alert("Error", "Could not fetch your exact location.");
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!title || !description || !address || !contactInfo) {
       Alert.alert("Missing Fields", "Please fill in all required fields.");
@@ -85,7 +133,7 @@ export default function CreateListing() {
         imageUrls = await uploadListingImages(images);
       }
 
-      const payload = {
+      const payload: any = {
         title,
         category,
         listingType,
@@ -96,6 +144,11 @@ export default function CreateListing() {
         condition,
         images: imageUrls,
       };
+
+      if (lat && lng) {
+        payload.lat = lat;
+        payload.lng = lng;
+      }
 
       // Create the listing
       await createListing(payload);
@@ -276,7 +329,25 @@ export default function CreateListing() {
           />
 
           {/* Address */}
-          <Text style={styles.label}>Complete Address *</Text>
+          <View style={styles.addressHeader}>
+            <Text style={[styles.label, { marginTop: 0, marginBottom: 0 }]}>
+              Complete Address *
+            </Text>
+            <TouchableOpacity
+              style={styles.locationBtn}
+              onPress={useCurrentLocation}
+              disabled={locationLoading}
+            >
+              {locationLoading ? (
+                <ActivityIndicator size="small" color="#4A6CF7" />
+              ) : (
+                <>
+                  <Feather name="navigation" size={14} color="#4A6CF7" />
+                  <Text style={styles.locationBtnText}>Use My Location</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
           <TextInput
             style={[styles.input, styles.textArea]}
             placeholder="E.g., 123 Main St, Apt 4B, City, Country"
@@ -297,6 +368,22 @@ export default function CreateListing() {
             value={contactInfo}
             onChangeText={setContactInfo}
           />
+
+          {/* Disclaimer / Warning */}
+          <View style={styles.disclaimerContainer}>
+            <Feather
+              name="alert-circle"
+              size={20}
+              color="#FF9800"
+              style={styles.disclaimerIcon}
+            />
+            <Text style={styles.disclaimerText}>
+              <Text style={{ fontWeight: "700" }}>Note: </Text>
+              Need Connect is a platform for discovering listings. We are not
+              responsible for any transactions, exchanges, or interactions
+              between users. Please exercise caution.
+            </Text>
+          </View>
 
           <TouchableOpacity
             style={[
@@ -418,6 +505,27 @@ const styles = StyleSheet.create({
     minHeight: 120,
     paddingTop: 16,
   },
+  addressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  locationBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EDF1FF",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 6,
+  },
+  locationBtnText: {
+    color: "#4A6CF7",
+    fontSize: 12,
+    fontWeight: "600",
+  },
   priceContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -528,5 +636,25 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "700",
+  },
+  disclaimerContainer: {
+    flexDirection: "row",
+    backgroundColor: "#FFF8E1",
+    borderWidth: 1,
+    borderColor: "#FFE082",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    alignItems: "flex-start",
+  },
+  disclaimerIcon: {
+    marginRight: 10,
+    marginTop: 2,
+  },
+  disclaimerText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#F57F17",
+    lineHeight: 18,
   },
 });

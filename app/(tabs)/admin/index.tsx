@@ -8,6 +8,7 @@ import {
   FlatList,
   Image,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -225,7 +226,28 @@ export default function AdminDashboard() {
         )}
 
         {item.images && item.images.length > 0 && (
-          <Image source={{ uri: item.images[0] }} style={styles.cardImage} />
+          <View style={{ marginBottom: 16 }}>
+            {item.images.length === 1 ? (
+              <Image
+                source={{ uri: item.images[0] }}
+                style={[styles.cardImage, { marginBottom: 0 }]}
+              />
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 12, paddingRight: 16 }}
+              >
+                {item.images.map((url: string, index: number) => (
+                  <Image
+                    key={index}
+                    source={{ uri: url }}
+                    style={[styles.cardImage, { width: 280, marginBottom: 0 }]}
+                  />
+                ))}
+              </ScrollView>
+            )}
+          </View>
         )}
         <View style={styles.actionRow}>
           <TouchableOpacity
@@ -277,7 +299,28 @@ export default function AdminDashboard() {
         <Text style={styles.listingPrice}>{item.price}</Text>
 
         {item.images && item.images.length > 0 && (
-          <Image source={{ uri: item.images[0] }} style={styles.cardImage} />
+          <View style={{ marginBottom: 16 }}>
+            {item.images.length === 1 ? (
+              <Image
+                source={{ uri: item.images[0] }}
+                style={[styles.cardImage, { marginBottom: 0 }]}
+              />
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 12, paddingRight: 16 }}
+              >
+                {item.images.map((url: string, index: number) => (
+                  <Image
+                    key={index}
+                    source={{ uri: url }}
+                    style={[styles.cardImage, { width: 280, marginBottom: 0 }]}
+                  />
+                ))}
+              </ScrollView>
+            )}
+          </View>
         )}
 
         <View style={styles.actionRow}>
