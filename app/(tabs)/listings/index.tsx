@@ -7,6 +7,7 @@ import {
   Alert,
   FlatList,
   Keyboard,
+  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
@@ -40,6 +41,7 @@ export default function ListingsFeed() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [locationText, setLocationText] = useState("");
@@ -64,7 +66,7 @@ export default function ListingsFeed() {
     ) => {
       try {
         if (replace) {
-          setLoading(true);
+          if (!refreshing) setLoading(true);
           setError(null);
         } else {
           setLoadingMore(true);
@@ -72,23 +74,17 @@ export default function ListingsFeed() {
 
         const params: any = { page: pageNum, limit: 10 };
 
-        // Combine the main query and location text for backend text index
-        const combinedSearch = [searchQuery, locText]
-          .filter(
-            (text) =>
-              text && text.trim() !== "" && text !== "My Current Location",
-          )
-          .join(" ");
+        // Combine search query and location address for a simple text match on backend
+        const searchParts = [];
+        if (searchQuery) searchParts.push(searchQuery.trim());
+        if (locText && locText !== "My Current Location")
+          searchParts.push(locText.trim());
 
-        if (combinedSearch) params.search = combinedSearch;
-        if (categoryFilter !== "All") params.category = categoryFilter;
-
-        // If Near Me is active, attach lat/lng
-        if (locObj) {
-          params.lat = locObj.lat;
-          params.lng = locObj.lng;
-          params.radius = 50; // 50km default radius
+        if (searchParts.length > 0) {
+          params.search = searchParts.join(" ");
         }
+
+        if (categoryFilter !== "All") params.category = categoryFilter;
 
         const res = await fetchListings(params);
         const { data, pagination } = res.data;
@@ -104,6 +100,7 @@ export default function ListingsFeed() {
       } finally {
         setLoading(false);
         setLoadingMore(false);
+        setRefreshing(false);
       }
     },
     [],
@@ -159,12 +156,34 @@ export default function ListingsFeed() {
         return;
       }
       let loc = await Location.getCurrentPositionAsync({});
-      setLocationText("My Current Location");
+
+      // Get human-readable address from coordinates
+      const addressArr = await Location.reverseGeocodeAsync({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+
+      if (addressArr.length > 0) {
+        const addr = addressArr[0];
+        // Create a searchable location string (e.g. "Bengaluru, Karnataka")
+        const locationName = [
+          addr.city || addr.district || addr.subregion,
+          addr.region,
+        ]
+          .filter(Boolean)
+          .join(", ");
+
+        setLocationText(locationName || "My Current Location");
+      } else {
+        setLocationText("My Current Location");
+      }
+
       setLocationFilter({
         lat: loc.coords.latitude,
         lng: loc.coords.longitude,
       });
     } catch (e) {
+      console.error("Location error:", e);
       Alert.alert("Error", "Could not fetch your location.");
       setLocationText("");
     } finally {
@@ -172,17 +191,10 @@ export default function ListingsFeed() {
     }
   };
 
-  const handleLoadMore = () => {
-    if (!loadingMore && page < totalPages) {
-      loadListings(
-        page + 1,
-        query,
-        activeCategory,
-        locationFilter,
-        locationText,
-        false,
-      );
-    }
+  const onRefresh = () => {
+    setRefreshing(true);
+    setPage(1);
+    loadListings(1, query, activeCategory, locationFilter, locationText, true);
   };
 
   const handleSearchChange = (text: string) => {
@@ -310,41 +322,10 @@ export default function ListingsFeed() {
           </View>
 
           {/* Results */}
-          {loading ? (
+          {loading && !refreshing ? (
             <View style={styles.centered}>
               <ActivityIndicator size="large" color="#4A6CF7" />
               <Text style={styles.loadingText}>Finding listings...</Text>
-            </View>
-          ) : error && listings.length === 0 ? (
-            <View style={styles.centered}>
-              <Feather name="inbox" size={48} color="#ccc" />
-              <Text style={styles.emptyText}>No Listings Found</Text>
-              <Text style={styles.emptySubText}>
-                Be the first to create one!
-              </Text>
-              <TouchableOpacity
-                style={styles.retryButton}
-                onPress={() =>
-                  loadListings(
-                    1,
-                    query,
-                    activeCategory,
-                    locationFilter,
-                    locationText,
-                    true,
-                  )
-                }
-              >
-                <Text style={styles.retryText}>Retry</Text>
-              </TouchableOpacity>
-            </View>
-          ) : listings.length === 0 ? (
-            <View style={styles.centered}>
-              <Feather name="inbox" size={48} color="#ccc" />
-              <Text style={styles.emptyText}>No listings found</Text>
-              <Text style={styles.emptySubText}>
-                Try adjusting your search or category
-              </Text>
             </View>
           ) : (
             <FlatList
@@ -361,9 +342,48 @@ export default function ListingsFeed() {
                 />
               )}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.listContent}
-              onEndReached={handleLoadMore}
+              contentContainerStyle={[
+                styles.listContent,
+                listings.length === 0 && { flex: 1 },
+              ]}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+              onEndReached={() => {
+                if (!loadingMore && page < totalPages) {
+                  loadListings(
+                    page + 1,
+                    query,
+                    activeCategory,
+                    locationFilter,
+                    locationText,
+                    false,
+                  );
+                }
+              }}
               onEndReachedThreshold={0.4}
+              ListEmptyComponent={
+                error ? (
+                  <View style={styles.centered}>
+                    <Feather name="alert-circle" size={48} color="#FF4757" />
+                    <Text style={styles.errorText}>{error}</Text>
+                    <TouchableOpacity
+                      style={styles.retryButton}
+                      onPress={onRefresh}
+                    >
+                      <Text style={styles.retryText}>Retry</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View style={styles.centered}>
+                    <Feather name="inbox" size={48} color="#ccc" />
+                    <Text style={styles.emptyText}>No listings found</Text>
+                    <Text style={styles.emptySubText}>
+                      Try adjusting your search or category
+                    </Text>
+                  </View>
+                )
+              }
               ListFooterComponent={
                 loadingMore ? (
                   <ActivityIndicator
@@ -491,6 +511,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 12,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#FF4757",
+    fontWeight: "600",
+    textAlign: "center",
   },
   loadingText: {
     fontSize: 15,

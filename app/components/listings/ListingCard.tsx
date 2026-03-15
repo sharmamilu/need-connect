@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useAuth } from "../../utils/AuthContext";
 import { deleteListing } from "../../utils/apiFunctions";
+import { useAuth } from "../../utils/AuthContext";
 
 export default function ListingCard({ data, onDeleteSuccess }: any) {
   const router = useRouter();
@@ -122,11 +122,31 @@ export default function ListingCard({ data, onDeleteSuccess }: any) {
           {data.category} • {data.condition}
         </Text>
 
+        <View style={styles.locationContainer}>
+          <Feather name="map-pin" size={12} color="#888" />
+          <Text style={styles.locationText} numberOfLines={1}>
+            {data.address || data.location}
+          </Text>
+        </View>
+
         <View style={styles.footerRow}>
-          <View style={styles.locationContainer}>
-            <Feather name="map-pin" size={12} color="#888" />
-            <Text style={styles.locationText} numberOfLines={1}>
-              {data.address || data.location}
+          <View style={styles.sellerHeader}>
+            {data.userImage ? (
+              <Image
+                source={{ uri: data.userImage }}
+                style={styles.userAvatar}
+              />
+            ) : (
+              <View style={[styles.userAvatar, styles.userPlaceholder]}>
+                <Text style={styles.userInitial}>
+                  {(data.userName || data.author?.name)
+                    ?.charAt(0)
+                    .toUpperCase() || "S"}
+                </Text>
+              </View>
+            )}
+            <Text style={styles.userName} numberOfLines={1}>
+              {data.userName || data.author?.name || "Seller"}
             </Text>
           </View>
           <Text style={styles.timeText}>
@@ -203,15 +223,41 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    flex: 1,
+    marginBottom: 8,
   },
   locationText: {
     fontSize: 12,
     color: "#888",
   },
   timeText: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#aaa",
+  },
+  sellerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  userAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  userPlaceholder: {
+    backgroundColor: "#F0F2F5",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  userInitial: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#4A6CF7",
+  },
+  userName: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#555",
   },
   deleteFloatBtn: {
     position: "absolute",

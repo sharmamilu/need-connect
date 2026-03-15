@@ -53,7 +53,7 @@ const TEMPLATES = [
   },
 ];
 
-export default function TemplatesScreen() {
+export default function UtilitiesScreen() {
   const router = useRouter();
 
   const renderItem = ({ item }: { item: (typeof TEMPLATES)[0] }) => (
@@ -76,14 +76,9 @@ export default function TemplatesScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Feather name="arrow-left" size={24} color="#333" />
-        </TouchableOpacity>
+        <View style={{ width: 40 }} />
         <Text style={styles.headerTitle}>Utilities & Templates</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: 40 }} />
       </View>
 
       <Text style={styles.subtitle}>
@@ -133,10 +128,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
-  },
-  backButton: {
-    padding: 8,
-    marginLeft: -8,
   },
   headerTitle: {
     fontSize: 18,

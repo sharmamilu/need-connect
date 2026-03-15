@@ -141,11 +141,14 @@ export default function PortfolioDetail() {
     );
   }
 
-  const isOwner =
-    currentUser?.id === portfolio?.user?._id ||
-    currentUser?._id === portfolio?.user?._id ||
-    currentUser?.id === portfolio?.userId ||
-    currentUser?._id === portfolio?.userId;
+  const ownerId =
+    portfolio?.user?._id ||
+    portfolio?.user?.id ||
+    (typeof portfolio?.user === "string" ? portfolio.user : null) ||
+    portfolio?.userId;
+
+  const currentUid = currentUser?._id || currentUser?.id;
+  const isOwner = !!(currentUid && ownerId && currentUid === ownerId);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -514,12 +517,8 @@ export default function PortfolioDetail() {
         onClose={() => setShowReview(false)}
         userName={portfolio?.name || "User"}
         reviewedUserId={
-          portfolio?.user?._id ||
-          portfolio?.user?.id ||
-          portfolio?.user ||
-          portfolio?.userId ||
-          portfolioId ||
-          "UNKNOWN_ID"
+          ownerId ||
+          (typeof portfolioId === "string" ? portfolioId : "UNKNOWN_ID")
         }
         onSubmit={async (reviewData: any) => {
           try {

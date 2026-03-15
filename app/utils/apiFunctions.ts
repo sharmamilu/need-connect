@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getToken } from "./storage";
 
-const BASE_URL = "https://need-connect-backend.onrender.com/api";
+const BASE_URL = "http://192.168.1.4:5000/api";
 
 const API = axios.create({
   baseURL: BASE_URL,
@@ -208,6 +208,7 @@ export const fetchListings = (
     limit?: number;
     category?: string;
     search?: string;
+    location?: string;
     lat?: number;
     lng?: number;
     radius?: number;

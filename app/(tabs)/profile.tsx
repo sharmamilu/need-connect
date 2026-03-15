@@ -223,7 +223,7 @@ export default function ProfileScreen() {
 
           <TouchableOpacity
             style={styles.optionRow}
-            onPress={() => router.push("/(screens)/templates")}
+            onPress={() => router.push("/utilities")}
             activeOpacity={0.7}
           >
             <View

@@ -3,10 +3,23 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { toggleSavePortfolio } from "../../utils/apiFunctions";
+import { useAuth } from "../../utils/AuthContext";
 
 export default function ProfessionalCard({ data }: any) {
   const router = useRouter();
+  const { user: currentUser } = useAuth();
   const [isSaved, setIsSaved] = useState(data.saved || data.isSaved || false);
+
+  const currentUid = currentUser?._id || currentUser?.id;
+  const targetUid =
+    data.userId ||
+    data.user?._id ||
+    (typeof data.user === "string" ? data.user : null);
+
+  const rating = data.rating || data.user?.rating || 0;
+  const isLowRating = rating > 0 && rating < 2.5;
+
+  const isOwner = currentUid && targetUid && currentUid === targetUid;
 
   const handleSaveToggle = async () => {
     setIsSaved(!isSaved);
@@ -51,9 +64,19 @@ export default function ProfessionalCard({ data }: any) {
             />
           </TouchableOpacity>
         </View>
-        <Text style={styles.profession} numberOfLines={1}>
-          {data.profession}
-        </Text>
+        <View style={styles.professionRow}>
+          <Text style={styles.profession} numberOfLines={1}>
+            {data.profession}
+          </Text>
+          <View style={styles.ratingBox}>
+            <Ionicons name="star" size={14} color="#FFB800" />
+            <Text
+              style={[styles.ratingText, isLowRating && styles.lowRatingText]}
+            >
+              {rating > 0 ? rating.toFixed(1) : "New"}
+            </Text>
+          </View>
+        </View>
 
         <View style={styles.skills}>
           {data.skills.slice(0, 3).map((skill: any) => (
@@ -107,9 +130,32 @@ const styles = StyleSheet.create({
     padding: 4,
     marginRight: -4,
   },
+  professionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   profession: {
     fontSize: 13,
     color: "#666",
+    flex: 1,
+  },
+  ratingBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#FFF9E6",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  ratingText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#444",
+  },
+  lowRatingText: {
+    color: "#FF4757",
   },
   skills: {
     flexDirection: "row",

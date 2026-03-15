@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   FlatList,
   Keyboard,
+  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
@@ -29,6 +30,7 @@ export default function ExploreScreen() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const skillDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -45,7 +47,7 @@ export default function ExploreScreen() {
     ) => {
       try {
         if (replace) {
-          setLoading(true);
+          if (!refreshing) setLoading(true);
           setError(null);
         } else {
           setLoadingMore(true);
@@ -66,6 +68,7 @@ export default function ExploreScreen() {
       } finally {
         setLoading(false);
         setLoadingMore(false);
+        setRefreshing(false);
       }
     },
     [],
@@ -153,6 +156,11 @@ export default function ExploreScreen() {
     setActiveInput(null);
     setSkillSuggestions([]);
     setLocationSuggestions([]);
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadProfessionals(1, skillQuery, locationQuery, true);
   };
 
   return (
@@ -270,32 +278,10 @@ export default function ExploreScreen() {
             </View>
           </View>
 
-          {/* Results */}
-          {loading ? (
+          {loading && !refreshing ? (
             <View style={styles.centered}>
               <ActivityIndicator size="large" color="#4A6CF7" />
               <Text style={styles.loadingText}>Finding professionals...</Text>
-            </View>
-          ) : error ? (
-            <View style={styles.centered}>
-              <Feather name="alert-circle" size={40} color="#FF4757" />
-              <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity
-                style={styles.retryButton}
-                onPress={() =>
-                  loadProfessionals(1, skillQuery, locationQuery, true)
-                }
-              >
-                <Text style={styles.retryText}>Retry</Text>
-              </TouchableOpacity>
-            </View>
-          ) : professionals.length === 0 ? (
-            <View style={styles.centered}>
-              <Feather name="users" size={40} color="#ccc" />
-              <Text style={styles.emptyText}>No professionals found</Text>
-              <Text style={styles.emptySubText}>
-                Try adjusting your search filters
-              </Text>
             </View>
           ) : (
             <FlatList
@@ -303,9 +289,37 @@ export default function ExploreScreen() {
               keyExtractor={(item) => item._id}
               renderItem={({ item }) => <ProfessionalCard data={item} />}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.listContent}
+              contentContainerStyle={[
+                styles.listContent,
+                professionals.length === 0 && { flex: 1 },
+              ]}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
               onEndReached={handleLoadMore}
               onEndReachedThreshold={0.4}
+              ListEmptyComponent={
+                error ? (
+                  <View style={styles.centered}>
+                    <Feather name="alert-circle" size={40} color="#FF4757" />
+                    <Text style={styles.errorText}>{error}</Text>
+                    <TouchableOpacity
+                      style={styles.retryButton}
+                      onPress={onRefresh}
+                    >
+                      <Text style={styles.retryText}>Retry</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View style={styles.centered}>
+                    <Feather name="users" size={40} color="#ccc" />
+                    <Text style={styles.emptyText}>No professionals found</Text>
+                    <Text style={styles.emptySubText}>
+                      Try adjusting your search filters
+                    </Text>
+                  </View>
+                )
+              }
               ListFooterComponent={
                 loadingMore ? (
                   <ActivityIndicator

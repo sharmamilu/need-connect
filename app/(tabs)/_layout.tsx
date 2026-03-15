@@ -81,6 +81,17 @@ export default function TabsLayout() {
           }}
         />
 
+        {/* Utilities/Templates Tab */}
+        <Tabs.Screen
+          name="utilities"
+          options={{
+            title: "Utilities",
+            tabBarIcon: ({ color, size }) => (
+              <Feather name="grid" size={size} color={color} />
+            ),
+          }}
+        />
+
         {/* Profile Tab */}
         <Tabs.Screen
           name="profile"

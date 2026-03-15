@@ -200,16 +200,27 @@ export default function ListingDetails() {
 
           <Text style={styles.sectionTitle}>Seller Information</Text>
           <View style={styles.sellerCard}>
-            <View style={styles.sellerAvatar}>
-              <Text style={styles.sellerInitial}>
-                {listing.author?.name?.charAt(0).toUpperCase() || "S"}
-              </Text>
-            </View>
+            {listing.userImage ? (
+              <Image
+                source={{ uri: listing.userImage }}
+                style={styles.sellerAvatar}
+              />
+            ) : (
+              <View style={styles.sellerAvatar}>
+                <Text style={styles.sellerInitial}>
+                  {(listing.userName || listing.author?.name)
+                    ?.charAt(0)
+                    .toUpperCase() || "S"}
+                </Text>
+              </View>
+            )}
             <View style={styles.sellerInfo}>
               <Text style={styles.sellerName}>
-                {listing.author?.name || "Anonymous Seller"}
+                {listing.userName || listing.author?.name || "Anonymous Seller"}
               </Text>
-              <Text style={styles.sellerSub}>Verified Member</Text>
+              <Text style={styles.sellerSub}>
+                {listing.userProfession || "Verified Member"}
+              </Text>
             </View>
           </View>
         </View>
