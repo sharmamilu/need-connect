@@ -185,6 +185,12 @@ const TEMPLATE_CONFIGS: Record<
       placeholder: "React Native, TypeScript, Node.js, UI/UX",
       multiline: true,
     },
+    {
+      key: "personalDetails",
+      label: "Personal Details",
+      placeholder: "Languages, Hobbies, Date of Birth, etc.",
+      multiline: true,
+    },
   ],
 };
 
@@ -254,6 +260,7 @@ export default function TemplateViewer() {
       const expStr = formData.experience || "";
       const eduStr = formData.education || "";
       const skillsStr = formData.skills || "";
+      const personalStr = formData.personalDetails || "";
 
       const primaryColor = style.id === "dark" ? "#38BDF8" : style.color;
       const bgCol =
@@ -320,6 +327,7 @@ export default function TemplateViewer() {
             <div>
               ${renderSection("Skills", skillsStr)}
               ${renderSection("Education", eduStr)}
+              ${renderSection("Personal Details", personalStr)}
             </div>
           </div>
         </div>
