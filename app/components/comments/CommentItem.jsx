@@ -30,7 +30,7 @@ export default function CommentItem({
   const id = comment._id || comment.id;
   const name = comment.userName || comment.user?.name || "User";
   const avatar =
-    comment.profilePhoto || comment.user?.avatar || "https://i.pravatar.cc/150";
+    comment.profilePhoto || comment.user?.profilePhoto || comment.user?.avatar;
   const isVerified =
     comment.isVerified !== undefined
       ? comment.isVerified
@@ -114,10 +114,26 @@ export default function CommentItem({
       ]}
     >
       <View style={styles.contentWrap}>
-        <Image
-          source={{ uri: avatar }}
-          style={[styles.avatar, depth > 0 && styles.smallAvatar]}
-        />
+        {avatar ? (
+          <Image
+            source={{ uri: avatar }}
+            style={[styles.avatar, depth > 0 && styles.smallAvatar]}
+          />
+        ) : (
+          <View
+            style={[
+              styles.avatar,
+              depth > 0 && styles.smallAvatar,
+              styles.placeholderAvatar,
+            ]}
+          >
+            <Text
+              style={[styles.placeholderText, depth > 0 && { fontSize: 12 }]}
+            >
+              {name.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
 
         <View style={{ flex: 1 }}>
           <View style={styles.headerRow}>
@@ -393,5 +409,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#4A6CF7",
     fontWeight: "600",
+  },
+  placeholderAvatar: {
+    backgroundColor: "#4A6CF7",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  placeholderText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });

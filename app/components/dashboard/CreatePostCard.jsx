@@ -2,6 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -58,7 +59,10 @@ export default function CreatePostCard({ onSubmit }) {
       }
     } catch (error) {
       console.error("Error creating post:", error);
-      alert("Failed to create post. Please try again.");
+      const errMsg =
+        error.response?.data?.message ||
+        "Failed to create post. Please try again.";
+      Alert.alert("Post Failed", errMsg);
     } finally {
       setIsPosting(false);
     }

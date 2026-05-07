@@ -92,6 +92,18 @@ export default function TabsLayout() {
           }}
         />
 
+        {/* Notifications Tab */}
+        <Tabs.Screen
+          name="notifications"
+          options={{
+            title: "Notifications",
+            href: (user as any)?.userRole === "admin" ? "/notifications" : null,
+            tabBarIcon: ({ color, size }) => (
+              <Feather name="bell" size={size} color={color} />
+            ),
+          }}
+        />
+
         {/* Profile Tab */}
         <Tabs.Screen
           name="profile"
