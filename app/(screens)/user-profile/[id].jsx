@@ -174,7 +174,7 @@ export default function UserProfileScreen() {
           ListEmptyComponent={
             <View style={{ padding: 40, alignItems: "center" }}>
               <Text style={{ color: "#666" }}>
-                This user hasn't posted anything yet.
+                {"This user hasn't posted anything yet."}
               </Text>
             </View>
           }

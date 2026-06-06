@@ -36,6 +36,10 @@ export default function AdminDashboard() {
   const [posts, setPosts] = useState<any[]>([]);
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
@@ -55,48 +59,87 @@ export default function AdminDashboard() {
     setViewerVisible(true);
   };
 
-  const loadPendingItems = useCallback(async () => {
-    setLoading(true);
+  const loadPendingItems = useCallback(async (pageNum = 1, isInitial = true) => {
+    if (pageNum === 1 && isInitial) {
+      setLoading(true);
+    }
     try {
       if (activeTab === "Posts") {
-        const res = await fetchAdminPosts({ status: "pending" });
-        setPosts(res.data?.data || []);
+        const res = await fetchAdminPosts({ status: "pending", page: pageNum, limit: 10 });
+        const newPosts = res.data?.data || [];
+        const pagination = res.data?.pagination;
+        if (pageNum === 1) {
+          setPosts(newPosts);
+          setTotalPages(pagination?.pages || 1);
+        } else {
+          setPosts((prev) => [...prev, ...newPosts]);
+        }
       } else {
-        const res = await fetchAdminListings({ status: "pending" });
-        setListings(res.data?.data || []);
+        const res = await fetchAdminListings({ status: "pending", page: pageNum, limit: 10 });
+        const newListings = res.data?.data || [];
+        const pagination = res.data?.pagination;
+        if (pageNum === 1) {
+          setListings(newListings);
+          setTotalPages(pagination?.pages || 1);
+        } else {
+          setListings((prev) => [...prev, ...newListings]);
+        }
       }
     } catch (error) {
       console.log(`Error fetching pending ${activeTab}:`, error);
       // Fallback fake data if backend admin routes aren't instantly ready
-      if (activeTab === "Posts") {
-        setPosts([
-          {
-            _id: "mock-post-1",
-            author: { name: "Mock User" },
-            description: "This is a requested post review.",
-            createdAt: new Date().toISOString(),
-          },
-        ]);
-      } else {
-        setListings([
-          {
-            _id: "mock-list-1",
-            author: { name: "Mock User" },
-            title: "Mock Pending Jacket",
-            price: "$150",
-            category: "Clothing",
-            createdAt: new Date().toISOString(),
-          },
-        ]);
+      if (pageNum === 1) {
+        if (activeTab === "Posts") {
+          setPosts([
+            {
+              _id: "mock-post-1",
+              author: { name: "Mock User" },
+              description: "This is a requested post review.",
+              createdAt: new Date().toISOString(),
+            },
+          ]);
+        } else {
+          setListings([
+            {
+              _id: "mock-list-1",
+              author: { name: "Mock User" },
+              title: "Mock Pending Jacket",
+              price: "$150",
+              category: "Clothing",
+              createdAt: new Date().toISOString(),
+            },
+          ]);
+        }
       }
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      setLoadingMore(false);
     }
   }, [activeTab]);
 
   useEffect(() => {
-    loadPendingItems();
-  }, [loadPendingItems]);
+    setPosts([]);
+    setListings([]);
+    setPage(1);
+    setTotalPages(1);
+    loadPendingItems(1, true);
+  }, [activeTab]);
+
+  const handleLoadMore = () => {
+    if (!loadingMore && page < totalPages) {
+      setLoadingMore(true);
+      const nextPage = page + 1;
+      setPage(nextPage);
+      loadPendingItems(nextPage, false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setPage(1);
+    loadPendingItems(1, false);
+  };
 
   const handleApprovePost = async (id: string) => {
     try {
@@ -489,7 +532,7 @@ export default function AdminDashboard() {
               </ScrollView>
             )}
           </View>
-        )}  )}
+        )}
 
         <View style={styles.actionRow}>
           <TouchableOpacity
@@ -569,6 +612,15 @@ export default function AdminDashboard() {
               <Text style={styles.emptyText}>All posts reviewed!</Text>
             </View>
           }
+          ListFooterComponent={
+            loadingMore ? (
+              <ActivityIndicator size="small" color="#4A6CF7" style={{ marginVertical: 12 }} />
+            ) : null
+          }
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.2}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
         />
       ) : (
         <FlatList
@@ -582,6 +634,15 @@ export default function AdminDashboard() {
               <Text style={styles.emptyText}>All listings reviewed!</Text>
             </View>
           }
+          ListFooterComponent={
+            loadingMore ? (
+              <ActivityIndicator size="small" color="#4A6CF7" style={{ marginVertical: 12 }} />
+            ) : null
+          }
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.2}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
         />
       )}
 

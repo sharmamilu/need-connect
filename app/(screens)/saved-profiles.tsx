@@ -85,7 +85,7 @@ export default function SavedPortfoliosScreen() {
           />
           <Text style={styles.emptyTitle}>No saved profiles yet</Text>
           <Text style={styles.emptySub}>
-            When you save professional portfolios, they'll appear here.
+            {"When you save professional portfolios, they'll appear here."}
           </Text>
         </View>
       ) : (

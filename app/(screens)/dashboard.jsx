@@ -185,7 +185,7 @@ export default function DashboardScreen() {
           ListEmptyComponent={
             <View style={{ padding: 40, alignItems: "center" }}>
               <Text style={{ color: "#666" }}>
-                You haven't posted anything yet.
+                {"You haven't posted anything yet."}
               </Text>
             </View>
           }

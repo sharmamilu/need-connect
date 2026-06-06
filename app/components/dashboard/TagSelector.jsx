@@ -132,7 +132,7 @@ export default function TagSelector({ selectedTags, setSelectedTags }) {
               color="#3b5bdb"
               style={{ marginRight: 4 }}
             />
-            <Text style={styles.customTagText}>Add "{searchQuery.trim()}"</Text>
+            <Text style={styles.customTagText}>{"Add \"" + searchQuery.trim() + "\""}</Text>
           </TouchableOpacity>
         )}
         {filteredTags.length === 0 && !showAddCustomTag && (
