@@ -36,6 +36,7 @@ const ExperienceSection = ({
   error,
 }: ExperienceSectionProps) => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
   const editable = mode === "edit" || mode === "create";
 
   const handleChange = (
@@ -43,19 +44,44 @@ const ExperienceSection = ({
     field: keyof Experience,
     value: string | boolean,
   ) => {
+    setLocalError(null); // Clear errors on change
     const updated = [...experiences];
     (updated[index] as any)[field] = value;
     setExperiences(updated);
   };
 
   const toggleCurrent = (index: number, value: boolean) => {
+    setLocalError(null);
     const updated = [...experiences];
     updated[index].currentlyWorking = value;
     if (value) updated[index].endDate = "";
     setExperiences(updated);
   };
 
+  const handleSaveEntry = (index: number) => {
+    const exp = experiences[index];
+    if (!exp.role?.trim()) {
+      setLocalError("Please enter the Role / Position.");
+      return;
+    }
+    if (!exp.company?.trim()) {
+      setLocalError("Please enter the Company Name.");
+      return;
+    }
+    if (!exp.startDate?.trim()) {
+      setLocalError("Please enter the Start Date (e.g. Jan 2022).");
+      return;
+    }
+    if (!exp.currentlyWorking && !exp.endDate?.trim()) {
+      setLocalError("Please enter the End Date or check 'I currently work here'.");
+      return;
+    }
+    setLocalError(null);
+    setEditingIndex(null);
+  };
+
   const addExperience = () => {
+    setLocalError(null);
     const newExp: Experience = {
       id: `${experiences.length}-${Math.random().toString(36).slice(2)}`,
       role: "",
@@ -71,7 +97,10 @@ const ExperienceSection = ({
 
   const removeExperience = (index: number) => {
     setExperiences(experiences.filter((_, i) => i !== index));
-    if (editingIndex === index) setEditingIndex(null);
+    if (editingIndex === index) {
+      setEditingIndex(null);
+      setLocalError(null);
+    }
   };
 
   return (
@@ -118,7 +147,10 @@ const ExperienceSection = ({
                 {editable && (
                   <View style={styles.itemActions}>
                     <TouchableOpacity
-                      onPress={() => setEditingIndex(isEditing ? null : index)}
+                      onPress={() => {
+                        setLocalError(null);
+                        setEditingIndex(isEditing ? null : index);
+                      }}
                       style={styles.actionBtn}
                     >
                       <Feather
@@ -139,10 +171,15 @@ const ExperienceSection = ({
 
               {!isEditing && (
                 <View style={styles.summaryContent}>
-                  <Text style={styles.summaryDate}>
-                    {exp.startDate || "Start"} —{" "}
-                    {exp.currentlyWorking ? "Present" : exp.endDate || "End"}
-                  </Text>
+                  {(!exp.role?.trim() || !exp.company?.trim() || !exp.startDate?.trim() || (!exp.currentlyWorking && !exp.endDate?.trim())) ? (
+                    <Text style={styles.incompleteWarning}>
+                      ⚠️ Incomplete entry. Tap edit to fill in details.
+                    </Text>
+                  ) : (
+                    <Text style={styles.summaryDate}>
+                      {exp.startDate} — {exp.currentlyWorking ? "Present" : exp.endDate}
+                    </Text>
+                  )}
                   {exp.description ? (
                     <Text style={styles.summaryDesc} numberOfLines={2}>
                       {exp.description}
@@ -234,9 +271,13 @@ const ExperienceSection = ({
                     />
                   </View>
 
+                  {localError && (
+                    <Text style={styles.cardErrorText}>{localError}</Text>
+                  )}
+
                   <TouchableOpacity
                     style={styles.doneBtn}
-                    onPress={() => setEditingIndex(null)}
+                    onPress={() => handleSaveEntry(index)}
                   >
                     <Feather name="check" size={16} color="#fff" />
                     <Text style={styles.doneBtnText}>Save Entry</Text>
@@ -440,5 +481,18 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginBottom: spacing.md,
     textAlign: "center",
+  },
+  cardErrorText: {
+    color: colors.error,
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+  incompleteWarning: {
+    color: colors.error,
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: 4,
   },
 });
