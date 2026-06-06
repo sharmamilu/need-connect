@@ -2,7 +2,7 @@ import axios from "axios";
 import { Platform } from "react-native";
 import { getToken } from "./storage";
 
-const BASE_URL = "http://192.168.1.2:5000/api";
+const BASE_URL = "https://need-connect-backend.onrender.com/api";
 
 const API = axios.create({
   baseURL: BASE_URL,
