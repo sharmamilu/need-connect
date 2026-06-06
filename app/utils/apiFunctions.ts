@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Platform } from "react-native";
-import { getToken } from "./storage";
+import { getToken, saveToken } from "./storage";
 
 const BASE_URL = "https://need-connect-backend.onrender.com/api";
 
@@ -15,6 +15,23 @@ API.interceptors.request.use(async (config) => {
   }
   return config;
 });
+
+API.interceptors.response.use(
+  async (response) => {
+    const newToken = response.headers["x-new-token"];
+    if (newToken) {
+      try {
+        await saveToken(newToken);
+      } catch (err) {
+        console.error("Failed to save auto-renewed token:", err);
+      }
+    }
+    return response;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 /* ---------- IMAGE UPLOAD HELPERS ---------- */
 

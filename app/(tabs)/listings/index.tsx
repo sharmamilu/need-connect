@@ -265,56 +265,37 @@ export default function ListingsFeed() {
         <View style={styles.container}>
           {/* Search Section */}
           <View style={styles.searchSection}>
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <View style={styles.searchBar}>
-                <Feather name="search" size={18} color="#7C7C7C" />
+            <View style={styles.searchBarRow}>
+              {/* Query Search input */}
+              <View style={styles.searchFieldWrap}>
+                <Feather name="search" size={16} color={colors.primary} style={styles.fieldIcon} />
                 <TextInput
                   placeholder="Search listings..."
                   value={query}
                   onChangeText={handleSearchChange}
-                  style={styles.input}
-                  placeholderTextColor="#999"
+                  style={styles.fieldInput}
+                  placeholderTextColor={colors.placeholder}
                 />
                 {query.length > 0 && (
-                  <TouchableOpacity onPress={() => setQuery("")}>
-                    <Feather name="x" size={16} color="#999" />
+                  <TouchableOpacity
+                    onPress={() => setQuery("")}
+                    style={styles.clearFieldBtn}
+                  >
+                    <Feather name="x" size={14} color={colors.gray} />
                   </TouchableOpacity>
                 )}
               </View>
 
-              {/* Location Toggle Button */}
-              <TouchableOpacity
-                style={[
-                  styles.nearMeBtn,
-                  locationFilter && styles.nearMeBtnActive,
-                ]}
-                onPress={toggleLocationFilter}
-                disabled={locationLoading}
-              >
-                {locationLoading ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={locationFilter ? "#fff" : colors.primary}
-                  />
-                ) : (
-                  <Feather
-                    name="navigation"
-                    size={20}
-                    color={locationFilter ? "#fff" : colors.primary}
-                  />
-                )}
-              </TouchableOpacity>
-            </View>
+              {/* Vertical Divider */}
+              <View style={styles.fieldDivider} />
 
-            {/* Custom Location Search */}
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <View style={[styles.searchBar, { flex: 1 }]}>
-                <Feather name="map-pin" size={18} color="#7C7C7C" />
+              {/* Location Search input */}
+              <View style={[styles.searchFieldWrap, { flex: 0.8 }]}>
+                <Feather name="map-pin" size={15} color="#10B981" style={styles.fieldIcon} />
                 <TextInput
-                  placeholder="Where? (e.g. New York, London)"
+                  placeholder="Where?"
                   value={locationText}
                   onChangeText={(text) => {
-                    // Prevent editing if it's auto-selected to current location to avoid confusion
                     if (locationText === "My Current Location" && text !== "") {
                       setLocationText("");
                       setLocationFilter(null);
@@ -322,60 +303,80 @@ export default function ListingsFeed() {
                       setLocationText(text);
                     }
                   }}
-                  style={styles.input}
-                  placeholderTextColor="#999"
+                  style={styles.fieldInput}
+                  placeholderTextColor={colors.placeholder}
                 />
-                {locationText.length > 0 && (
+                {locationText.length > 0 ? (
                   <TouchableOpacity
                     onPress={() => {
                       setLocationText("");
                       setLocationFilter(null);
                     }}
+                    style={styles.clearFieldBtn}
                   >
-                    <Feather name="x" size={16} color="#999" />
+                    <Feather name="x" size={14} color={colors.gray} />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={toggleLocationFilter}
+                    disabled={locationLoading}
+                    style={styles.nearMeInlineBtn}
+                  >
+                    {locationLoading ? (
+                      <ActivityIndicator
+                        size="small"
+                        color={colors.primary}
+                      />
+                    ) : (
+                      <Feather
+                        name="navigation"
+                        size={15}
+                        color={locationFilter ? colors.primary : colors.gray}
+                      />
+                    )}
                   </TouchableOpacity>
                 )}
               </View>
             </View>
+          </View>
 
-            {/* Categories */}
-            <View style={styles.categoriesWrapper}>
-              <FlatList
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                data={CATEGORIES}
-                keyExtractor={(item) => item}
-                contentContainerStyle={styles.categoriesList}
-                renderItem={({ item }) => {
-                  const isActive = activeCategory === item;
-                  return (
-                    <TouchableOpacity
+          {/* Categories */}
+          <View style={styles.categoriesWrapper}>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={CATEGORIES}
+              keyExtractor={(item) => item}
+              contentContainerStyle={styles.categoriesList}
+              renderItem={({ item }) => {
+                const isActive = activeCategory === item;
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.categoryItem,
+                      isActive && styles.categoryItemActive,
+                    ]}
+                    onPress={() => setActiveCategory(item)}
+                    activeOpacity={0.8}
+                  >
+                    <Feather
+                      name={CATEGORY_ICONS[item] || "package"}
+                      size={13}
+                      color={isActive ? "#fff" : "#4B5563"}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text
                       style={[
-                        styles.categoryItem,
-                        isActive && styles.categoryItemActive,
+                        styles.categoryText,
+                        isActive && styles.categoryTextActive,
                       ]}
-                      onPress={() => setActiveCategory(item)}
-                      activeOpacity={0.8}
                     >
-                      <Feather
-                        name={CATEGORY_ICONS[item] || "package"}
-                        size={13}
-                        color={isActive ? "#fff" : "#4B5563"}
-                        style={{ marginRight: 6 }}
-                      />
-                      <Text
-                        style={[
-                          styles.categoryText,
-                          isActive && styles.categoryTextActive,
-                        ]}
-                      >
-                        {item}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                }}
-              />
-            </View>
+                      {item}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              }}
+            />
           </View>
 
           {/* Sort + count bar */}
@@ -530,38 +531,58 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   searchSection: {
-    gap: spacing.md,
-    marginBottom: spacing.md,
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 4,
+    marginBottom: 16,
+    zIndex: 100,
+    position: "relative",
   },
-  searchBar: {
+  searchBarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.inputBg,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 10,
+    height: 48,
+  },
+  searchFieldWrap: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.card,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-    borderRadius: radius.md,
-    gap: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
+    height: "100%",
   },
-  nearMeBtn: {
-    width: 48,
-    height: 48,
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.md,
+  fieldIcon: {
+    marginRight: 8,
+  },
+  fieldInput: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: "600",
+    height: "100%",
+    padding: 0,
+  },
+  clearFieldBtn: {
+    padding: 6,
+  },
+  fieldDivider: {
+    width: 1,
+    height: "50%",
+    backgroundColor: colors.border,
+    marginHorizontal: 10,
+  },
+  nearMeInlineBtn: {
+    padding: 6,
     justifyContent: "center",
     alignItems: "center",
-    alignSelf: "center",
-  },
-  nearMeBtnActive: {
-    backgroundColor: colors.primary,
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: colors.text,
-    fontWeight: "500",
   },
   categoriesWrapper: {
     marginHorizontal: -spacing.lg,
@@ -601,6 +622,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginTop: spacing.lg,
     marginBottom: spacing.md,
   },
   resultCount: {
