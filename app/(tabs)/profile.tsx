@@ -1,7 +1,10 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -13,7 +16,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../constants/colors";
 import { radius, shadow, spacing } from "../constants/theme";
-import { deleteMyAccount, fetchReviewStats } from "../utils/apiFunctions";
+import {
+  deleteMyAccount,
+  fetchReviewStats,
+  uploadProfileImage,
+  updatePortfolio,
+} from "../utils/apiFunctions";
 import { useAuth } from "../utils/AuthContext";
 
 type OptionRow = {
@@ -26,14 +34,56 @@ type OptionRow = {
 };
 
 export default function ProfileScreen() {
-  const { logout, user } = useAuth();
+  const { logout, user, updateUser } = useAuth();
   const router = useRouter();
+  const [loadingAvatar, setLoadingAvatar] = useState(false);
   const [stats, setStats] = useState({
     averageRating: 0,
     totalReviews: 0,
     profilePhoto: "",
   });
   const [loadingStats, setLoadingStats] = useState(true);
+
+  const handlePickAvatar = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert("Permission Denied", "We need access to your camera roll to change your avatar.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedImage = result.assets[0];
+        setLoadingAvatar(true);
+        const uploadedUrl = await uploadProfileImage(selectedImage);
+        
+        // Update user profile/portfolio
+        await updatePortfolio({ profilePhoto: uploadedUrl });
+        
+        // Refresh local stats state
+        setStats(prev => ({ ...prev, profilePhoto: uploadedUrl }));
+        
+        // Refresh Auth Context globally
+        if (user) {
+          await updateUser({ ...user, avatar: uploadedUrl });
+        }
+        
+        Alert.alert("Success", "Profile photo updated successfully!");
+      }
+    } catch (err) {
+      console.error("Failed to upload profile photo:", err);
+      Alert.alert("Error", "Failed to update profile photo.");
+    } finally {
+      setLoadingAvatar(false);
+    }
+  };
 
   useEffect(() => {
     const loadStats = async () => {
@@ -162,69 +212,91 @@ export default function ProfileScreen() {
       >
         {/* HEADER */}
         <View style={styles.header}>
-          <View style={styles.avatarWrapper}>
-            {stats.profilePhoto || user?.avatar ? (
-              <Image
-                source={{ uri: stats.profilePhoto || user?.avatar }}
-                style={styles.avatar}
-              />
+          <LinearGradient
+            colors={[colors.primary, colors.primaryDark]}
+            style={styles.coverBanner}
+          />
+          <View style={styles.headerInfoContainer}>
+            <TouchableOpacity
+              onPress={handlePickAvatar}
+              activeOpacity={0.9}
+              style={styles.avatarWrapper}
+              disabled={loadingAvatar}
+            >
+              {loadingAvatar ? (
+                <View style={[styles.avatar, styles.placeholderAvatar, { backgroundColor: colors.skeleton }]}>
+                  <ActivityIndicator color={colors.primary} size="small" />
+                </View>
+              ) : stats.profilePhoto || user?.avatar ? (
+                <Image
+                  source={{ uri: stats.profilePhoto || user?.avatar }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <View style={[styles.avatar, styles.placeholderAvatar]}>
+                  <Text style={styles.placeholderText}>{initial}</Text>
+                </View>
+              )}
+              {user?.isVerified !== false && (
+                <View style={styles.verifiedBadge}>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={22}
+                    color={colors.primary}
+                  />
+                </View>
+              )}
+              <View style={styles.cameraIconBadge}>
+                <Feather name="camera" size={12} color="#fff" />
+              </View>
+            </TouchableOpacity>
+
+            <Text style={styles.name}>{user?.name || "Member"}</Text>
+            {user?.profession ? (
+              <Text style={styles.profession}>{user.profession}</Text>
             ) : (
-              <View style={[styles.avatar, styles.placeholderAvatar]}>
-                <Text style={styles.placeholderText}>{initial}</Text>
-              </View>
-            )}
-            {user?.isVerified !== false && (
-              <View style={styles.verifiedBadge}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={26}
-                  color={colors.primary}
-                />
-              </View>
-            )}
-          </View>
-
-          <Text style={styles.name}>{user?.name || "Member"}</Text>
-          {user?.profession ? (
-            <Text style={styles.profession}>{user.profession}</Text>
-          ) : null}
-
-          <View style={styles.statsContainer}>
-            <TouchableOpacity
-              style={styles.statBox}
-              activeOpacity={0.7}
-              onPress={openReviews}
-            >
-              <Text style={styles.statNumber}>
-                {loadingStats ? "–" : stats.totalReviews}
+              <Text style={[styles.profession, { color: colors.textMuted }]}>
+                No Profession Set
               </Text>
-              <Text style={styles.statLabel}>Reviews</Text>
-            </TouchableOpacity>
+            )}
 
-            <View style={styles.statDivider} />
-
-            <TouchableOpacity
-              style={styles.statBox}
-              activeOpacity={0.7}
-              onPress={openReviews}
-            >
-              <View style={styles.ratingRow}>
+            <View style={styles.statsContainer}>
+              <TouchableOpacity
+                style={styles.statBox}
+                activeOpacity={0.7}
+                onPress={openReviews}
+              >
                 <Text style={styles.statNumber}>
-                  {loadingStats
-                    ? "–"
-                    : stats.averageRating > 0
-                      ? stats.averageRating.toFixed(1)
-                      : "New"}
+                  {loadingStats ? "–" : stats.totalReviews}
                 </Text>
-                <Ionicons
-                  name="star"
-                  size={15}
-                  color={colors.star}
-                  style={{ marginLeft: 4 }}
-                />
-              </View>
-              <Text style={styles.statLabel}>Avg Rating</Text>
-            </TouchableOpacity>
+                <Text style={styles.statLabel}>Reviews</Text>
+              </TouchableOpacity>
+
+              <View style={styles.statDivider} />
+
+              <TouchableOpacity
+                style={styles.statBox}
+                activeOpacity={0.7}
+                onPress={openReviews}
+              >
+                <View style={styles.ratingRow}>
+                  <Text style={styles.statNumber}>
+                    {loadingStats
+                      ? "–"
+                      : stats.averageRating > 0
+                        ? stats.averageRating.toFixed(1)
+                        : "New"}
+                  </Text>
+                  <Ionicons
+                    name="star"
+                    size={15}
+                    color={colors.star}
+                    style={{ marginLeft: 4 }}
+                  />
+                </View>
+                <Text style={styles.statLabel}>Avg Rating</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -312,27 +384,43 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 40,
+    paddingTop: 8,
   },
   header: {
-    alignItems: "center",
     backgroundColor: colors.card,
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.xxl,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    borderRadius: 24,
+    marginHorizontal: spacing.lg,
     marginBottom: spacing.xl,
-    ...shadow.header,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow.card,
+  },
+  coverBanner: {
+    height: 110,
+    width: "100%",
+  },
+  headerInfoContainer: {
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+    marginTop: -50,
   },
   avatarWrapper: {
     position: "relative",
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
   },
   avatar: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     borderWidth: 4,
-    borderColor: colors.card,
+    borderColor: "#fff",
     backgroundColor: colors.skeleton,
   },
   placeholderAvatar: {
@@ -341,61 +429,85 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   placeholderText: {
-    fontSize: 40,
+    fontSize: 36,
     fontWeight: "800",
     color: "#fff",
   },
   verifiedBadge: {
     position: "absolute",
-    bottom: 2,
-    right: 4,
+    top: 2,
+    left: -2,
     backgroundColor: "#fff",
+    borderRadius: 11,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cameraIconBadge: {
+    position: "absolute",
+    bottom: 2,
+    right: -2,
+    backgroundColor: colors.primaryDark,
+    width: 26,
+    height: 26,
     borderRadius: 13,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   name: {
-    fontSize: 23,
+    fontSize: 20,
     fontWeight: "800",
     color: colors.text,
-    marginBottom: 3,
+    marginTop: 4,
+    marginBottom: 2,
   },
   profession: {
-    fontSize: 14.5,
+    fontSize: 13.5,
     color: colors.primary,
-    fontWeight: "600",
-    marginBottom: spacing.lg,
+    fontWeight: "700",
+    marginBottom: spacing.md,
   },
   statsContainer: {
     flexDirection: "row",
-    backgroundColor: colors.inputBg,
-    borderRadius: radius.lg,
+    backgroundColor: colors.primarySoft,
+    borderRadius: 16,
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xxl,
+    paddingHorizontal: spacing.lg,
     alignItems: "center",
-    width: "82%",
+    width: "100%",
   },
   statBox: {
     flex: 1,
     alignItems: "center",
   },
   statNumber: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: colors.text,
+    fontSize: 18,
+    fontWeight: "850",
+    color: colors.primary,
   },
   ratingRow: {
     flexDirection: "row",
     alignItems: "center",
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11.5,
     color: colors.textMuted,
-    marginTop: 3,
-    fontWeight: "500",
+    marginTop: 2,
+    fontWeight: "600",
   },
   statDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: colors.border,
+    width: 1.5,
+    height: 28,
+    backgroundColor: "rgba(74, 108, 247, 0.15)",
   },
   section: {
     backgroundColor: colors.card,
@@ -408,7 +520,7 @@ const styles = StyleSheet.create({
     ...shadow.card,
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: "700",
     color: colors.textMuted,
     marginBottom: spacing.md,
@@ -429,9 +541,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: colors.primarySoft,
     justifyContent: "center",
     alignItems: "center",
@@ -441,12 +553,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   infoLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textMuted,
-    marginBottom: 2,
+    marginBottom: 1,
+    fontWeight: "500",
   },
   infoValue: {
-    fontSize: 15,
+    fontSize: 14.5,
     fontWeight: "600",
     color: colors.text,
   },
@@ -464,9 +577,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   optionIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,
@@ -475,49 +588,55 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   optionText: {
-    fontSize: 15.5,
-    fontWeight: "700",
+    fontSize: 14.5,
+    fontWeight: "750",
     color: colors.text,
     marginBottom: 1,
   },
   optionSubtext: {
-    fontSize: 12.5,
+    fontSize: 12,
     color: colors.textMuted,
   },
   dangerZone: {
     marginHorizontal: spacing.lg,
-    gap: spacing.md,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    ...shadow.card,
   },
   logoutBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.errorSoft,
-    paddingVertical: 15,
+    paddingVertical: 14,
     borderRadius: radius.md,
     gap: 8,
   },
   logoutText: {
     color: colors.error,
-    fontSize: 15.5,
+    fontSize: 15,
     fontWeight: "700",
   },
   deleteBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 13,
-    gap: 8,
+    paddingVertical: 10,
+    gap: 6,
   },
   deleteText: {
     color: colors.textMuted,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
   },
   versionText: {
     textAlign: "center",
     color: colors.gray,
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: "500",
     marginTop: spacing.xl,
   },

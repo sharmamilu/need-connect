@@ -32,6 +32,17 @@ const CATEGORIES = [
   "Other",
 ];
 
+const CATEGORY_ICONS: Record<string, string> = {
+  All: "grid",
+  Electronics: "smartphone",
+  Furniture: "home",
+  Clothing: "shopping-bag",
+  Books: "book-open",
+  Vehicles: "truck",
+  Services: "tool",
+  Other: "package",
+};
+
 type SortKey = "newest" | "priceLow" | "priceHigh";
 const SORTS: { key: SortKey; label: string; icon: keyof typeof Feather.glyphMap }[] = [
   { key: "newest", label: "Newest", icon: "clock" },
@@ -335,24 +346,34 @@ export default function ListingsFeed() {
                 data={CATEGORIES}
                 keyExtractor={(item) => item}
                 contentContainerStyle={styles.categoriesList}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={[
-                      styles.categoryItem,
-                      activeCategory === item && styles.categoryItemActive,
-                    ]}
-                    onPress={() => setActiveCategory(item)}
-                  >
-                    <Text
+                renderItem={({ item }) => {
+                  const isActive = activeCategory === item;
+                  return (
+                    <TouchableOpacity
                       style={[
-                        styles.categoryText,
-                        activeCategory === item && styles.categoryTextActive,
+                        styles.categoryItem,
+                        isActive && styles.categoryItemActive,
                       ]}
+                      onPress={() => setActiveCategory(item)}
+                      activeOpacity={0.8}
                     >
-                      {item}
-                    </Text>
-                  </TouchableOpacity>
-                )}
+                      <Feather
+                        name={CATEGORY_ICONS[item] || "package"}
+                        size={13}
+                        color={isActive ? "#fff" : "#4B5563"}
+                        style={{ marginRight: 6 }}
+                      />
+                      <Text
+                        style={[
+                          styles.categoryText,
+                          isActive && styles.categoryTextActive,
+                        ]}
+                      >
+                        {item}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                }}
               />
             </View>
           </View>
@@ -398,6 +419,8 @@ export default function ListingsFeed() {
             <FlatList
               data={visibleListings}
               keyExtractor={(item) => item._id}
+              numColumns={2}
+              columnWrapperStyle={styles.row}
               renderItem={({ item }) => (
                 <ListingCard
                   data={item}
@@ -549,24 +572,30 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
   },
   categoryItem: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: radius.pill,
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: "#E5E7EB",
+    flexDirection: "row",
+    alignItems: "center",
   },
   categoryItemActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
   categoryText: {
-    fontSize: 13.5,
-    fontWeight: "600",
-    color: colors.textMuted,
+    fontSize: 12.5,
+    fontWeight: "700",
+    color: "#4B5563",
   },
   categoryTextActive: {
     color: "#fff",
+  },
+  row: {
+    justifyContent: "space-between",
+    paddingHorizontal: 2,
   },
   sortBar: {
     flexDirection: "row",

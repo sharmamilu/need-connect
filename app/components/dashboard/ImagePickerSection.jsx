@@ -1,7 +1,10 @@
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { useState } from "react";
 import {
+  Alert,
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,21 +13,63 @@ import {
 } from "react-native";
 
 export default function ImagePickerSection({ images = [], setImages }) {
-  const pickImage = async () => {
+  const [pickerVisible, setPickerVisible] = useState(false);
+
+  const pickImage = () => {
     if (images.length >= 5) {
-      alert("You can only upload up to 5 images");
+      Alert.alert("Limit Reached", "You can only upload up to 5 images");
       return;
     }
+    setPickerVisible(true);
+  };
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsMultipleSelection: true,
-      selectionLimit: 5 - images.length,
-      quality: 0.7,
-    });
+  const handleCameraLaunch = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "We need camera access to take a photo."
+        );
+        return;
+      }
+      let result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        quality: 0.7,
+      });
 
-    if (!result.canceled) {
-      setImages([...images, ...result.assets].slice(0, 5));
+      if (!result.canceled) {
+        setImages([...images, ...result.assets].slice(0, 5));
+      }
+    } catch (error) {
+      console.log("Error taking photo:", error);
+      Alert.alert("Error", "Failed to take photo");
+    }
+  };
+
+  const handleGalleryLaunch = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "We need access to your gallery to upload a photo."
+        );
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        selectionLimit: 5 - images.length,
+        quality: 0.7,
+      });
+
+      if (!result.canceled) {
+        setImages([...images, ...result.assets].slice(0, 5));
+      }
+    } catch (error) {
+      console.log("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick image");
     }
   };
 
@@ -59,6 +104,52 @@ export default function ImagePickerSection({ images = [], setImages }) {
           </TouchableOpacity>
         )}
       </ScrollView>
+
+      <Modal
+        visible={pickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPickerVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setPickerVisible(false)}
+        >
+          <View style={styles.pickerContainer}>
+            <Text style={styles.pickerTitle}>Add Photo</Text>
+            
+            <TouchableOpacity 
+              style={styles.pickerOption} 
+              onPress={() => {
+                setPickerVisible(false);
+                handleCameraLaunch();
+              }}
+            >
+              <Feather name="camera" size={20} color="#3b5bdb" style={{ marginRight: 12 }} />
+              <Text style={styles.pickerOptionText}>Take Photo (Camera)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.pickerOption} 
+              onPress={() => {
+                setPickerVisible(false);
+                handleGalleryLaunch();
+              }}
+            >
+              <Feather name="image" size={20} color="#3b5bdb" style={{ marginRight: 12 }} />
+              <Text style={styles.pickerOptionText}>Choose from Gallery</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.pickerCancelBtn} 
+              onPress={() => setPickerVisible(false)}
+            >
+              <Text style={styles.pickerCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -103,5 +194,48 @@ const styles = StyleSheet.create({
     color: "#3b5bdb",
     marginTop: 4,
     fontWeight: "600",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  pickerContainer: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  pickerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#2D3436",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  pickerOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  pickerOptionText: {
+    fontSize: 16,
+    color: "#2D3436",
+    fontWeight: "600",
+  },
+  pickerCancelBtn: {
+    marginTop: 16,
+    paddingVertical: 14,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  pickerCancelText: {
+    color: "#666",
+    fontWeight: "700",
+    fontSize: 16,
   },
 });

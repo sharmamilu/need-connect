@@ -24,6 +24,7 @@ import HomeHeader from "../components/dashboard/HomeHeader";
 import PostSkeleton from "../components/dashboard/PostSkeleton";
 import QuickActionsStrip from "../components/dashboard/QuickActionsStrip";
 import SuggestedOpportunities from "../components/dashboard/SuggestedOpportunities";
+import MatchedPreferencesSection from "../components/dashboard/MatchedPreferencesSection";
 import PostCard from "../components/post/PostCard";
 import { useAuth } from "../utils/AuthContext";
 import {
@@ -193,6 +194,7 @@ export default function HomeScreen() {
           />
           {showTools && <QuickActionsStrip />}
           <SuggestedOpportunities />
+          <MatchedPreferencesSection />
           {[0, 1, 2].map((i) => (
             <PostSkeleton key={i} />
           ))}
@@ -226,6 +228,7 @@ export default function HomeScreen() {
             />
             {showTools && <QuickActionsStrip onHide={handleToggleTools} />}
             <SuggestedOpportunities />
+            <MatchedPreferencesSection />
             {posts.length > 0 && (
               <FeedControls
                 filter={filter}

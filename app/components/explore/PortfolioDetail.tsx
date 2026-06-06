@@ -23,6 +23,8 @@ import {
 import { useAuth } from "../../utils/AuthContext";
 import ExperienceSection from "../portfolio/ExperienceSection";
 import ReviewModal from "../reviews/ReviewModal";
+import { colors } from "../../constants/colors";
+import SectionCard from "../portfolio/SectionCard";
 
 export default function PortfolioDetail() {
   const { portfolioId } = useLocalSearchParams();
@@ -165,13 +167,15 @@ export default function PortfolioDetail() {
             <Feather name="arrow-left" size={24} color="#333" />
           </TouchableOpacity>
 
-          {/* HEADER */}
-          <View style={styles.header}>
+          {/* HEADER CARD */}
+          <View style={styles.headerCard}>
+            <View style={styles.headerBanner} />
             {portfolio.profilePhoto ? (
               <Image
                 source={{ uri: portfolio.profilePhoto }}
                 style={[
                   styles.avatar,
+                  styles.avatarHasBanner,
                   stats.averageRating > 0 &&
                     stats.averageRating < 2.5 &&
                     styles.lowRatingAvatar,
@@ -181,6 +185,7 @@ export default function PortfolioDetail() {
               <View
                 style={[
                   styles.avatar,
+                  styles.avatarHasBanner,
                   styles.placeholderAvatar,
                   stats.averageRating > 0 &&
                     stats.averageRating < 2.5 &&
@@ -251,7 +256,10 @@ export default function PortfolioDetail() {
               />
             </TouchableOpacity>
 
-            <Text style={styles.location}>{portfolio.location}</Text>
+            <View style={styles.locationBadge}>
+              <Feather name="map-pin" size={12} color={colors.textMuted} style={{ marginRight: 4 }} />
+              <Text style={styles.locationText}>{portfolio.location}</Text>
+            </View>
 
             {isOwner &&
               stats.averageRating > 0 &&
@@ -278,23 +286,23 @@ export default function PortfolioDetail() {
 
           {/* BIO */}
           {!!portfolio.bio && (
-            <Section title="About">
+            <SectionCard icon="user" title="About">
               <Text style={styles.text}>{portfolio.bio}</Text>
-            </Section>
+            </SectionCard>
           )}
 
           {/* SERVICES */}
           {portfolio.services?.length > 0 && (
-            <Section title="Services">
+            <SectionCard icon="briefcase" title="Services" count={portfolio.services.length}>
               <TagList data={portfolio.services} />
-            </Section>
+            </SectionCard>
           )}
 
           {/* SKILLS */}
           {portfolio.skills?.length > 0 && (
-            <Section title="Skills">
+            <SectionCard icon="award" title="Skills" count={portfolio.skills.length}>
               <TagList data={portfolio.skills} />
-            </Section>
+            </SectionCard>
           )}
 
           {/* EXPERIENCE */}
@@ -309,7 +317,7 @@ export default function PortfolioDetail() {
 
           {/* GALLERY */}
           {portfolio.gallery?.length > 0 && (
-            <Section title="Portfolio">
+            <SectionCard icon="image" title="Portfolio" count={portfolio.gallery.length}>
               <View style={styles.gallery}>
                 {portfolio.gallery.map((img: string, idx: number) => (
                   <TouchableOpacity
@@ -322,7 +330,7 @@ export default function PortfolioDetail() {
                   </TouchableOpacity>
                 ))}
               </View>
-            </Section>
+            </SectionCard>
           )}
 
           {/* LIGHTBOX MODAL */}
@@ -394,7 +402,7 @@ export default function PortfolioDetail() {
 
           {/* LINKS */}
           {Object.keys(portfolio.links || {}).length > 0 && (
-            <Section title="Social Links">
+            <SectionCard icon="globe" title="Social Links">
               {Object.entries(portfolio.links)
                 .filter(([, url]) => !!url)
                 .map(([key, url]) => (
@@ -414,12 +422,12 @@ export default function PortfolioDetail() {
                     </Text>
                   </TouchableOpacity>
                 ))}
-            </Section>
+            </SectionCard>
           )}
 
           {/* CONTACT INFO */}
           {(portfolio.contact?.phone || portfolio.email) && (
-            <Section title="Contact">
+            <SectionCard icon="mail" title="Contact">
               {portfolio.contact?.phone && (
                 <TouchableOpacity
                   style={styles.contactRow}
@@ -466,7 +474,7 @@ export default function PortfolioDetail() {
                   />
                 </TouchableOpacity>
               )}
-            </Section>
+            </SectionCard>
           )}
 
           {/* FOOTER SPACER */}
@@ -535,21 +543,6 @@ export default function PortfolioDetail() {
   );
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {children}
-    </View>
-  );
-}
-
 function TagList({ data }: { data: string[] }) {
   return (
     <View style={styles.tags}>
@@ -573,22 +566,46 @@ const styles = StyleSheet.create({
     padding: 16,
   },
 
-  header: {
+  headerCard: {
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 24,
     alignItems: "center",
-    marginBottom: 24,
-    marginTop: 10,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 3,
+    position: "relative",
+    overflow: "hidden",
+  },
+  headerBanner: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 70,
+    backgroundColor: colors.primarySoft,
   },
 
   backButton: {
-    marginBottom: 20,
-    marginTop: 10,
+    marginBottom: 16,
+    marginTop: 8,
   },
 
   avatar: {
     width: 96,
     height: 96,
     borderRadius: 48,
-    marginBottom: 10,
+    marginBottom: 12,
+  },
+  avatarHasBanner: {
+    marginTop: 20,
+    borderWidth: 3,
+    borderColor: "#fff",
   },
   placeholderAvatar: {
     backgroundColor: "#4A6CF7",
@@ -608,19 +625,21 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "800",
+    color: colors.text,
   },
   profession: {
     fontSize: 14,
     color: "#4A6CF7",
-    marginTop: 4,
+    fontWeight: "700",
+    marginTop: 2,
   },
   ratingRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 2,
-    marginTop: 4,
-    marginBottom: 4,
+    marginTop: 6,
+    marginBottom: 6,
   },
   ratingText: {
     marginLeft: 6,
@@ -629,15 +648,25 @@ const styles = StyleSheet.create({
     color: "#555",
   },
   lowRatingAvatar: {
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: "#FF4757",
   },
   lowRatingText: {
     color: "#FF4757",
   },
-  location: {
-    fontSize: 13,
-    color: "#777",
+  locationBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  locationText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    fontWeight: "600",
   },
   warningBanner: {
     marginTop: 12,
@@ -675,19 +704,9 @@ const styles = StyleSheet.create({
     color: "#4A6CF7",
   },
 
-  section: {
-    marginBottom: 22,
-  },
-
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 10,
-  },
-
   text: {
-    fontSize: 14,
-    color: "#555",
+    fontSize: 14.5,
+    color: "#4B5563",
     lineHeight: 22,
   },
 
@@ -707,6 +726,7 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 12,
     color: "#4A6CF7",
+    fontWeight: "700",
   },
 
   gallery: {

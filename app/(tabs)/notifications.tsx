@@ -1,8 +1,10 @@
 import { Feather } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  DeviceEventEmitter,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -48,8 +50,8 @@ export default function NotificationsScreen() {
         fetchAdminListings({ status: "pending", limit: 1 }),
       ]);
 
-      const pendingPostsCount = postsRes.data?.pagination?.total || 0;
-      const pendingListingsCount = listingsRes.data?.pagination?.total || 0;
+      const pendingPostsCount = postsRes.data?.count ?? postsRes.data?.pagination?.total ?? (postsRes.data?.data?.length || 0);
+      const pendingListingsCount = listingsRes.data?.count ?? listingsRes.data?.pagination?.total ?? (listingsRes.data?.data?.length || 0);
 
       const adminNotifs = [];
 
@@ -109,7 +111,22 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     loadNotifications();
-  }, [loadNotifications]);
+
+    if (!isAdmin) {
+      const markWelcomeAsRead = async () => {
+        try {
+          await AsyncStorage.setItem("welcome_notif_read", "true");
+          DeviceEventEmitter.emit("NotificationRefresh");
+        } catch (err) {
+          console.error("Failed to mark notification as read:", err);
+        }
+      };
+      markWelcomeAsRead();
+    }
+
+    const sub = DeviceEventEmitter.addListener("NotificationRefresh", loadNotifications);
+    return () => sub.remove();
+  }, [loadNotifications, isAdmin]);
 
   const onRefresh = () => {
     setRefreshing(true);

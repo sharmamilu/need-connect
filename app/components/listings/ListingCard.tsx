@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import {
   Alert,
   Image,
@@ -15,13 +16,14 @@ import { useAuth } from "../../utils/AuthContext";
 
 const TYPE_STYLES: Record<string, { label: string; color: string }> = {
   Free: { label: "FREE", color: colors.success },
-  Donate: { label: "DONATE", color: "#9333EA" },
+  Donate: { label: "DONATED", color: "#9333EA" },
   Sell: { label: "FOR SALE", color: colors.primary },
 };
 
 export default function ListingCard({ data, onDeleteSuccess }: any) {
   const router = useRouter();
   const { user } = useAuth();
+  const [isFavorite, setIsFavorite] = useState(false);
 
   const currentUserId = user?._id || user?.id;
   const authorId =
@@ -36,8 +38,8 @@ export default function ListingCard({ data, onDeleteSuccess }: any) {
   const isFreeType =
     data.listingType === "Free" || data.listingType === "Donate";
   const priceDisplay = isFreeType
-    ? data.listingType
-    : data.price || "Contact for price";
+    ? data.listingType === "Free" ? "FREE" : "DONATE"
+    : data.price || "Contact";
   const typeStyle = TYPE_STYLES[data.listingType] || TYPE_STYLES.Sell;
 
   const status = (data.status || "").toLowerCase();
@@ -74,17 +76,40 @@ export default function ListingCard({ data, onDeleteSuccess }: any) {
           <Image source={{ uri: data.images[0] }} style={styles.image} />
         ) : (
           <View style={[styles.image, styles.placeholderImage]}>
-            <Feather name="image" size={26} color={colors.gray} />
+            <Feather name="image" size={24} color={colors.gray} />
           </View>
         )}
 
+        {/* Dynamic Type Badge */}
         <View style={[styles.typeBadge, { backgroundColor: typeStyle.color }]}>
           <Text style={styles.typeBadgeText}>{typeStyle.label}</Text>
         </View>
 
+        {/* Favorite Heart Trigger */}
+        <TouchableOpacity
+          style={styles.favoriteBtn}
+          onPress={() => setIsFavorite(!isFavorite)}
+          activeOpacity={0.8}
+        >
+          <Feather
+            name="heart"
+            size={15}
+            color={isFavorite ? "#EF4444" : "#4B5563"}
+            style={isFavorite ? { fill: "#EF4444" } : null}
+          />
+        </TouchableOpacity>
+
+        {/* Floating Price Tag */}
+        <View style={styles.priceTag}>
+          <Text style={[styles.priceText, isFreeType && styles.freePriceText]} numberOfLines={1}>
+            {priceDisplay}
+          </Text>
+        </View>
+
+        {/* Photo Count */}
         {data.images && data.images.length > 1 && (
           <View style={styles.photoCount}>
-            <Feather name="image" size={11} color="#fff" />
+            <Feather name="camera" size={10} color="#fff" />
             <Text style={styles.photoCountText}>{data.images.length}</Text>
           </View>
         )}
@@ -95,7 +120,7 @@ export default function ListingCard({ data, onDeleteSuccess }: any) {
             onPress={handleDelete}
             hitSlop={8}
           >
-            <Feather name="trash-2" size={16} color={colors.error} />
+            <Feather name="trash-2" size={14} color={colors.error} />
           </TouchableOpacity>
         )}
       </View>
@@ -103,14 +128,14 @@ export default function ListingCard({ data, onDeleteSuccess }: any) {
       {/* STATUS BANNERS (owner only) */}
       {status === "pending" && isOwner && (
         <View style={[styles.statusBanner, styles.pendingBanner]}>
-          <Feather name="clock" size={15} color="#B45309" />
+          <Feather name="clock" size={12} color="#B45309" />
           <Text style={styles.pendingText}>In review</Text>
         </View>
       )}
       {status === "rejected" && isOwner && (
         <View style={[styles.statusBanner, styles.rejectedBanner]}>
           <View style={styles.rejectedHeader}>
-            <Feather name="alert-circle" size={15} color={colors.error} />
+            <Feather name="alert-circle" size={12} color={colors.error} />
             <Text style={styles.rejectedTitle}>Rejected</Text>
           </View>
           <Text style={styles.rejectedReason} numberOfLines={2}>
@@ -121,31 +146,17 @@ export default function ListingCard({ data, onDeleteSuccess }: any) {
 
       {/* CONTENT */}
       <View style={styles.content}>
-        <View style={styles.headerRow}>
-          <Text style={styles.title} numberOfLines={1}>
-            {data.title}
-          </Text>
-          <Text style={[styles.price, isFreeType && styles.freePrice]} numberOfLines={1}>
-            {priceDisplay}
-          </Text>
-        </View>
+        <Text style={styles.title} numberOfLines={1}>
+          {data.title}
+        </Text>
 
-        <View style={styles.metaRow}>
-          {data.category ? (
-            <View style={styles.metaChip}>
-              <Text style={styles.metaChipText}>{data.category}</Text>
-            </View>
-          ) : null}
-          {data.condition ? (
-            <View style={styles.metaChip}>
-              <Text style={styles.metaChipText}>{data.condition}</Text>
-            </View>
-          ) : null}
-        </View>
+        <Text style={styles.categorySubText} numberOfLines={1}>
+          {data.category || "General"} • {data.condition || "Good"}
+        </Text>
 
         {(data.address || data.location) && (
           <View style={styles.locationContainer}>
-            <Feather name="map-pin" size={12} color={colors.gray} />
+            <Feather name="map-pin" size={11} color={colors.gray} />
             <Text style={styles.locationText} numberOfLines={1}>
               {data.address || data.location}
             </Text>
@@ -169,8 +180,8 @@ export default function ListingCard({ data, onDeleteSuccess }: any) {
           </View>
           <Text style={styles.timeText}>
             {data.createdAt
-              ? new Date(data.createdAt).toLocaleDateString()
-              : "Just now"}
+              ? new Date(data.createdAt).toLocaleDateString([], { month: "short", day: "numeric" })
+              : "Now"}
           </Text>
         </View>
       </View>
@@ -181,71 +192,118 @@ export default function ListingCard({ data, onDeleteSuccess }: any) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    marginBottom: spacing.lg,
+    borderRadius: 18,
+    marginBottom: 12,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: "#E5E7EB",
+    flex: 1,
+    maxWidth: "48.5%", // Prevents single grid items from stretching full-width
     ...shadow.card,
   },
   imageWrap: {
     position: "relative",
+    width: "100%",
+    height: 135,
   },
   image: {
     width: "100%",
-    height: 190,
+    height: "100%",
     backgroundColor: colors.skeleton,
   },
   placeholderImage: {
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#F3F4F6",
   },
   typeBadge: {
     position: "absolute",
-    top: spacing.md,
-    left: spacing.md,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
+    top: 8,
+    left: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    zIndex: 10,
   },
   typeBadgeText: {
     color: "#fff",
-    fontSize: 10.5,
-    fontWeight: "800",
-    letterSpacing: 0.5,
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 0.3,
+  },
+  favoriteBtn: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  priceTag: {
+    position: "absolute",
+    bottom: 8,
+    left: 8,
+    backgroundColor: "rgba(17, 24, 39, 0.85)", // Dark glassmorphism tag
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  priceText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  freePriceText: {
+    color: "#34D399", // bright green for free items
   },
   photoCount: {
     position: "absolute",
-    bottom: spacing.md,
-    right: spacing.md,
+    bottom: 8,
+    right: 8,
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    paddingHorizontal: 8,
+    gap: 3,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 6,
     paddingVertical: 3,
-    borderRadius: radius.pill,
+    borderRadius: 6,
+    zIndex: 10,
   },
   photoCountText: {
     color: "#fff",
-    fontSize: 11,
-    fontWeight: "700",
+    fontSize: 9,
+    fontWeight: "800",
   },
   deleteFloatBtn: {
     position: "absolute",
-    top: spacing.md,
-    right: spacing.md,
+    top: 40,
+    right: 8,
     backgroundColor: "rgba(255,255,255,0.95)",
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    ...shadow.card,
+    zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   statusBanner: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
@@ -253,85 +311,56 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FEF3C7",
-    gap: 6,
+    gap: 4,
   },
   pendingText: {
     color: "#B45309",
-    fontSize: 12.5,
+    fontSize: 11,
     fontWeight: "700",
   },
   rejectedBanner: {
     backgroundColor: colors.errorSoft,
-    borderLeftWidth: 4,
+    borderLeftWidth: 3,
     borderLeftColor: colors.error,
   },
   rejectedHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 4,
     marginBottom: 2,
   },
   rejectedTitle: {
     color: colors.error,
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: "700",
   },
   rejectedReason: {
     color: "#7F1D1D",
-    fontSize: 12.5,
+    fontSize: 10.5,
   },
   content: {
-    padding: spacing.md,
-  },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+    padding: 10,
   },
   title: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
-    flex: 1,
-  },
-  price: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "800",
-    color: colors.primary,
-    maxWidth: "42%",
-    textAlign: "right",
+    color: "#1F2937",
+    marginBottom: 2,
   },
-  freePrice: {
-    color: colors.success,
-  },
-  metaRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginBottom: spacing.sm,
-  },
-  metaChip: {
-    backgroundColor: colors.inputBg,
-    borderRadius: radius.sm,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  metaChipText: {
-    fontSize: 11.5,
-    color: colors.textMuted,
+  categorySubText: {
+    fontSize: 11,
+    color: "#6B7280",
     fontWeight: "600",
   },
   locationContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    marginBottom: spacing.md,
+    gap: 3,
+    marginTop: 4,
   },
   locationText: {
-    fontSize: 12.5,
-    color: colors.textMuted,
+    fontSize: 11,
+    color: "#9CA3AF",
     flex: 1,
   },
   footerRow: {
@@ -339,19 +368,20 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.md,
+    borderTopColor: "#F3F4F6",
+    paddingTop: 8,
+    marginTop: 8,
   },
   sellerHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 5,
     flex: 1,
   },
   userAvatar: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: colors.skeleton,
   },
   userPlaceholder: {
@@ -360,18 +390,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   userInitial: {
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: 9,
+    fontWeight: "800",
     color: colors.primary,
   },
   userName: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: "600",
-    color: colors.textMuted,
+    color: "#4B5563",
     flex: 1,
   },
   timeText: {
-    fontSize: 11.5,
-    color: colors.gray,
+    fontSize: 10.5,
+    color: "#9CA3AF",
   },
 });

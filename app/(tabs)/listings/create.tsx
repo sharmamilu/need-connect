@@ -8,6 +8,7 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -17,6 +18,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { colors } from "../../constants/colors";
+import { radius, shadow, spacing } from "../../constants/theme";
 import { createListing, uploadListingImages } from "../../utils/apiFunctions";
 
 const CATEGORIES = [
@@ -30,6 +33,12 @@ const CATEGORIES = [
 ];
 const TYPES = ["Sell", "Donate", "Free"];
 const CONDITIONS = ["New", "Like New", "Used"];
+const CURRENCIES = [
+  { symbol: "$", code: "USD" },
+  { symbol: "₹", code: "INR" },
+  { symbol: "£", code: "GBP" },
+  { symbol: "€", code: "EUR" },
+];
 
 export default function CreateListing() {
   const router = useRouter();
@@ -40,17 +49,57 @@ export default function CreateListing() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [address, setAddress] = useState("");
-  const [contactInfo, setContactInfo] = useState("");
+  const [contactMethod, setContactMethod] = useState<"phone" | "email" | "both">("phone");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [condition, setCondition] = useState(CONDITIONS[0]);
   const [images, setImages] = useState<any[]>([]);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
+  const [currency, setCurrency] = useState(CURRENCIES[0]);
 
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [pickerVisible, setPickerVisible] = useState(false);
 
-  const pickImage = async () => {
+  const pickImage = () => {
+    setPickerVisible(true);
+  };
+
+  const handleCameraLaunch = async () => {
     try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "We need camera access to take a photo of your item."
+        );
+        return;
+      }
+      let result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        setImages((prev) => [...prev, ...result.assets].slice(0, 10));
+      }
+    } catch (error) {
+      console.log("Error taking photo:", error);
+      Alert.alert("Error", "Failed to take photo");
+    }
+  };
+
+  const handleGalleryLaunch = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "We need access to your gallery to pick photos of your item."
+        );
+        return;
+      }
       let result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsMultipleSelection: true,
@@ -58,7 +107,7 @@ export default function CreateListing() {
       });
 
       if (!result.canceled) {
-        setImages((prev) => [...prev, ...result.assets].slice(0, 10)); // Cap at 10 images
+        setImages((prev) => [...prev, ...result.assets].slice(0, 10));
       }
     } catch (error) {
       console.log("Error picking image:", error);
@@ -115,10 +164,27 @@ export default function CreateListing() {
   };
 
   const handleSubmit = async () => {
-    if (!title || !description || !address || !contactInfo) {
+    if (!title || !description || !address) {
       Alert.alert("Missing Fields", "Please fill in all required fields.");
       return;
     }
+
+    const normalizedPhone = phone.trim();
+    const normalizedEmail = email.trim();
+
+    if (!normalizedPhone && !normalizedEmail) {
+      Alert.alert(
+        "Contact Information",
+        "Please enter at least a Phone Number or an Email Address for buyers to reach you."
+      );
+      return;
+    }
+
+    if (normalizedEmail && !/\S+@\S+\.\S+/.test(normalizedEmail)) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      return;
+    }
+
     if (listingType === "Sell" && !price) {
       Alert.alert("Missing Fields", "Please enter a price to sell your item.");
       return;
@@ -129,18 +195,22 @@ export default function CreateListing() {
 
       let imageUrls: string[] = [];
       if (images.length > 0) {
-        // First upload the images using the FormData API
         imageUrls = await uploadListingImages(images);
       }
+
+      const contactParts = [];
+      if (normalizedPhone) contactParts.push(`Phone: ${normalizedPhone}`);
+      if (normalizedEmail) contactParts.push(`Email: ${normalizedEmail}`);
+      const contactInfoValue = contactParts.join(" | ");
 
       const payload: any = {
         title,
         category,
         listingType,
-        price: listingType === "Sell" ? price : "Free",
+        price: listingType === "Sell" ? `${currency.symbol}${price}` : "Free",
         description,
         address,
-        contactInfo,
+        contactInfo: contactInfoValue,
         condition,
         images: imageUrls,
       };
@@ -150,7 +220,6 @@ export default function CreateListing() {
         payload.lng = lng;
       }
 
-      // Create the listing
       await createListing(payload);
       Alert.alert(
         "Success",
@@ -176,7 +245,7 @@ export default function CreateListing() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Feather name="arrow-left" size={24} color="#2D3436" />
+          <Feather name="arrow-left" size={24} color="#1F2937" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Create Listing</Text>
         <View style={{ width: 24 }} />
@@ -185,196 +254,344 @@ export default function CreateListing() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={100}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Images */}
-          <Text style={styles.sectionTitle}>Photos ({images.length}/10)</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.imageScrollContainer}
-          >
-            {images.map((img, index) => (
-              <View key={index} style={styles.imagePreviewWrapper}>
-                <Image source={{ uri: img.uri }} style={styles.imagePreview} />
-                <TouchableOpacity
-                  style={styles.removeImageBtn}
-                  onPress={() => removeImage(index)}
-                >
-                  <Feather name="x" size={14} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            ))}
-            {images.length < 10 && (
-              <TouchableOpacity style={styles.addImageBtn} onPress={pickImage}>
-                <Feather name="camera" size={24} color="#4A6CF7" />
-                <Text style={styles.addImageText}>Add Photo</Text>
-              </TouchableOpacity>
-            )}
-          </ScrollView>
-
-          {/* Title */}
-          <Text style={styles.label}>Title *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="What are you offering?"
-            placeholderTextColor="#999"
-            value={title}
-            onChangeText={setTitle}
-            maxLength={60}
-          />
-
-          {/* Listing Type */}
-          <Text style={styles.label}>Listing Type</Text>
-          <View style={styles.rowSelectors}>
-            {TYPES.map((type) => (
-              <TouchableOpacity
-                key={type}
-                style={[
-                  styles.selectorButton,
-                  listingType === type && styles.selectorButtonActive,
-                ]}
-                onPress={() => setListingType(type)}
-              >
-                <Text
-                  style={[
-                    styles.selectorText,
-                    listingType === type && styles.selectorTextActive,
-                  ]}
-                >
-                  {type}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Price */}
-          {listingType === "Sell" && (
-            <View>
-              <Text style={styles.label}>Price / Offer *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="E.g., $100, 50 EUR, or Best Offer"
-                placeholderTextColor="#999"
-                value={price}
-                onChangeText={setPrice}
-              />
-            </View>
-          )}
-
-          {/* Category */}
-          <Text style={styles.label}>Category</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipScroll}
-          >
-            {CATEGORIES.map((cat) => (
-              <TouchableOpacity
-                key={cat}
-                style={[
-                  styles.chipButton,
-                  category === cat && styles.chipButtonActive,
-                ]}
-                onPress={() => setCategory(cat)}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    category === cat && styles.chipTextActive,
-                  ]}
-                >
-                  {cat}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          {/* Condition */}
-          <Text style={styles.label}>Condition</Text>
-          <View style={styles.rowSelectors}>
-            {CONDITIONS.map((cond) => (
-              <TouchableOpacity
-                key={cond}
-                style={[
-                  styles.selectorButton,
-                  condition === cond && styles.selectorButtonActive,
-                ]}
-                onPress={() => setCondition(cond)}
-              >
-                <Text
-                  style={[
-                    styles.selectorText,
-                    condition === cond && styles.selectorTextActive,
-                  ]}
-                >
-                  {cond}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Description */}
-          <Text style={styles.label}>Description *</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Describe the item, features, and reason for listing..."
-            placeholderTextColor="#999"
-            multiline
-            numberOfLines={4}
-            value={description}
-            onChangeText={setDescription}
-            textAlignVertical="top"
-          />
-
-          {/* Address */}
-          <View style={styles.addressHeader}>
-            <Text style={[styles.label, { marginTop: 0, marginBottom: 0 }]}>
-              Complete Address *
-            </Text>
-            <TouchableOpacity
-              style={styles.locationBtn}
-              onPress={useCurrentLocation}
-              disabled={locationLoading}
+          
+          {/* Photos Upload Card */}
+          <View style={styles.formCard}>
+            <Text style={styles.cardHeaderTitle}>Photos ({images.length}/10)</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.imageScrollContainer}
             >
-              {locationLoading ? (
-                <ActivityIndicator size="small" color="#4A6CF7" />
-              ) : (
-                <>
-                  <Feather name="navigation" size={14} color="#4A6CF7" />
-                  <Text style={styles.locationBtnText}>Use My Location</Text>
-                </>
+              {images.map((img, index) => (
+                <View key={index} style={styles.imagePreviewWrapper}>
+                  <Image source={{ uri: img.uri }} style={styles.imagePreview} />
+                  <TouchableOpacity
+                    style={styles.removeImageBtn}
+                    onPress={() => removeImage(index)}
+                  >
+                    <Feather name="x" size={12} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              {images.length < 10 && (
+                <TouchableOpacity style={styles.addImageBtn} onPress={pickImage}>
+                  <Feather name="camera" size={22} color={colors.primary} />
+                  <Text style={styles.addImageText}>Add Photo</Text>
+                </TouchableOpacity>
               )}
-            </TouchableOpacity>
+            </ScrollView>
           </View>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="E.g., 123 Main St, Apt 4B, City, Country"
-            placeholderTextColor="#999"
-            multiline
-            numberOfLines={3}
-            value={address}
-            onChangeText={setAddress}
-            textAlignVertical="top"
-          />
 
-          {/* Contact Info */}
-          <Text style={styles.label}>Contact Information *</Text>
-          <TextInput
-            style={[styles.input, { marginBottom: 30 }]}
-            placeholder="Phone number, email, or preferred contact"
-            placeholderTextColor="#999"
-            value={contactInfo}
-            onChangeText={setContactInfo}
-          />
+          {/* Item Details Card */}
+          <View style={styles.formCard}>
+            <Text style={styles.cardHeaderTitle}>Item Details</Text>
+            
+            <Text style={styles.label}>Title *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="What are you offering?"
+              placeholderTextColor="#9CA3AF"
+              value={title}
+              onChangeText={setTitle}
+              maxLength={60}
+            />
 
-          {/* Disclaimer / Warning */}
+            <Text style={styles.label}>Category</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipScroll}
+            >
+              {CATEGORIES.map((cat) => {
+                const isActive = category === cat;
+                const catIcons: Record<string, string> = {
+                  Electronics: "smartphone",
+                  Furniture: "home",
+                  Clothing: "shopping-bag",
+                  Books: "book-open",
+                  Vehicles: "truck",
+                  Services: "tool",
+                  Other: "package",
+                };
+                return (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[
+                      styles.chipButton,
+                      isActive && styles.chipButtonActive,
+                    ]}
+                    onPress={() => setCategory(cat)}
+                    activeOpacity={0.8}
+                  >
+                    <Feather
+                      name={catIcons[cat] || "package"}
+                      size={12}
+                      color={isActive ? "#fff" : "#4B5563"}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text
+                      style={[
+                        styles.chipText,
+                        isActive && styles.chipTextActive,
+                      ]}
+                    >
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            <Text style={styles.label}>Condition</Text>
+            <View style={styles.rowSelectors}>
+              {CONDITIONS.map((cond) => {
+                const isActive = condition === cond;
+                const condIcons: Record<string, string> = {
+                  New: "star",
+                  "Like New": "thumbs-up",
+                  Used: "refresh-cw",
+                };
+                return (
+                  <TouchableOpacity
+                    key={cond}
+                    style={[
+                      styles.selectorButton,
+                      isActive && styles.selectorButtonActive,
+                    ]}
+                    onPress={() => setCondition(cond)}
+                    activeOpacity={0.8}
+                  >
+                    <Feather
+                      name={condIcons[cond] as any}
+                      size={13}
+                      color={isActive ? "#fff" : "#4B5563"}
+                    />
+                    <Text
+                      style={[
+                        styles.selectorText,
+                        isActive && styles.selectorTextActive,
+                      ]}
+                    >
+                      {cond}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Text style={styles.label}>Description *</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Describe the item condition, features, and specs..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              numberOfLines={4}
+              value={description}
+              onChangeText={setDescription}
+              textAlignVertical="top"
+            />
+          </View>
+
+          {/* Pricing & Type Card */}
+          <View style={styles.formCard}>
+            <Text style={styles.cardHeaderTitle}>Pricing & Listing Type</Text>
+            
+            <Text style={styles.label}>Select Option</Text>
+            <View style={styles.rowSelectors}>
+              {TYPES.map((type) => {
+                const isActive = listingType === type;
+                const typeIcons: Record<string, string> = {
+                  Sell: "tag",
+                  Donate: "gift",
+                  Free: "smile",
+                };
+                return (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.selectorButton,
+                      isActive && styles.selectorButtonActive,
+                    ]}
+                    onPress={() => setListingType(type)}
+                    activeOpacity={0.8}
+                  >
+                    <Feather
+                      name={typeIcons[type] as any}
+                      size={13}
+                      color={isActive ? "#fff" : "#4B5563"}
+                    />
+                    <Text
+                      style={[
+                        styles.selectorText,
+                        isActive && styles.selectorTextActive,
+                      ]}
+                    >
+                      {type}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {listingType === "Sell" && (
+              <View style={{ marginTop: 12 }}>
+                <Text style={styles.label}>Price / Offer *</Text>
+                
+                {/* Currency select chips */}
+                <View style={styles.currencyChips}>
+                  {CURRENCIES.map((c) => {
+                    const isActive = currency.symbol === c.symbol;
+                    return (
+                      <TouchableOpacity
+                        key={c.code}
+                        style={[
+                          styles.currencyChip,
+                          isActive && styles.currencyChipActive,
+                        ]}
+                        onPress={() => setCurrency(c)}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={[
+                            styles.currencyChipText,
+                            isActive && styles.currencyChipTextActive,
+                          ]}
+                        >
+                          {c.symbol} {c.code}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <View style={styles.priceInputRow}>
+                  <Text style={styles.priceCurrency}>{currency.symbol}</Text>
+                  <TextInput
+                    style={styles.priceInput}
+                    placeholder="0.00"
+                    placeholderTextColor="#9CA3AF"
+                    keyboardType="numeric"
+                    value={price}
+                    onChangeText={setPrice}
+                  />
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* Location & Contact Card */}
+          <View style={styles.formCard}>
+            <Text style={styles.cardHeaderTitle}>Location & Contact</Text>
+            
+            <View style={styles.addressHeader}>
+              <Text style={styles.label}>Address *</Text>
+              <TouchableOpacity
+                style={styles.locationBtn}
+                onPress={useCurrentLocation}
+                disabled={locationLoading}
+                activeOpacity={0.7}
+              >
+                {locationLoading ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <>
+                    <Feather name="navigation" size={12} color={colors.primary} />
+                    <Text style={styles.locationBtnText}>Use My Location</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              style={[styles.input, styles.textArea, { minHeight: 80 }]}
+              placeholder="E.g., Apartment, Street, City, Country"
+              placeholderTextColor="#9CA3AF"
+              multiline
+              numberOfLines={3}
+              value={address}
+              onChangeText={setAddress}
+              textAlignVertical="top"
+            />
+
+            <Text style={styles.label}>Preferred Contact Method</Text>
+            <View style={styles.rowSelectors}>
+              {["Phone", "Email", "Both"].map((method) => {
+                const value = method.toLowerCase() as "phone" | "email" | "both";
+                const isActive = contactMethod === value;
+                const methodIcons: Record<string, string> = {
+                  phone: "phone",
+                  email: "mail",
+                  both: "layers",
+                };
+                return (
+                  <TouchableOpacity
+                    key={method}
+                    style={[
+                      styles.selectorButton,
+                      isActive && styles.selectorButtonActive,
+                    ]}
+                    onPress={() => setContactMethod(value)}
+                    activeOpacity={0.8}
+                  >
+                    <Feather
+                      name={methodIcons[value] as any}
+                      size={13}
+                      color={isActive ? "#fff" : "#4B5563"}
+                    />
+                    <Text
+                      style={[
+                        styles.selectorText,
+                        isActive && styles.selectorTextActive,
+                      ]}
+                    >
+                      {method}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Conditionally render inputs */}
+            {(contactMethod === "phone" || contactMethod === "both") && (
+              <View style={{ marginTop: 12 }}>
+                <Text style={styles.label}>Phone Number</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="E.g., +1 234 567 8900"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="phone-pad"
+                  value={phone}
+                  onChangeText={setPhone}
+                />
+              </View>
+            )}
+
+            {(contactMethod === "email" || contactMethod === "both") && (
+              <View style={{ marginTop: 12 }}>
+                <Text style={styles.label}>Email Address</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="E.g., contact@domain.com"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+              </View>
+            )}
+          </View>
+
+          {/* Warning Disclaimer */}
           <View style={styles.disclaimerContainer}>
             <Feather
               name="alert-circle"
-              size={20}
-              color="#FF9800"
+              size={18}
+              color="#D97706"
               style={styles.disclaimerIcon}
             />
             <Text style={styles.disclaimerText}>
@@ -385,6 +602,7 @@ export default function CreateListing() {
             </Text>
           </View>
 
+          {/* Submit Action */}
           <TouchableOpacity
             style={[
               styles.submitButton,
@@ -392,15 +610,63 @@ export default function CreateListing() {
             ]}
             onPress={handleSubmit}
             disabled={loading}
+            activeOpacity={0.8}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.submitButtonText}>Post Listing</Text>
+              <Text style={styles.submitButtonText}>Publish Listing</Text>
             )}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Image Source Selection Modal */}
+      <Modal
+        visible={pickerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPickerVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setPickerVisible(false)}
+        >
+          <View style={styles.pickerContainer}>
+            <Text style={styles.pickerTitle}>Add Photo</Text>
+            
+            <TouchableOpacity 
+              style={styles.pickerOption} 
+              onPress={() => {
+                setPickerVisible(false);
+                handleCameraLaunch();
+              }}
+            >
+              <Feather name="camera" size={20} color={colors.primary} style={{ marginRight: 12 }} />
+              <Text style={styles.pickerOptionText}>Take Photo (Camera)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.pickerOption} 
+              onPress={() => {
+                setPickerVisible(false);
+                handleGalleryLaunch();
+              }}
+            >
+              <Feather name="image" size={20} color={colors.primary} style={{ marginRight: 12 }} />
+              <Text style={styles.pickerOptionText}>Choose from Gallery</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.pickerCancelBtn} 
+              onPress={() => setPickerVisible(false)}
+            >
+              <Text style={styles.pickerCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -408,16 +674,17 @@ export default function CreateListing() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F9FAFB",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 14,
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
+    borderBottomColor: "#E5E7EB",
   },
   backButton: {
     padding: 4,
@@ -425,22 +692,32 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#2D3436",
+    fontWeight: "800",
+    color: "#1F2937",
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: 16,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#2D3436",
-    marginBottom: 12,
+  formCard: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    ...shadow.card,
+  },
+  cardHeaderTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#1F2937",
+    marginBottom: 14,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   imageScrollContainer: {
-    gap: 12,
-    marginBottom: 24,
+    gap: 10,
     paddingBottom: 4,
   },
   addImageBtn: {
@@ -448,7 +725,7 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: "#EDF1FF",
+    borderColor: "#CBD5E1",
     borderStyle: "dashed",
     backgroundColor: "#F8F9FA",
     justifyContent: "center",
@@ -457,8 +734,8 @@ const styles = StyleSheet.create({
   },
   addImageText: {
     fontSize: 11,
-    color: "#4A6CF7",
-    fontWeight: "500",
+    color: colors.primary,
+    fontWeight: "600",
   },
   imagePreviewWrapper: {
     position: "relative",
@@ -473,188 +750,255 @@ const styles = StyleSheet.create({
   },
   removeImageBtn: {
     position: "absolute",
-    top: -6,
-    right: -6,
-    backgroundColor: "#FF4757",
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    top: -5,
+    right: -5,
+    backgroundColor: "#EF4444",
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: "#fff",
+    zIndex: 10,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 8,
-    marginTop: 16,
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#4B5563",
+    marginBottom: 6,
+    marginTop: 12,
   },
   input: {
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#F9FAFB",
     borderWidth: 1,
     borderColor: "#E5E7EB",
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: "#2D3436",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: "#1F2937",
+    fontWeight: "500",
   },
   textArea: {
-    minHeight: 120,
-    paddingTop: 16,
+    minHeight: 100,
+    paddingTop: 12,
   },
   addressHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: 12,
+    marginBottom: 6,
   },
   locationBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#EDF1FF",
-    paddingHorizontal: 12,
+    backgroundColor: colors.primarySoft,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    gap: 6,
+    gap: 4,
   },
   locationBtnText: {
-    color: "#4A6CF7",
-    fontSize: 12,
-    fontWeight: "600",
+    color: colors.primary,
+    fontSize: 11,
+    fontWeight: "700",
   },
-  priceContainer: {
+  priceInputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#F9FAFB",
     borderWidth: 1,
     borderColor: "#E5E7EB",
     borderRadius: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
   },
-  currencySymbol: {
-    fontSize: 18,
-    color: "#666",
-    fontWeight: "500",
+  priceCurrency: {
+    fontSize: 16,
+    color: "#4B5563",
+    fontWeight: "700",
+    marginRight: 6,
   },
   priceInput: {
     flex: 1,
-    paddingVertical: 14,
-    paddingLeft: 8,
-    fontSize: 16,
-    color: "#2D3436",
-    fontWeight: "500",
+    paddingVertical: 12,
+    fontSize: 15,
+    color: "#1F2937",
+    fontWeight: "600",
   },
   rowSelectors: {
     flexDirection: "row",
-    gap: 10,
-    marginBottom: 8,
+    gap: 8,
+    marginVertical: 4,
   },
   selectorButton: {
     flex: 1,
-    paddingVertical: 12,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 11,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#E5E7EB",
     backgroundColor: "#fff",
-    alignItems: "center",
+    gap: 5,
   },
   selectorButtonActive: {
-    backgroundColor: "#EDF1FF",
-    borderColor: "#4A6CF7",
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   selectorText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#666",
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#4B5563",
   },
   selectorTextActive: {
-    color: "#4A6CF7",
+    color: "#fff",
   },
   chipScroll: {
     gap: 8,
-    paddingBottom: 8,
+    paddingBottom: 4,
+    marginVertical: 4,
   },
   chipButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#E5E7EB",
   },
   chipButtonActive: {
-    backgroundColor: "#4A6CF7",
-    borderColor: "#4A6CF7",
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   chipText: {
-    fontSize: 14,
-    color: "#666",
-    fontWeight: "500",
+    fontSize: 12.5,
+    color: "#4B5563",
+    fontWeight: "600",
   },
   chipTextActive: {
     color: "#fff",
   },
-  locationContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8F9FA",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    marginBottom: 30, // Extra space before button
-  },
-  locationIcon: {
-    marginRight: 10,
-  },
-  locationInput: {
-    flex: 1,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: "#2D3436",
-  },
   submitButton: {
-    backgroundColor: "#4A6CF7",
-    paddingVertical: 16,
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
     borderRadius: 16,
     alignItems: "center",
-    marginBottom: 40,
-    shadowColor: "#4A6CF7",
+    marginBottom: 48,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
   },
   submitButtonDisabled: {
-    opacity: 0.7,
+    opacity: 0.6,
   },
   submitButtonText: {
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 15,
+    fontWeight: "800",
   },
   disclaimerContainer: {
     flexDirection: "row",
-    backgroundColor: "#FFF8E1",
+    backgroundColor: "#FFFBEB",
     borderWidth: 1,
-    borderColor: "#FFE082",
+    borderColor: "#FDE68A",
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
+    padding: 12,
+    marginBottom: 16,
     alignItems: "flex-start",
   },
   disclaimerIcon: {
-    marginRight: 10,
-    marginTop: 2,
+    marginRight: 8,
+    marginTop: 1,
   },
   disclaimerText: {
     flex: 1,
-    fontSize: 13,
-    color: "#F57F17",
-    lineHeight: 18,
+    fontSize: 11.5,
+    color: "#B45309",
+    lineHeight: 16,
+    fontWeight: "500",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(17, 24, 39, 0.4)",
+    justifyContent: "flex-end",
+  },
+  pickerContainer: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    paddingBottom: 36,
+  },
+  pickerTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#1F2937",
+    marginBottom: 16,
+    textAlign: "center",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  pickerOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  pickerOptionText: {
+    fontSize: 15,
+    color: "#1F2937",
+    fontWeight: "600",
+  },
+  pickerCancelBtn: {
+    marginTop: 14,
+    paddingVertical: 12,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  pickerCancelText: {
+    color: "#4B5563",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  currencyChips: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  currencyChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#fff",
+  },
+  currencyChipActive: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primary,
+  },
+  currencyChipText: {
+    fontSize: 11.5,
+    fontWeight: "600",
+    color: "#4B5563",
+  },
+  currencyChipTextActive: {
+    color: colors.primary,
+    fontWeight: "700",
   },
 });

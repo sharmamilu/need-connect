@@ -2,8 +2,10 @@ import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   Animated,
   Image,
+  Modal,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -78,8 +80,9 @@ const MAX_IMAGES = 8;
 export default function GallerySection({ images = [], onChange, mode }: Props) {
   const editable = mode !== "view";
   const [showLimitError, setShowLimitError] = useState(false);
+  const [pickerVisible, setPickerVisible] = useState(false);
 
-  const pickImages = async () => {
+  const pickImages = () => {
     if (!editable) return;
 
     if (images.length >= MAX_IMAGES) {
@@ -87,29 +90,66 @@ export default function GallerySection({ images = [], onChange, mode }: Props) {
       setTimeout(() => setShowLimitError(false), 3000);
       return;
     }
+    setPickerVisible(true);
+  };
 
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      alert("Permission to access gallery is required!");
-      return;
+  const handleCameraLaunch = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "We need camera access to take a photo."
+        );
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["images"],
+        quality: 0.7,
+      });
+
+      if (!result.canceled) {
+        const newImage: PortfolioLocalImage = {
+          uri: result.assets[0].uri,
+        };
+        onChange([...images, newImage]);
+      }
+    } catch (error) {
+      console.log("Error taking photo:", error);
+      Alert.alert("Error", "Failed to take photo");
     }
+  };
 
-    const remainingCount = MAX_IMAGES - images.length;
+  const handleGalleryLaunch = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "We need access to your gallery to pick photos."
+        );
+        return;
+      }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsMultipleSelection: true,
-      allowsEditing: false,
-      selectionLimit: remainingCount,
-      quality: 0.7,
-    });
+      const remainingCount = MAX_IMAGES - images.length;
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsMultipleSelection: true,
+        allowsEditing: false,
+        selectionLimit: remainingCount,
+        quality: 0.7,
+      });
 
-    if (!result.canceled) {
-      const selectedImages = result.assets.slice(0, remainingCount);
-      const newImages: PortfolioLocalImage[] = selectedImages.map((asset) => ({
-        uri: asset.uri,
-      }));
-      onChange([...images, ...newImages]);
+      if (!result.canceled) {
+        const selectedImages = result.assets.slice(0, remainingCount);
+        const newImages: PortfolioLocalImage[] = selectedImages.map((asset) => ({
+          uri: asset.uri,
+        }));
+        onChange([...images, ...newImages]);
+      }
+    } catch (error) {
+      console.log("Error picking images:", error);
+      Alert.alert("Error", "Failed to pick images");
     }
   };
 
@@ -174,6 +214,52 @@ export default function GallerySection({ images = [], onChange, mode }: Props) {
           </TouchableOpacity>
         </>
       )}
+
+      <Modal
+        visible={pickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPickerVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setPickerVisible(false)}
+        >
+          <View style={styles.pickerContainer}>
+            <Text style={styles.pickerTitle}>Add Photo</Text>
+            
+            <TouchableOpacity 
+              style={styles.pickerOption} 
+              onPress={() => {
+                setPickerVisible(false);
+                handleCameraLaunch();
+              }}
+            >
+              <Feather name="camera" size={20} color={colors.primary} style={{ marginRight: 12 }} />
+              <Text style={styles.pickerOptionText}>Take Photo (Camera)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.pickerOption} 
+              onPress={() => {
+                setPickerVisible(false);
+                handleGalleryLaunch();
+              }}
+            >
+              <Feather name="image" size={20} color={colors.primary} style={{ marginRight: 12 }} />
+              <Text style={styles.pickerOptionText}>Choose from Gallery</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.pickerCancelBtn} 
+              onPress={() => setPickerVisible(false)}
+            >
+              <Text style={styles.pickerCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SectionCard>
   );
 }
@@ -271,5 +357,48 @@ const styles = StyleSheet.create({
     color: colors.error,
     fontSize: 13,
     fontWeight: "600",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  pickerContainer: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  pickerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#2D3436",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  pickerOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  pickerOptionText: {
+    fontSize: 16,
+    color: "#2D3436",
+    fontWeight: "600",
+  },
+  pickerCancelBtn: {
+    marginTop: 16,
+    paddingVertical: 14,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  pickerCancelText: {
+    color: "#666",
+    fontWeight: "700",
+    fontSize: 16,
   },
 });

@@ -5,9 +5,11 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  DeviceEventEmitter,
   FlatList,
   Image,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -41,6 +43,17 @@ export default function AdminDashboard() {
     id: string;
     type: "post" | "listing";
   } | null>(null);
+
+  // Image Viewer State
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerImages, setViewerImages] = useState<string[]>([]);
+  const [viewerIndex, setViewerIndex] = useState(0);
+
+  const openImageViewer = (imgList: string[], startIndex: number) => {
+    setViewerImages(imgList || []);
+    setViewerIndex(startIndex);
+    setViewerVisible(true);
+  };
 
   const loadPendingItems = useCallback(async () => {
     setLoading(true);
@@ -90,10 +103,12 @@ export default function AdminDashboard() {
       await approvePost(id);
       Alert.alert("Success", "Post Approved");
       setPosts((prev) => prev.filter((p) => p._id !== id));
+      DeviceEventEmitter.emit("NotificationRefresh");
     } catch (e) {
       // Mock success if api not ready
       Alert.alert("Success", "Post Approved (Mock)");
       setPosts((prev) => prev.filter((p) => p._id !== id));
+      DeviceEventEmitter.emit("NotificationRefresh");
     }
   };
 
@@ -108,9 +123,11 @@ export default function AdminDashboard() {
       await approveListing(id);
       Alert.alert("Success", "Listing Approved");
       setListings((prev) => prev.filter((l) => l._id !== id));
+      DeviceEventEmitter.emit("NotificationRefresh");
     } catch (e) {
       Alert.alert("Success", "Listing Approved (Mock)");
       setListings((prev) => prev.filter((l) => l._id !== id));
+      DeviceEventEmitter.emit("NotificationRefresh");
     }
   };
 
@@ -139,6 +156,7 @@ export default function AdminDashboard() {
         setListings((prev) => prev.filter((l) => l._id !== rejectTarget.id));
       }
       Alert.alert("Success", "Item successfully rejected.");
+      DeviceEventEmitter.emit("NotificationRefresh");
     } catch (e) {
       // Mock success if api not ready
       if (rejectTarget.type === "post") {
@@ -147,6 +165,7 @@ export default function AdminDashboard() {
         setListings((prev) => prev.filter((l) => l._id !== rejectTarget.id));
       }
       Alert.alert("Success", "Item rejected (Mock).");
+      DeviceEventEmitter.emit("NotificationRefresh");
     } finally {
       setRejectModalVisible(false);
       setRejectTarget(null);
@@ -160,20 +179,70 @@ export default function AdminDashboard() {
     const showBg =
       bg && bg.id !== "none" && (!item.images || item.images.length === 0);
 
+    const authorId =
+      item.author?._id ||
+      item.author?.id ||
+      item.user?._id ||
+      item.user?.id ||
+      item.userId;
+    const authorAvatar =
+      item.author?.avatar ||
+      item.user?.avatar ||
+      item.author?.profilePhoto ||
+      item.user?.profilePhoto ||
+      item.userImage;
+    const authorProfession =
+      item.author?.profession ||
+      item.user?.profession ||
+      item.userProfession ||
+      "";
+
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {authorName.charAt(0).toUpperCase()}
-            </Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.authorName}>{authorName}</Text>
-            <Text style={styles.dateText}>
-              {new Date(item.createdAt).toLocaleString()}
-            </Text>
-          </View>
+          <TouchableOpacity
+            style={styles.cardHeaderClickable}
+            onPress={() => {
+              if (authorId) {
+                router.push({
+                  pathname: "/user-profile/[id]",
+                  params: {
+                    id: authorId,
+                    name: authorName || "",
+                    avatarUri: authorAvatar || "",
+                    profession: authorProfession || "",
+                  },
+                });
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            {authorAvatar ? (
+              <Image source={{ uri: authorAvatar }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {authorName.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Text style={styles.authorName} numberOfLines={1}>{authorName}</Text>
+                {authorProfession ? (
+                  <Text style={styles.professionText} numberOfLines={1}>
+                    • {authorProfession}
+                  </Text>
+                ) : null}
+              </View>
+              <Text style={styles.dateText}>
+                {new Date(item.createdAt).toLocaleString()}
+              </Text>
+            </View>
+            <View style={styles.viewPortfolioBadge}>
+              <Feather name="chevron-right" size={16} color="#4A6CF7" />
+            </View>
+          </TouchableOpacity>
         </View>
 
         {showBg ? (
@@ -228,10 +297,15 @@ export default function AdminDashboard() {
         {item.images && item.images.length > 0 && (
           <View style={{ marginBottom: 16 }}>
             {item.images.length === 1 ? (
-              <Image
-                source={{ uri: item.images[0] }}
-                style={[styles.cardImage, { marginBottom: 0 }]}
-              />
+              <TouchableOpacity
+                onPress={() => openImageViewer(item.images, 0)}
+                activeOpacity={0.9}
+              >
+                <Image
+                  source={{ uri: item.images[0] }}
+                  style={[styles.cardImage, { marginBottom: 0 }]}
+                />
+              </TouchableOpacity>
             ) : (
               <ScrollView
                 horizontal
@@ -239,11 +313,16 @@ export default function AdminDashboard() {
                 contentContainerStyle={{ gap: 12, paddingRight: 16 }}
               >
                 {item.images.map((url: string, index: number) => (
-                  <Image
+                  <TouchableOpacity
                     key={index}
-                    source={{ uri: url }}
-                    style={[styles.cardImage, { width: 280, marginBottom: 0 }]}
-                  />
+                    onPress={() => openImageViewer(item.images, index)}
+                    activeOpacity={0.9}
+                  >
+                    <Image
+                      source={{ uri: url }}
+                      style={[styles.cardImage, { width: 280, marginBottom: 0 }]}
+                    />
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
             )}
@@ -277,34 +356,118 @@ export default function AdminDashboard() {
       item.userName ||
       "User";
 
+    const authorId =
+      item.author?._id ||
+      item.author?.id ||
+      item.user?._id ||
+      item.user?.id ||
+      item.userId;
+    const authorAvatar =
+      item.author?.avatar ||
+      item.user?.avatar ||
+      item.author?.profilePhoto ||
+      item.user?.profilePhoto ||
+      item.userImage;
+    const authorProfession =
+      item.author?.profession ||
+      item.user?.profession ||
+      item.userProfession ||
+      "";
+
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {authorName.charAt(0).toUpperCase()}
-            </Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.authorName}>{authorName}</Text>
-            <Text style={styles.dateText}>
-              {new Date(item.createdAt).toLocaleString()}
-            </Text>
-          </View>
-          <View style={styles.badge}>
+          <TouchableOpacity
+            style={styles.cardHeaderClickable}
+            onPress={() => {
+              if (authorId) {
+                router.push({
+                  pathname: "/user-profile/[id]",
+                  params: {
+                    id: authorId,
+                    name: authorName || "",
+                    avatarUri: authorAvatar || "",
+                    profession: authorProfession || "",
+                  },
+                });
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            {authorAvatar ? (
+              <Image source={{ uri: authorAvatar }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {authorName.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Text style={styles.authorName} numberOfLines={1}>{authorName}</Text>
+                {authorProfession ? (
+                  <Text style={styles.professionText} numberOfLines={1}>
+                    • {authorProfession}
+                  </Text>
+                ) : null}
+              </View>
+              <Text style={styles.dateText}>
+                {new Date(item.createdAt).toLocaleString()}
+              </Text>
+            </View>
+            <View style={styles.viewPortfolioBadge}>
+              <Feather name="chevron-right" size={16} color="#4A6CF7" />
+            </View>
+          </TouchableOpacity>
+          <View style={[styles.badge, { marginLeft: 8 }]}>
             <Text style={styles.badgeText}>{item.category}</Text>
           </View>
         </View>
         <Text style={styles.listingTitle}>{item.title}</Text>
-        <Text style={styles.listingPrice}>{item.price}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <Text style={styles.listingPrice}>{item.price}</Text>
+          {item.condition && (
+            <View style={styles.conditionBadge}>
+              <Text style={styles.conditionText}>{item.condition}</Text>
+            </View>
+          )}
+        </View>
+
+        {item.description ? (
+          <Text style={styles.listingDescription}>{item.description}</Text>
+        ) : null}
+
+        {/* Display complete listing details */}
+        <View style={styles.listingDetailsBox}>
+          {item.address ? (
+            <View style={styles.detailRow}>
+              <Feather name="map-pin" size={12} color="#4B5563" style={{ marginRight: 6, marginTop: 2 }} />
+              <Text style={styles.detailLabel}>Address: </Text>
+              <Text style={styles.detailValue}>{item.address}</Text>
+            </View>
+          ) : null}
+          {item.contactInfo ? (
+            <View style={[styles.detailRow, { marginTop: 6 }]}>
+              <Feather name="phone" size={12} color="#4B5563" style={{ marginRight: 6, marginTop: 2 }} />
+              <Text style={styles.detailLabel}>Contact: </Text>
+              <Text style={styles.detailValue}>{item.contactInfo}</Text>
+            </View>
+          ) : null}
+        </View>
 
         {item.images && item.images.length > 0 && (
           <View style={{ marginBottom: 16 }}>
             {item.images.length === 1 ? (
-              <Image
-                source={{ uri: item.images[0] }}
-                style={[styles.cardImage, { marginBottom: 0 }]}
-              />
+              <TouchableOpacity
+                onPress={() => openImageViewer(item.images, 0)}
+                activeOpacity={0.9}
+              >
+                <Image
+                  source={{ uri: item.images[0] }}
+                  style={[styles.cardImage, { marginBottom: 0 }]}
+                />
+              </TouchableOpacity>
             ) : (
               <ScrollView
                 horizontal
@@ -312,16 +475,21 @@ export default function AdminDashboard() {
                 contentContainerStyle={{ gap: 12, paddingRight: 16 }}
               >
                 {item.images.map((url: string, index: number) => (
-                  <Image
+                  <TouchableOpacity
                     key={index}
-                    source={{ uri: url }}
-                    style={[styles.cardImage, { width: 280, marginBottom: 0 }]}
-                  />
+                    onPress={() => openImageViewer(item.images, index)}
+                    activeOpacity={0.9}
+                  >
+                    <Image
+                      source={{ uri: url }}
+                      style={[styles.cardImage, { width: 280, marginBottom: 0 }]}
+                    />
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
             )}
           </View>
-        )}
+        )}  )}
 
         <View style={styles.actionRow}>
           <TouchableOpacity
@@ -459,6 +627,71 @@ export default function AdminDashboard() {
               </TouchableOpacity>
             </View>
           </View>
+        </View>
+      </Modal>
+
+      {/* Full-Screen Image Viewer Modal */}
+      <Modal
+        visible={viewerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setViewerVisible(false)}
+      >
+        <View style={styles.viewerContainer}>
+          {/* Header */}
+          <View style={styles.viewerHeader}>
+            <Text style={styles.viewerTitle}>
+              {viewerImages.length > 1
+                ? `Image ${viewerIndex + 1} of ${viewerImages.length}`
+                : "Image Preview"}
+            </Text>
+            <TouchableOpacity
+              style={styles.viewerCloseBtn}
+              onPress={() => setViewerVisible(false)}
+            >
+              <Feather name="x" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Main Image View */}
+          <View style={styles.viewerImageWrap}>
+            {viewerImages.length > 0 && (
+              <Image
+                source={{ uri: viewerImages[viewerIndex] }}
+                style={styles.viewerImage}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+
+          {/* Navigation Controls (Only if multiple images) */}
+          {viewerImages.length > 1 && (
+            <View style={styles.viewerNavRow}>
+              <TouchableOpacity
+                style={[
+                  styles.viewerNavBtn,
+                  viewerIndex === 0 && { opacity: 0.3 }
+                ]}
+                disabled={viewerIndex === 0}
+                onPress={() => setViewerIndex((prev) => Math.max(0, prev - 1))}
+              >
+                <Feather name="arrow-left" size={20} color="#fff" />
+                <Text style={styles.viewerNavText}>Prev</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.viewerNavBtn,
+                  viewerIndex === viewerImages.length - 1 && { opacity: 0.3 }
+                ]}
+                disabled={viewerIndex === viewerImages.length - 1}
+                onPress={() => setViewerIndex((prev) => Math.min(viewerImages.length - 1, prev + 1))}
+              >
+                <Text style={styles.viewerNavText}>Next</Text>
+                <Feather name="arrow-right" size={20} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </Modal>
     </SafeAreaView>
@@ -701,5 +934,118 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
     fontSize: 16,
+  },
+  cardHeaderClickable: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  professionText: {
+    fontSize: 12,
+    color: "#666",
+    fontWeight: "500",
+    maxWidth: 100,
+  },
+  viewPortfolioBadge: {
+    padding: 4,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 4,
+  },
+  conditionBadge: {
+    backgroundColor: "#F3F4F6",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  conditionText: {
+    fontSize: 11,
+    color: "#4B5563",
+    fontWeight: "700",
+  },
+  listingDescription: {
+    fontSize: 14,
+    color: "#4B5563",
+    lineHeight: 20,
+    marginBottom: 10,
+  },
+  listingDetailsBox: {
+    backgroundColor: "#F9FAFB",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    padding: 12,
+    marginBottom: 14,
+  },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  detailLabel: {
+    fontSize: 12.5,
+    fontWeight: "700",
+    color: "#374151",
+  },
+  detailValue: {
+    fontSize: 12.5,
+    color: "#4B5563",
+    flex: 1,
+  },
+  viewerContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.95)",
+    justifyContent: "space-between",
+    paddingTop: Platform.OS === "ios" ? 50 : 20,
+    paddingBottom: 30,
+  },
+  viewerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    zIndex: 10,
+  },
+  viewerTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  viewerCloseBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  viewerImageWrap: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  viewerImage: {
+    width: "100%",
+    height: "100%",
+  },
+  viewerNavRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+    alignItems: "center",
+  },
+  viewerNavBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 6,
+  },
+  viewerNavText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 14,
   },
 });

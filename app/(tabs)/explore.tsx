@@ -5,6 +5,7 @@ import {
   FlatList,
   Keyboard,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -15,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import ProfessionalCard from "../components/explore/ProfessionalCard";
 import { fetchPortfolios, fetchSuggestions } from "../utils/apiFunctions";
+import { colors } from "../constants/colors";
 
 export default function ExploreScreen() {
   const [skillQuery, setSkillQuery] = useState("");
@@ -163,28 +165,31 @@ export default function ExploreScreen() {
     loadProfessionals(1, skillQuery, locationQuery, true);
   };
 
+  const POPULAR_SKILLS = ["Developer", "Designer", "Plumber", "Electrician", "Tutor", "Chef"];
+
   return (
     <TouchableWithoutFeedback onPress={dismissSuggestions}>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <View style={styles.container}>
+          {/* Header Hero */}
+          <View style={styles.headerHero}>
+            <Text style={styles.heroTitle}>Find Experts</Text>
+            <Text style={styles.heroSubtitle}>Connect with trusted local professionals</Text>
+          </View>
+
           {/* Search Section */}
           <View style={styles.searchSection}>
-            {/* Skill Search */}
-            <View
-              style={[
-                styles.inputWrapper,
-                { zIndex: activeInput === "skill" ? 10 : 1 },
-              ]}
-            >
-              <View style={styles.searchBar}>
-                <Feather name="search" size={18} color="#7C7C7C" />
+            <View style={styles.searchBarRow}>
+              {/* Skill Search input */}
+              <View style={styles.searchFieldWrap}>
+                <Feather name="search" size={16} color={colors.primary} style={styles.fieldIcon} />
                 <TextInput
-                  placeholder="Search skills or profession"
+                  placeholder="Skills, service..."
                   value={skillQuery}
                   onChangeText={handleSkillChange}
                   onFocus={() => setActiveInput("skill")}
-                  style={styles.input}
-                  placeholderTextColor="#999"
+                  style={styles.fieldInput}
+                  placeholderTextColor={colors.placeholder}
                 />
                 {skillQuery.length > 0 && (
                   <TouchableOpacity
@@ -192,53 +197,26 @@ export default function ExploreScreen() {
                       setSkillQuery("");
                       setSkillSuggestions([]);
                     }}
+                    style={styles.clearFieldBtn}
                   >
-                    <Feather name="x" size={16} color="#999" />
+                    <Feather name="x" size={14} color={colors.gray} />
                   </TouchableOpacity>
                 )}
               </View>
-              {skillSuggestions.length > 0 && activeInput === "skill" && (
-                <View style={styles.suggestionsContainer}>
-                  {skillSuggestions.map((item, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.suggestionItem,
-                        index === skillSuggestions.length - 1 && {
-                          borderBottomWidth: 0,
-                        },
-                      ]}
-                      onPress={() => handleSelectSuggestion("skill", item)}
-                    >
-                      <Feather
-                        name="search"
-                        size={14}
-                        color="#999"
-                        style={styles.suggestionIcon}
-                      />
-                      <Text style={styles.suggestionText}>{item}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
 
-            {/* Location Search */}
-            <View
-              style={[
-                styles.inputWrapper,
-                { zIndex: activeInput === "location" ? 10 : 1 },
-              ]}
-            >
-              <View style={styles.searchBar}>
-                <Feather name="map-pin" size={18} color="#7C7C7C" />
+              {/* Vertical Divider */}
+              <View style={styles.fieldDivider} />
+
+              {/* Location Search input */}
+              <View style={[styles.searchFieldWrap, { flex: 0.8 }]}>
+                <Feather name="map-pin" size={15} color="#10B981" style={styles.fieldIcon} />
                 <TextInput
-                  placeholder="Search location"
+                  placeholder="Location..."
                   value={locationQuery}
                   onChangeText={handleLocationChange}
                   onFocus={() => setActiveInput("location")}
-                  style={styles.input}
-                  placeholderTextColor="#999"
+                  style={styles.fieldInput}
+                  placeholderTextColor={colors.placeholder}
                 />
                 {locationQuery.length > 0 && (
                   <TouchableOpacity
@@ -246,36 +224,75 @@ export default function ExploreScreen() {
                       setLocationQuery("");
                       setLocationSuggestions([]);
                     }}
+                    style={styles.clearFieldBtn}
                   >
-                    <Feather name="x" size={16} color="#999" />
+                    <Feather name="x" size={14} color={colors.gray} />
                   </TouchableOpacity>
                 )}
               </View>
-              {locationSuggestions.length > 0 && activeInput === "location" && (
-                <View style={styles.suggestionsContainer}>
-                  {locationSuggestions.map((item, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.suggestionItem,
-                        index === locationSuggestions.length - 1 && {
-                          borderBottomWidth: 0,
-                        },
-                      ]}
-                      onPress={() => handleSelectSuggestion("location", item)}
-                    >
-                      <Feather
-                        name="map-pin"
-                        size={14}
-                        color="#999"
-                        style={styles.suggestionIcon}
-                      />
-                      <Text style={styles.suggestionText}>{item}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
             </View>
+
+            {/* Popular skill suggestion chips */}
+            <View style={styles.popularRow}>
+              <Text style={styles.popularLabel}>Popular:</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.popularChips}
+              >
+                {POPULAR_SKILLS.map((skill) => (
+                  <TouchableOpacity
+                    key={skill}
+                    style={styles.popularChip}
+                    onPress={() => {
+                      setSkillQuery(skill);
+                      loadProfessionals(1, skill, locationQuery, true);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.popularChipText}>{skill}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Float Suggestions Dropdown - Skill */}
+            {activeInput === "skill" && skillSuggestions.length > 0 && (
+              <View style={styles.suggestionsDropdown}>
+                {skillSuggestions.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.suggestionRow,
+                      index === skillSuggestions.length - 1 && { borderBottomWidth: 0 },
+                    ]}
+                    onPress={() => handleSelectSuggestion("skill", item)}
+                  >
+                    <Feather name="search" size={13} color={colors.gray} style={styles.suggestIcon} />
+                    <Text style={styles.suggestText}>{item}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {/* Float Suggestions Dropdown - Location */}
+            {activeInput === "location" && locationSuggestions.length > 0 && (
+              <View style={styles.suggestionsDropdown}>
+                {locationSuggestions.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.suggestionRow,
+                      index === locationSuggestions.length - 1 && { borderBottomWidth: 0 },
+                    ]}
+                    onPress={() => handleSelectSuggestion("location", item)}
+                  >
+                    <Feather name="map-pin" size={13} color={colors.gray} style={styles.suggestIcon} />
+                    <Text style={styles.suggestText}>{item}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
 
           {loading && !refreshing ? (
@@ -344,74 +361,135 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8,
     backgroundColor: "#F8F9FA",
   },
-  searchSection: {
-    gap: 12,
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 28,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 6,
-    marginBottom: 20,
-    zIndex: 100,
+  headerHero: {
+    marginBottom: 16,
+    paddingHorizontal: 4,
+    marginTop: 4,
   },
-  inputWrapper: {
-    position: "relative",
-    zIndex: 2,
+  heroTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: colors.text,
+    letterSpacing: -0.5,
   },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F5F7FA",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
-    gap: 12,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: "#2D3436",
+  heroSubtitle: {
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 2,
     fontWeight: "500",
   },
-  suggestionsContainer: {
+  searchSection: {
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 4,
+    marginBottom: 16,
+    zIndex: 100,
+    position: "relative",
+  },
+  searchBarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.inputBg,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 10,
+    height: 48,
+  },
+  searchFieldWrap: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    height: "100%",
+  },
+  fieldIcon: {
+    marginRight: 8,
+  },
+  fieldInput: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: "600",
+    height: "100%",
+    padding: 0,
+  },
+  clearFieldBtn: {
+    padding: 6,
+  },
+  fieldDivider: {
+    width: 1,
+    height: "50%",
+    backgroundColor: colors.border,
+    marginHorizontal: 10,
+  },
+  popularRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    paddingHorizontal: 2,
+  },
+  popularLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.textMuted,
+    marginRight: 8,
+  },
+  popularChips: {
+    gap: 6,
+    alignItems: "center",
+  },
+  popularChip: {
+    backgroundColor: colors.primarySoft,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  popularChipText: {
+    fontSize: 11.5,
+    color: colors.primary,
+    fontWeight: "700",
+  },
+  suggestionsDropdown: {
     position: "absolute",
-    top: "100%",
+    top: "105%",
     left: 0,
     right: 0,
     backgroundColor: "#fff",
-    borderRadius: 16,
-    marginTop: 8,
-    paddingVertical: 4,
+    borderRadius: 14,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 15 },
-    shadowOpacity: 0.15,
-    shadowRadius: 25,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 8,
     borderWidth: 1,
-    borderColor: "#F1F3F6",
-    zIndex: 9999,
+    borderColor: colors.border,
+    zIndex: 99999,
+    paddingVertical: 4,
   },
-  suggestionItem: {
+  suggestionRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 18,
-    paddingVertical: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#F5F7FA",
+    borderBottomColor: colors.inputBg,
   },
-  suggestionIcon: {
-    marginRight: 14,
+  suggestIcon: {
+    marginRight: 10,
   },
-  suggestionText: {
-    fontSize: 15,
-    color: "#333",
-    fontWeight: "400",
+  suggestText: {
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: "500",
   },
   listContent: {
     paddingBottom: 20,

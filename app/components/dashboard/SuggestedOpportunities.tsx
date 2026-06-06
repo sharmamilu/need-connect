@@ -64,7 +64,7 @@ export default function SuggestedOpportunities() {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.sectionTitle}>Opportunities for You</Text>
+        <Text style={styles.sectionTitle}>Listings for You</Text>
         <TouchableOpacity
           onPress={() => router.push("/listings")}
           style={styles.seeAllBtn}
