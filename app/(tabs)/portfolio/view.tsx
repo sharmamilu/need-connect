@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   ScrollView,
   Share,
+  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -16,6 +17,8 @@ import ProfileSection from "../../components/portfolio/ProfileSection";
 import ServicesSection from "../../components/portfolio/ServicesSection";
 import SkillsSection from "../../components/portfolio/SkillsSection";
 import SocialLinksSection from "../../components/portfolio/SocialLinksSection";
+import { colors } from "../../constants/colors";
+import { radius, shadow, spacing } from "../../constants/theme";
 import { usePortfolio } from "../../hooks/usePortfolio";
 
 export default function ViewPortfolio() {
@@ -23,66 +26,36 @@ export default function ViewPortfolio() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#4A6CF7" />
-        <Text style={{ marginTop: 10, color: "#666" }}>
-          Loading Portfolio...
-        </Text>
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.centeredText}>Loading portfolio...</Text>
       </View>
     );
   }
 
-  if (error) {
+  // Error or empty → prompt to create.
+  if (error || (!portfolio.name && !loading)) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 20,
-        }}
-      >
-        <Text style={{ fontSize: 16, color: "#E53935", textAlign: "center" }}>
-          {error}
-        </Text>
-        <PortfolioActions
-          mode="create"
-          onSubmit={() => router.push("/portfolio/create")}
-        />
-      </View>
-    );
-  }
-
-  // If loading is done and there's no name, it's likely empty
-  if (!portfolio.name && !loading) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 20,
-        }}
-      >
-        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
-          No Portfolio Found
-        </Text>
-        <Text
-          style={{
-            textAlign: "center",
-            color: "#666",
-            marginTop: 10,
-            marginBottom: 20,
-          }}
-        >
-          You haven't created a portfolio yet. Let's build one to showcase your
-          skills!
-        </Text>
-        <PortfolioActions
-          mode="create"
-          onSubmit={() => router.push("/portfolio/create")}
-        />
-      </View>
+      <SafeAreaView style={styles.screen} edges={["top"]}>
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIcon}>
+            <Feather name="user-plus" size={30} color={colors.primary} />
+          </View>
+          <Text style={styles.emptyTitle}>
+            {error ? "Couldn't load portfolio" : "No portfolio yet"}
+          </Text>
+          <Text style={styles.emptySubtitle}>
+            {error ||
+              "Create a portfolio to showcase your skills and get discovered by clients."}
+          </Text>
+          <View style={styles.emptyCta}>
+            <PortfolioActions
+              mode="create"
+              onSubmit={() => router.replace("/portfolio/create")}
+            />
+          </View>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -92,47 +65,36 @@ export default function ViewPortfolio() {
       await Share.share({
         message: `Check out my professional portfolio on Need Connect!\n\n${shareUrl}`,
       });
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: "#F8F9FA" }}
-      edges={["top"]}
-    >
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          paddingHorizontal: 18,
-          paddingTop: 10,
-        }}
-      >
-        <Text style={{ fontSize: 20, fontWeight: "700", color: "#333" }}>
-          My Portfolio
-        </Text>
-        <TouchableOpacity
-          onPress={handleShare}
-          style={{
-            padding: 8,
-            backgroundColor: "#fff",
-            borderRadius: 20,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 2,
-          }}
-        >
-          <Feather name="share-2" size={20} color="#4A6CF7" />
-        </TouchableOpacity>
+    <SafeAreaView style={styles.screen} edges={["top"]}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Portfolio</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={handleShare}
+            style={styles.headerButton}
+            activeOpacity={0.8}
+          >
+            <Feather name="share-2" size={18} color={colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push("/portfolio/edit")}
+            style={[styles.headerButton, styles.editButton]}
+            activeOpacity={0.8}
+          >
+            <Feather name="edit-2" size={18} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
+
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 18, paddingBottom: 10 }}
+        contentContainerStyle={styles.content}
       >
         <ProfileSection data={portfolio} onChange={() => {}} mode="view" />
         <ServicesSection
@@ -140,11 +102,7 @@ export default function ViewPortfolio() {
           onChange={() => {}}
           mode="view"
         />
-        <SkillsSection
-          skills={portfolio.skills}
-          onChange={() => {}}
-          mode="view"
-        />
+        <SkillsSection skills={portfolio.skills} onChange={() => {}} mode="view" />
         <ExperienceSection
           experiences={portfolio.experience || []}
           setExperiences={() => {}}
@@ -169,3 +127,88 @@ export default function ViewPortfolio() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.background,
+  },
+  centeredText: {
+    marginTop: spacing.md,
+    color: colors.textMuted,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  headerButton: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.pill,
+    backgroundColor: colors.card,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow.card,
+  },
+  editButton: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  content: {
+    padding: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.xxl,
+  },
+  emptyIcon: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.lg,
+  },
+  emptyTitle: {
+    fontSize: 19,
+    fontWeight: "800",
+    color: colors.text,
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: "center",
+    lineHeight: 21,
+  },
+  emptyCta: {
+    alignSelf: "stretch",
+    marginTop: spacing.xl,
+  },
+});

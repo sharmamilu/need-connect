@@ -18,6 +18,8 @@ import PostHeader from "./PostHeader";
 import PostImageGrid from "./PostImageGrid";
 import PostTags from "./PostTags";
 
+import { colors } from "../../constants/colors";
+import { radius, shadow, spacing } from "../../constants/theme";
 import {
   deletePost,
   toggleLike,
@@ -262,45 +264,45 @@ export default function PostCard({ post, onDeleteSuccess }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
-    marginBottom: 16,
-    padding: 14,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    backgroundColor: colors.card,
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow.card,
   },
   description: {
-    marginTop: 8,
-    fontSize: 14,
-    color: "#444",
+    marginTop: spacing.sm,
+    fontSize: 14.5,
+    lineHeight: 21,
+    color: colors.text,
   },
   backgroundContent: {
     minHeight: 200,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 12,
-    marginVertical: 10,
-    padding: 20,
+    borderRadius: radius.md,
+    marginTop: spacing.md,
+    padding: spacing.xl,
   },
   descriptionOnBg: {
     marginTop: 0,
     fontSize: 22,
-    fontWeight: "bold",
+    fontWeight: "800",
     textAlign: "center",
     lineHeight: 30,
   },
   statusBanner: {
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    marginBottom: spacing.md,
   },
   pendingBanner: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FEF3C7", // amber-100
-    gap: 8,
+    gap: spacing.sm,
   },
   pendingText: {
     color: "#B45309", // amber-700
@@ -308,9 +310,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   rejectedBanner: {
-    backgroundColor: "#FEF2F2", // red-50
+    backgroundColor: colors.errorSoft,
     borderLeftWidth: 4,
-    borderLeftColor: "#E53935",
+    borderLeftColor: colors.error,
   },
   rejectedHeader: {
     flexDirection: "row",
@@ -319,21 +321,21 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   rejectedTitle: {
-    color: "#E53935",
+    color: colors.error,
     fontSize: 14,
     fontWeight: "700",
   },
   rejectedReason: {
     color: "#7F1D1D", // red-900
     fontSize: 13,
-    marginBottom: 10,
+    marginBottom: spacing.sm,
   },
   rejectedDeleteBtn: {
     alignSelf: "flex-start",
-    backgroundColor: "#E53935",
-    paddingHorizontal: 12,
+    backgroundColor: colors.error,
+    paddingHorizontal: spacing.md,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: radius.sm,
   },
   rejectedDeleteText: {
     color: "#fff",

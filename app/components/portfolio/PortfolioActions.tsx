@@ -6,9 +6,18 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { colors } from "../../constants/colors";
+import { radius, spacing } from "../../constants/theme";
 
 export default function PortfolioActions({ mode, onSubmit, loading }: any) {
   const isView = mode === "view";
+
+  const label =
+    mode === "view"
+      ? "Edit Portfolio"
+      : mode === "edit"
+        ? "Save Changes"
+        : "Publish Portfolio";
 
   return (
     <View style={styles.container}>
@@ -18,9 +27,9 @@ export default function PortfolioActions({ mode, onSubmit, loading }: any) {
         style={[
           styles.button,
           isView ? styles.editButton : styles.submitButton,
-          loading && { opacity: 0.7 },
+          loading && styles.loadingButton,
         ]}
-        activeOpacity={0.8}
+        activeOpacity={0.85}
       >
         {loading ? (
           <ActivityIndicator color="#fff" size="small" />
@@ -31,13 +40,7 @@ export default function PortfolioActions({ mode, onSubmit, loading }: any) {
             color="#fff"
           />
         )}
-        <Text style={styles.buttonText}>
-          {mode === "view"
-            ? "Edit Portfolio"
-            : mode === "edit"
-              ? "Update Portfolio"
-              : "Publish Portfolio"}
-        </Text>
+        <Text style={styles.buttonText}>{loading ? "Saving..." : label}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -45,27 +48,35 @@ export default function PortfolioActions({ mode, onSubmit, loading }: any) {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 10,
-    marginBottom: 20,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xl,
   },
   button: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 16,
-    borderRadius: 16,
-    gap: 10,
-    shadowColor: "#4A6CF7",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    borderRadius: radius.lg,
+    gap: spacing.sm,
   },
   submitButton: {
-    backgroundColor: "#4A6CF7",
+    backgroundColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 5,
   },
   editButton: {
-    backgroundColor: "#1A1A1A",
+    backgroundColor: colors.text,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  loadingButton: {
+    opacity: 0.7,
   },
   buttonText: {
     color: "#fff",

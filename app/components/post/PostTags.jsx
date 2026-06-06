@@ -1,12 +1,16 @@
 import { StyleSheet, Text, View } from "react-native";
+import { colors } from "../../constants/colors";
+import { radius, spacing } from "../../constants/theme";
 
 export default function PostTags({ tags }) {
+  if (!tags?.length) return null;
+
   return (
     <View style={styles.container}>
       {tags.map((tag, index) => (
-        <Text key={index} style={styles.tag}>
-          #{tag}
-        </Text>
+        <View key={index} style={styles.tag}>
+          <Text style={styles.tagText}>#{tag}</Text>
+        </View>
       ))}
     </View>
   );
@@ -16,16 +20,18 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: 8,
+    marginTop: spacing.md,
+    gap: spacing.sm,
   },
   tag: {
-    backgroundColor: "#eef3ff",
-    color: "#3b5bdb",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 6,
-    marginBottom: 6,
-    fontSize: 12,
+    backgroundColor: colors.primarySoft,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+  },
+  tagText: {
+    color: colors.primary,
+    fontSize: 12.5,
+    fontWeight: "600",
   },
 });

@@ -1,27 +1,18 @@
 import { Feather } from "@expo/vector-icons";
-import { Image } from "expo-image";
-import { Link, router } from "expo-router";
+import { Link, router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { getToken } from "../utils/storage";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import AuthHeader from "../components/auth/AuthHeader";
+import AuthScreen from "../components/auth/AuthScreen";
 import AppButton from "../components/common/AppButton";
-import AppInput from "../components/common/AppInput";
+import FormField, {
+  FormFieldHandle,
+} from "../components/common/FormField";
 import { colors } from "../constants/colors";
-import { useAlert } from "../utils/AlertManager";
 import { loginApi } from "../utils/api/auth.api";
 import { useAuth } from "../utils/AuthContext";
+import { getToken } from "../utils/storage";
 
 type LoginForm = {
   email: string;
@@ -31,376 +22,209 @@ type LoginForm = {
 type FormErrors = Partial<Record<keyof LoginForm, string>>;
 
 export default function Login() {
-  const { showAlert } = useAlert();
   const { login } = useAuth();
+  const { email: prefillEmail } = useLocalSearchParams<{ email?: string }>();
   const [form, setForm] = useState<LoginForm>({
-    email: "",
+    email: prefillEmail || "",
     password: "",
   });
-
   const [errors, setErrors] = useState<FormErrors>({});
+  const [generalError, setGeneralError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isUserLogged, setIsUserLogged] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Animation refs for each field
-  const emailShakeAnimation = useRef(new Animated.Value(0)).current;
-  const passwordShakeAnimation = useRef(new Animated.Value(0)).current;
+  const emailRef = useRef<FormFieldHandle>(null);
+  const passwordRef = useRef<FormFieldHandle>(null);
+
+  // Already logged in? Skip straight to the app.
+  useEffect(() => {
+    (async () => {
+      const token = await getToken();
+      if (token) router.replace("/" as any);
+    })();
+  }, []);
 
   const updateField = (key: keyof LoginForm, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: "" }));
+    setGeneralError("");
   };
-
-  const shakeField = (field: keyof LoginForm) => {
-    const animation =
-      field === "email" ? emailShakeAnimation : passwordShakeAnimation;
-
-    Animated.sequence([
-      Animated.timing(animation, {
-        toValue: 10,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(animation, {
-        toValue: -10,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(animation, {
-        toValue: 6,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(animation, {
-        toValue: -6,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(animation, {
-        toValue: 2,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(animation, {
-        toValue: 0,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  // check if the user is already logged in if so just redirect him to the dashboard
-  useEffect(() => {
-    const checkUserLogged = async () => {
-      const token = await getToken();
-      if (token) {
-        router.replace("/dashboard" as any);
-      }
-    };
-    checkUserLogged();
-  }, []);
 
   const validate = (): boolean => {
-    const newErrors: FormErrors = {};
+    const next: FormErrors = {};
 
     if (!form.email.trim()) {
-      newErrors.email = "Email address is required";
-    } else if (!/^\S+@\S+\.\S+$/.test(form.email)) {
-      newErrors.email = "Enter a valid email address";
+      next.email = "Email address is required";
+    } else if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) {
+      next.email = "Enter a valid email address";
     }
 
     if (!form.password) {
-      newErrors.password = "Password is required";
+      next.password = "Password is required";
     }
 
-    setErrors(newErrors);
+    setErrors(next);
+    if (next.email) emailRef.current?.shake();
+    if (next.password) passwordRef.current?.shake();
 
-    // Trigger shake animation for fields with errors
-    if (newErrors.email) {
-      shakeField("email");
-    }
-    if (newErrors.password) {
-      shakeField("password");
-    }
-
-    return Object.keys(newErrors).length === 0;
+    return Object.keys(next).length === 0;
   };
 
   const isFormValid = form.email.trim() !== "" && form.password.trim() !== "";
 
   const handleLogin = async () => {
-    if (!validate()) return;
+    if (isSubmitting || !validate()) return;
 
+    setGeneralError("");
+    setIsSubmitting(true);
     try {
-      const response = await loginApi(form as any);
+      const response = await loginApi({
+        email: form.email.trim(),
+        password: form.password,
+      });
 
-      // Use auth context to save token and user data
-      if (response.data?.token && response.data?.user) {
+      if (response?.data?.token && response?.data?.user) {
         await login(response.data.token, response.data.user);
-      }
-
-      showAlert("Login successful!", "success");
-      router.replace("/" as any);
-    } catch (err: any) {
-      // Check if error is related to specific fields
-      const errorMessage = err.message?.toLowerCase() || "";
-
-      if (errorMessage.includes("email")) {
-        setErrors((prev) => ({ ...prev, email: err.message }));
-        shakeField("email");
-      } else if (errorMessage.includes("password")) {
-        setErrors((prev) => ({ ...prev, password: err.message }));
-        shakeField("password");
+        router.replace("/" as any);
       } else {
-        // For general errors, show alert
-        showAlert(err.message, "error");
+        setGeneralError("Unexpected response from server. Please try again.");
       }
+    } catch (err: any) {
+      const message = err?.message || "Login failed. Please try again.";
+      const lower = message.toLowerCase();
+
+      // Only attach to a specific field when the server clearly targets one.
+      if (lower.includes("valid email") || lower.includes("email is required")) {
+        setErrors((prev) => ({ ...prev, email: message }));
+        emailRef.current?.shake();
+      } else {
+        // Credential failures + network/server errors → general banner.
+        setGeneralError(message);
+        emailRef.current?.shake();
+        passwordRef.current?.shake();
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const toggleShowPassword = () => {
-    setShowPassword(!showPassword);
-  };
-
   return (
-    <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.card}>
-            {/* LOGO AREA */}
-            <View style={styles.logoContainer}>
-              {/* Replace with your real logo */}
-              <Image
-                source={require("../../assets/images/icon.png")}
-                style={styles.logo}
-              />
-              <Text style={styles.logoText}>Need Connect</Text>
-            </View>
+    <AuthScreen>
+      <AuthHeader
+        title="Welcome Back"
+        subtitle="Log in to continue to your account"
+      />
 
-            <AuthHeader
-              title="Welcome Back"
-              subtitle="Login using your email address"
-            />
+      {generalError ? (
+        <View style={styles.banner}>
+          <Feather name="alert-circle" size={16} color={colors.error} />
+          <Text style={styles.bannerText}>{generalError}</Text>
+        </View>
+      ) : null}
 
-            <View style={styles.form}>
-              {/* EMAIL */}
-              <View>
-                <Animated.View
-                  style={[
-                    styles.inputWrapper,
-                    {
-                      transform: [
-                        {
-                          translateX: emailShakeAnimation,
-                        },
-                      ],
-                    },
-                  ]}
-                >
-                  <AppInput
-                    placeholder="Email Address"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    value={form.email}
-                    onChangeText={(v: string) => updateField("email", v)}
-                    style={styles.inputWithIcon}
-                  />
-                  <Feather
-                    name="mail"
-                    size={20}
-                    color="#999"
-                    style={styles.inputIcon}
-                  />
-                </Animated.View>
-                {errors.email && (
-                  <Text style={styles.errorText}>{errors.email}</Text>
-                )}
-              </View>
+      <View style={styles.form}>
+        <FormField
+          ref={emailRef}
+          icon="mail"
+          placeholder="Email Address"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoComplete="email"
+          textContentType="emailAddress"
+          returnKeyType="next"
+          value={form.email}
+          onChangeText={(v) => updateField("email", v)}
+          error={errors.email}
+        />
 
-              {/* PASSWORD */}
-              <View>
-                <Animated.View
-                  style={[
-                    styles.inputWrapper,
-                    {
-                      transform: [
-                        {
-                          translateX: passwordShakeAnimation,
-                        },
-                      ],
-                    },
-                  ]}
-                >
-                  <AppInput
-                    placeholder="Password"
-                    secureTextEntry={!showPassword}
-                    value={form.password}
-                    onChangeText={(v: string) => updateField("password", v)}
-                    style={styles.inputWithIcon}
-                  />
-                  <TouchableOpacity
-                    onPress={toggleShowPassword}
-                    style={styles.passwordIcon}
-                  >
-                    <Feather
-                      name={showPassword ? "eye-off" : "eye"}
-                      size={20}
-                      color="#999"
-                    />
-                  </TouchableOpacity>
-                </Animated.View>
-                {errors.password && (
-                  <Text style={styles.errorText}>{errors.password}</Text>
-                )}
-              </View>
+        <FormField
+          ref={passwordRef}
+          icon="lock"
+          placeholder="Password"
+          isPassword
+          secureVisible={showPassword}
+          onToggleSecure={() => setShowPassword((s) => !s)}
+          autoComplete="password"
+          textContentType="password"
+          returnKeyType="done"
+          onSubmitEditing={handleLogin}
+          value={form.password}
+          onChangeText={(v) => updateField("password", v)}
+          error={errors.password}
+        />
 
-              {/* FORGOT PASSWORD LINK */}
-              <View style={styles.forgotContainer}>
-                <Link href="/forgot-password" asChild>
-                  <TouchableOpacity>
-                    <Text style={styles.forgotLink}>Forgot Password?</Text>
-                  </TouchableOpacity>
-                </Link>
-              </View>
+        <View style={styles.forgotContainer}>
+          <Link href="/forgot-password" asChild>
+            <TouchableOpacity hitSlop={8}>
+              <Text style={styles.forgotLink}>Forgot Password?</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
 
-              <AppButton
-                title="Login"
-                onPress={handleLogin}
-                disabled={!isFormValid}
-              />
-            </View>
+        <AppButton
+          title="Log In"
+          loadingTitle="Logging in..."
+          onPress={handleLogin}
+          disabled={!isFormValid}
+          isLoading={isSubmitting}
+        />
+      </View>
 
-            {/* REGISTER LINK */}
-            <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>
-                Don&apos;t have an account?{" "}
-              </Text>
-              <Link href="/register">
-                <Text style={styles.registerLink}>Register</Text>
-              </Link>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <View style={styles.registerContainer}>
+        <Text style={styles.registerText}>Don&apos;t have an account? </Text>
+        <Link href="/register" asChild>
+          <TouchableOpacity hitSlop={8}>
+            <Text style={styles.registerLink}>Sign Up</Text>
+          </TouchableOpacity>
+        </Link>
+      </View>
+    </AuthScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
+  form: {
+    marginTop: 4,
+    gap: 16,
   },
-
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 20,
-  },
-
-  card: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-
-  logoContainer: {
+  banner: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 8,
+    backgroundColor: colors.errorSoft,
+    borderRadius: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
     marginBottom: 16,
   },
-
-  logoText: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: "#4A6CF7",
-    letterSpacing: 0.5,
-    marginTop: 6,
-  },
-
-  logo: {
-    width: 64,
-    height: 64,
-    resizeMode: "contain",
-  },
-
-  form: {
-    marginTop: 12,
-    gap: 14,
-  },
-
-  inputWrapper: {
-    position: "relative",
-    width: "100%",
-  },
-
-  inputWithIcon: {
-    paddingRight: 40, // Make room for the icon
-  },
-
-  inputIcon: {
-    position: "absolute",
-    right: 12,
-    top: "39%",
-    transform: [{ translateY: -10 }],
-    zIndex: 1,
-  },
-
-  passwordIcon: {
-    position: "absolute",
-    right: 12,
-    top: "34%",
-    transform: [{ translateY: -10 }],
-    zIndex: 1,
-    padding: 5, // Makes touch area larger
-  },
-
-  errorText: {
-    color: "#E53935",
-    fontSize: 12,
-    marginTop: 4,
-    marginLeft: 4,
-  },
-
-  forgotContainer: {
-    alignItems: "flex-end",
-    marginTop: -5,
-    marginBottom: 5,
-  },
-
-  forgotLink: {
-    fontSize: 14,
-    color: "#4A6CF7",
+  bannerText: {
+    flex: 1,
+    color: colors.error,
+    fontSize: 13,
     fontWeight: "500",
   },
-
+  forgotContainer: {
+    alignItems: "flex-end",
+    marginTop: -4,
+  },
+  forgotLink: {
+    fontSize: 13.5,
+    color: colors.primary,
+    fontWeight: "600",
+  },
   registerContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 24,
+    alignItems: "center",
+    marginTop: 26,
   },
-
   registerText: {
     fontSize: 14,
-    color: "#666",
+    color: colors.textMuted,
   },
-
   registerLink: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#4A6CF7",
+    fontWeight: "700",
+    color: colors.primary,
   },
 });

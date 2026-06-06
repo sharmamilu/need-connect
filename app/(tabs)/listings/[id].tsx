@@ -12,9 +12,17 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { colors } from "../../constants/colors";
+import { radius, shadow, spacing } from "../../constants/theme";
 import { fetchListingById } from "../../utils/apiFunctions";
 
 const { width } = Dimensions.get("window");
+
+const TYPE_COLOR: Record<string, string> = {
+  Free: colors.success,
+  Donate: "#9333EA",
+  Sell: colors.primary,
+};
 
 export default function ListingDetails() {
   const { id } = useLocalSearchParams();
@@ -67,7 +75,7 @@ export default function ListingDetails() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#4A6CF7" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -93,7 +101,7 @@ export default function ListingDetails() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.iconBtn} onPress={() => router.back()}>
-          <Feather name="arrow-left" size={24} color="#2D3436" />
+          <Feather name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>
           Listing Details
@@ -137,7 +145,7 @@ export default function ListingDetails() {
             </>
           ) : (
             <View style={[styles.heroImage, styles.placeholderImage]}>
-              <Feather name="image" size={48} color="#ccc" />
+              <Feather name="image" size={48} color={colors.gray} />
               <Text style={styles.noImageText}>No Photos Available</Text>
             </View>
           )}
@@ -158,23 +166,46 @@ export default function ListingDetails() {
           </Text>
 
           <View style={styles.badges}>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{listing.category}</Text>
-            </View>
-            <View style={styles.badgeSecondary}>
-              <Text style={styles.badgeTextSecondary}>{listing.condition}</Text>
-            </View>
+            {listing.listingType ? (
+              <View
+                style={[
+                  styles.typeBadge,
+                  {
+                    backgroundColor:
+                      TYPE_COLOR[listing.listingType] || colors.primary,
+                  },
+                ]}
+              >
+                <Text style={styles.typeBadgeText}>
+                  {listing.listingType === "Sell"
+                    ? "FOR SALE"
+                    : listing.listingType.toUpperCase()}
+                </Text>
+              </View>
+            ) : null}
+            {listing.category ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{listing.category}</Text>
+              </View>
+            ) : null}
+            {listing.condition ? (
+              <View style={styles.badgeSecondary}>
+                <Text style={styles.badgeTextSecondary}>
+                  {listing.condition}
+                </Text>
+              </View>
+            ) : null}
           </View>
 
           <View style={styles.metadataRow}>
             <View style={styles.metadataItem}>
-              <Feather name="map-pin" size={16} color="#666" />
+              <Feather name="map-pin" size={16} color={colors.textMuted} />
               <Text style={styles.metadataText}>
                 {listing.address || listing.location}
               </Text>
             </View>
             <View style={styles.metadataItem}>
-              <Feather name="clock" size={16} color="#666" />
+              <Feather name="clock" size={16} color={colors.textMuted} />
               <Text style={styles.metadataText}>
                 {listing.createdAt
                   ? new Date(listing.createdAt).toLocaleDateString()
@@ -232,22 +263,22 @@ export default function ListingDetails() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colors.card,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#fff",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomColor: colors.border,
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#333",
+    color: colors.text,
   },
   iconBtn: {
     padding: 8,
@@ -257,111 +288,129 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: colors.background,
   },
   errorText: {
-    fontSize: 18,
-    color: "#666",
-    marginBottom: 16,
+    fontSize: 17,
+    color: colors.textMuted,
+    marginBottom: spacing.md,
   },
   backBtn: {
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.xl,
     paddingVertical: 10,
-    backgroundColor: "#F0F0F0",
-    borderRadius: 12,
+    backgroundColor: colors.inputBg,
+    borderRadius: radius.md,
   },
   backBtnText: {
-    fontWeight: "600",
+    fontWeight: "700",
+    color: colors.text,
   },
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   carouselContainer: {
     position: "relative",
     height: 320,
+    backgroundColor: colors.card,
   },
   heroImage: {
     width: width,
     height: 320,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: colors.skeleton,
   },
   placeholderImage: {
     justifyContent: "center",
     alignItems: "center",
-    gap: 12,
+    gap: spacing.md,
   },
   noImageText: {
-    color: "#aaa",
-    fontSize: 16,
+    color: colors.gray,
+    fontSize: 15,
     fontWeight: "500",
   },
   dotsContainer: {
     position: "absolute",
-    bottom: 16,
+    bottom: spacing.md,
     flexDirection: "row",
     alignSelf: "center",
     gap: 8,
   },
   dot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
+    backgroundColor: "rgba(255,255,255,0.5)",
   },
   dotActive: {
     backgroundColor: "#fff",
-    width: 20,
+    width: 18,
   },
   detailsContainer: {
-    padding: 24,
-    paddingBottom: 100, // accommodate bottom bar
+    backgroundColor: colors.background,
+    padding: spacing.xl,
+    paddingBottom: 100,
   },
   title: {
     fontSize: 22,
-    fontWeight: "700",
-    color: "#2D3436",
-    marginBottom: 8,
+    fontWeight: "800",
+    color: colors.text,
+    marginBottom: 6,
   },
   price: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#4A6CF7",
-    marginBottom: 16,
+    color: colors.primary,
+    marginBottom: spacing.md,
   },
   freePrice: {
-    color: "#16A34A",
+    color: colors.success,
   },
   badges: {
     flexDirection: "row",
-    gap: 10,
-    marginBottom: 20,
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  typeBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
+  typeBadgeText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 11,
+    letterSpacing: 0.5,
   },
   badge: {
-    backgroundColor: "#EDF1FF",
-    paddingHorizontal: 12,
+    backgroundColor: colors.primarySoft,
+    paddingHorizontal: spacing.md,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: radius.pill,
   },
   badgeText: {
-    color: "#4A6CF7",
-    fontWeight: "600",
-    fontSize: 13,
+    color: colors.primary,
+    fontWeight: "700",
+    fontSize: 12.5,
   },
   badgeSecondary: {
-    backgroundColor: "#F8F9FA",
+    backgroundColor: colors.inputBg,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    paddingHorizontal: 12,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: radius.pill,
   },
   badgeTextSecondary: {
-    color: "#666",
+    color: colors.textMuted,
     fontWeight: "600",
-    fontSize: 13,
+    fontSize: 12.5,
   },
   metadataRow: {
     flexDirection: "row",
-    gap: 24,
+    flexWrap: "wrap",
+    gap: spacing.xl,
   },
   metadataItem: {
     flexDirection: "row",
@@ -369,38 +418,41 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   metadataText: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 13.5,
+    color: colors.textMuted,
   },
   divider: {
     height: 1,
-    backgroundColor: "#F0F0F0",
-    marginVertical: 24,
+    backgroundColor: colors.border,
+    marginVertical: spacing.xl,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#2D3436",
-    marginBottom: 12,
+    fontSize: 17,
+    fontWeight: "800",
+    color: colors.text,
+    marginBottom: spacing.md,
   },
   descriptionText: {
     fontSize: 15,
-    lineHeight: 24,
-    color: "#4a5568",
+    lineHeight: 23,
+    color: colors.textMuted,
   },
   sellerCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8F9FA",
-    padding: 16,
-    borderRadius: 16,
-    gap: 16,
+    backgroundColor: colors.card,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    gap: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow.card,
   },
   sellerAvatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "#2D3436",
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -414,13 +466,13 @@ const styles = StyleSheet.create({
   },
   sellerName: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#2D3436",
-    marginBottom: 4,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: 3,
   },
   sellerSub: {
     fontSize: 13,
-    color: "#16A34A",
-    fontWeight: "500",
+    color: colors.success,
+    fontWeight: "600",
   },
 });

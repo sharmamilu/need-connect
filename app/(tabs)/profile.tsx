@@ -11,8 +11,19 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { colors } from "../constants/colors";
+import { radius, shadow, spacing } from "../constants/theme";
 import { deleteMyAccount, fetchReviewStats } from "../utils/apiFunctions";
 import { useAuth } from "../utils/AuthContext";
+
+type OptionRow = {
+  icon: keyof typeof Feather.glyphMap;
+  color: string;
+  bg: string;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+};
 
 export default function ProfileScreen() {
   const { logout, user } = useAuth();
@@ -26,18 +37,14 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     const loadStats = async () => {
-      // Use both possible ID fields
       const uId = user?._id || user?.id;
       if (!uId) {
         setLoadingStats(false);
         return;
       }
-
       try {
         const res = await fetchReviewStats(uId);
-        if (res.data?.success) {
-          setStats(res.data.data);
-        }
+        if (res.data?.success) setStats(res.data.data);
       } catch (err) {
         console.error("Failed to load stats:", err);
       } finally {
@@ -77,10 +84,75 @@ export default function ProfileScreen() {
     );
   };
 
-  const getInitials = (name?: string) => {
-    if (!name) return "?";
-    return name.charAt(0).toUpperCase();
+  const openReviews = () => {
+    const uId = user?._id || user?.id;
+    if (uId) {
+      router.push({
+        pathname: "/user-reviews",
+        params: { userId: uId, userName: user?.name },
+      });
+    }
   };
+
+  const initial = user?.name?.charAt(0).toUpperCase() || "?";
+
+  const options: OptionRow[] = [
+    {
+      icon: "briefcase",
+      color: "#9333EA",
+      bg: "#F3E8FF",
+      title: "My Portfolio",
+      subtitle: "View your professional profile",
+      onPress: () => router.push("/portfolio/view"),
+    },
+    {
+      icon: "grid",
+      color: "#DB2777",
+      bg: "#FCE7F3",
+      title: "Utilities & Templates",
+      subtitle: "Invoices, proposals & more",
+      onPress: () => router.push("/utilities"),
+    },
+    {
+      icon: "shopping-bag",
+      color: "#EA580C",
+      bg: "#FFEDD5",
+      title: "My Listings",
+      subtitle: "Manage your marketplace items",
+      onPress: () => {
+        const uId = user?._id || user?.id;
+        if (uId)
+          router.push({
+            pathname: "/(screens)/user-listings",
+            params: { userId: uId, userName: user?.name },
+          });
+      },
+    },
+    {
+      icon: "sliders",
+      color: "#0284C7",
+      bg: "#E0F2FE",
+      title: "Preferences",
+      subtitle: "Feed, matches & discovery",
+      onPress: () => router.push("/(screens)/preferences"),
+    },
+    {
+      icon: "bookmark",
+      color: "#16A34A",
+      bg: "#DCFCE7",
+      title: "Saved Posts",
+      subtitle: "Content you've saved",
+      onPress: () => router.push("/(screens)/saved-posts"),
+    },
+    {
+      icon: "users",
+      color: "#D97706",
+      bg: "#FEF3C7",
+      title: "Saved Profiles",
+      subtitle: "Professionals you've bookmarked",
+      onPress: () => router.push("/(screens)/saved-profiles"),
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -88,7 +160,7 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Section */}
+        {/* HEADER */}
         <View style={styles.header}>
           <View style={styles.avatarWrapper}>
             {stats.profilePhoto || user?.avatar ? (
@@ -97,43 +169,34 @@ export default function ProfileScreen() {
                 style={styles.avatar}
               />
             ) : (
-              <View style={styles.placeholderAvatar}>
-                <Text style={styles.placeholderText}>
-                  {getInitials(user?.name)}
-                </Text>
+              <View style={[styles.avatar, styles.placeholderAvatar]}>
+                <Text style={styles.placeholderText}>{initial}</Text>
               </View>
             )}
-            {/* Show verified badge if available */}
             {user?.isVerified !== false && (
               <View style={styles.verifiedBadge}>
-                <Ionicons name="checkmark-circle" size={24} color="#4A6CF7" />
-                <View style={styles.verifiedBadgeBg} />
+                <Ionicons
+                  name="checkmark-circle"
+                  size={26}
+                  color={colors.primary}
+                />
               </View>
             )}
           </View>
 
           <Text style={styles.name}>{user?.name || "Member"}</Text>
-          {user?.profession && (
+          {user?.profession ? (
             <Text style={styles.profession}>{user.profession}</Text>
-          )}
+          ) : null}
 
-          {/* Stats Analytics */}
           <View style={styles.statsContainer}>
             <TouchableOpacity
               style={styles.statBox}
               activeOpacity={0.7}
-              onPress={() => {
-                const uId = user?._id || user?.id;
-                if (uId) {
-                  router.push({
-                    pathname: "/user-reviews",
-                    params: { userId: uId, userName: user?.name },
-                  });
-                }
-              }}
+              onPress={openReviews}
             >
               <Text style={styles.statNumber}>
-                {loadingStats ? "-" : stats.totalReviews}
+                {loadingStats ? "–" : stats.totalReviews}
               </Text>
               <Text style={styles.statLabel}>Reviews</Text>
             </TouchableOpacity>
@@ -143,29 +206,21 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={styles.statBox}
               activeOpacity={0.7}
-              onPress={() => {
-                const uId = user?._id || user?.id;
-                if (uId) {
-                  router.push({
-                    pathname: "/user-reviews",
-                    params: { userId: uId, userName: user?.name },
-                  });
-                }
-              }}
+              onPress={openReviews}
             >
               <View style={styles.ratingRow}>
                 <Text style={styles.statNumber}>
                   {loadingStats
-                    ? "-"
+                    ? "–"
                     : stats.averageRating > 0
                       ? stats.averageRating.toFixed(1)
                       : "New"}
                 </Text>
                 <Ionicons
                   name="star"
-                  size={16}
-                  color="#FFB800"
-                  style={{ marginLeft: 4, marginTop: -2 }}
+                  size={15}
+                  color={colors.star}
+                  style={{ marginLeft: 4 }}
                 />
               </View>
               <Text style={styles.statLabel}>Avg Rating</Text>
@@ -173,13 +228,13 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Contact Information */}
+        {/* CONTACT */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Contact Information</Text>
 
           <View style={styles.infoRow}>
             <View style={styles.iconCircle}>
-              <Feather name="mail" size={16} color="#4A6CF7" />
+              <Feather name="mail" size={16} color={colors.primary} />
             </View>
             <View style={styles.infoTextContainer}>
               <Text style={styles.infoLabel}>Email</Text>
@@ -187,9 +242,9 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          <View style={styles.infoRow}>
+          <View style={[styles.infoRow, styles.infoRowLast]}>
             <View style={styles.iconCircle}>
-              <Feather name="phone" size={16} color="#4A6CF7" />
+              <Feather name="phone" size={16} color={colors.primary} />
             </View>
             <View style={styles.infoTextContainer}>
               <Text style={styles.infoLabel}>Phone</Text>
@@ -198,152 +253,51 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Options / Settings Section */}
+        {/* SETTINGS */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Settings</Text>
-
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={() => router.push("/portfolio/view")}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[styles.optionIconCircle, { backgroundColor: "#F3E8FF" }]}
+          <Text style={styles.sectionTitle}>Account</Text>
+          {options.map((opt, i) => (
+            <TouchableOpacity
+              key={opt.title}
+              style={[
+                styles.optionRow,
+                i === options.length - 1 && styles.optionRowLast,
+              ]}
+              onPress={opt.onPress}
+              activeOpacity={0.7}
             >
-              <Feather name="briefcase" size={18} color="#9333EA" />
-            </View>
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionText}>My Portfolio</Text>
-              <Text style={styles.optionSubtext}>
-                View your professional profile
-              </Text>
-            </View>
-            <Feather name="chevron-right" size={20} color="#CCC" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={() => router.push("/utilities")}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[styles.optionIconCircle, { backgroundColor: "#FCE7F3" }]}
-            >
-              <Feather name="layout" size={18} color="#DB2777" />
-            </View>
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionText}>Utilities & Templates</Text>
-              <Text style={styles.optionSubtext}>
-                Invoices, proposals & more
-              </Text>
-            </View>
-            <Feather name="chevron-right" size={20} color="#CCC" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={() => {
-              const uId = user?._id || user?.id;
-              if (uId) {
-                router.push({
-                  pathname: "/(screens)/user-listings",
-                  params: { userId: uId, userName: user?.name },
-                });
-              }
-            }}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[styles.optionIconCircle, { backgroundColor: "#FFEDD5" }]}
-            >
-              <Feather name="shopping-bag" size={18} color="#EA580C" />
-            </View>
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionText}>My Listings</Text>
-              <Text style={styles.optionSubtext}>
-                Manage your marketplace items
-              </Text>
-            </View>
-            <Feather name="chevron-right" size={20} color="#CCC" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={() => router.push("/(screens)/preferences")}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[styles.optionIconCircle, { backgroundColor: "#E0F2FE" }]}
-            >
-              <Feather name="sliders" size={18} color="#0284C7" />
-            </View>
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionText}>Preferences</Text>
-              <Text style={styles.optionSubtext}>
-                Feed, Matches & Discovery
-              </Text>
-            </View>
-            <Feather name="chevron-right" size={20} color="#CCC" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={() => router.push("/(screens)/saved-posts")}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[styles.optionIconCircle, { backgroundColor: "#DCFCE7" }]}
-            >
-              <Feather name="bookmark" size={18} color="#16A34A" />
-            </View>
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionText}>Saved Posts</Text>
-              <Text style={styles.optionSubtext}>
-                Content you&apos;ve saved
-              </Text>
-            </View>
-            <Feather name="chevron-right" size={20} color="#CCC" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={() => router.push("/(screens)/saved-profiles")}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[styles.optionIconCircle, { backgroundColor: "#FEF3C7" }]}
-            >
-              <Feather name="users" size={18} color="#D97706" />
-            </View>
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionText}>Saved Profiles</Text>
-              <Text style={styles.optionSubtext}>
-                Professionals you&apos;ve bookmarked
-              </Text>
-            </View>
-            <Feather name="chevron-right" size={20} color="#CCC" />
-          </TouchableOpacity>
+              <View style={[styles.optionIconCircle, { backgroundColor: opt.bg }]}>
+                <Feather name={opt.icon} size={18} color={opt.color} />
+              </View>
+              <View style={styles.optionTextContainer}>
+                <Text style={styles.optionText}>{opt.title}</Text>
+                <Text style={styles.optionSubtext}>{opt.subtitle}</Text>
+              </View>
+              <Feather name="chevron-right" size={20} color={colors.gray} />
+            </TouchableOpacity>
+          ))}
         </View>
 
-        {/* Logout Button */}
-        <TouchableOpacity
-          style={styles.logoutBtn}
-          onPress={handleLogout}
-          activeOpacity={0.8}
-        >
-          <Feather name="log-out" size={20} color="#E53935" />
-          <Text style={styles.logoutText}>Log Out</Text>
-        </TouchableOpacity>
+        {/* DANGER ZONE */}
+        <View style={styles.dangerZone}>
+          <TouchableOpacity
+            style={styles.logoutBtn}
+            onPress={handleLogout}
+            activeOpacity={0.85}
+          >
+            <Feather name="log-out" size={19} color={colors.error} />
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
 
-        {/* Delete Account Button */}
-        <TouchableOpacity
-          style={styles.deleteBtn}
-          onPress={handleDeleteAccount}
-          activeOpacity={0.8}
-        >
-          <Feather name="trash-2" size={20} color="#E53935" />
-          <Text style={styles.deleteText}>Delete Account</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteBtn}
+            onPress={handleDeleteAccount}
+            activeOpacity={0.7}
+          >
+            <Feather name="trash-2" size={17} color={colors.gray} />
+            <Text style={styles.deleteText}>Delete Account</Text>
+          </TouchableOpacity>
+        </View>
 
         <Text style={styles.versionText}>Need Connect v1.0.0</Text>
       </ScrollView>
@@ -354,50 +308,37 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingBottom: 40,
   },
   header: {
     alignItems: "center",
-    backgroundColor: "#fff",
-    paddingTop: 40,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 15,
-    elevation: 4,
-    marginBottom: 24,
+    backgroundColor: colors.card,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.xxl,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    marginBottom: spacing.xl,
+    ...shadow.header,
   },
   avatarWrapper: {
     position: "relative",
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   avatar: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+    width: 104,
+    height: 104,
+    borderRadius: 52,
     borderWidth: 4,
-    borderColor: "#F8F9FA",
+    borderColor: colors.card,
+    backgroundColor: colors.skeleton,
   },
   placeholderAvatar: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: "#4A6CF7",
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 4,
-    borderColor: "#F8F9FA",
-    shadowColor: "#4A6CF7",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
   },
   placeholderText: {
     fontSize: 40,
@@ -406,40 +347,31 @@ const styles = StyleSheet.create({
   },
   verifiedBadge: {
     position: "absolute",
-    bottom: 0,
+    bottom: 2,
     right: 4,
-    zIndex: 2,
-  },
-  verifiedBadgeBg: {
-    position: "absolute",
-    width: 14,
-    height: 14,
     backgroundColor: "#fff",
-    borderRadius: 7,
-    top: 5,
-    left: 5,
-    zIndex: -1,
+    borderRadius: 13,
   },
   name: {
-    fontSize: 24,
+    fontSize: 23,
     fontWeight: "800",
-    color: "#1c1e21",
-    marginBottom: 4,
+    color: colors.text,
+    marginBottom: 3,
   },
   profession: {
-    fontSize: 15,
-    color: "#4A6CF7",
+    fontSize: 14.5,
+    color: colors.primary,
     fontWeight: "600",
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   statsContainer: {
     flexDirection: "row",
-    backgroundColor: "#F8F9FA",
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
+    backgroundColor: colors.inputBg,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xxl,
     alignItems: "center",
-    width: "85%",
+    width: "82%",
   },
   statBox: {
     flex: 1,
@@ -448,7 +380,7 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#1c1e21",
+    color: colors.text,
   },
   ratingRow: {
     flexDirection: "row",
@@ -456,133 +388,137 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 12,
-    color: "#65676b",
-    marginTop: 4,
+    color: colors.textMuted,
+    marginTop: 3,
     fontWeight: "500",
   },
   statDivider: {
     width: 1,
     height: 30,
-    backgroundColor: "#E0E0E0",
+    backgroundColor: colors.border,
   },
   section: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    marginHorizontal: 16,
-    marginBottom: 20,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 2,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow.card,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
-    color: "#999",
-    marginBottom: 16,
+    color: colors.textMuted,
+    marginBottom: spacing.md,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    paddingBottom: spacing.md,
+    marginBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  infoRowLast: {
+    marginBottom: 0,
+    paddingBottom: 0,
+    borderBottomWidth: 0,
   },
   iconCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#EDF1FF",
+    backgroundColor: colors.primarySoft,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 14,
+    marginRight: spacing.md,
   },
   infoTextContainer: {
     flex: 1,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F3F6",
-    paddingBottom: 16,
   },
   infoLabel: {
     fontSize: 12,
-    color: "#65676b",
+    color: colors.textMuted,
     marginBottom: 2,
   },
   infoValue: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#333",
+    color: colors.text,
   },
   optionRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    paddingBottom: spacing.md,
+    marginBottom: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#F1F3F6",
-    paddingBottom: 16,
+    borderBottomColor: colors.border,
+  },
+  optionRowLast: {
+    marginBottom: 0,
+    paddingBottom: 0,
+    borderBottomWidth: 0,
   },
   optionIconCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 14,
+    marginRight: spacing.md,
   },
   optionTextContainer: {
     flex: 1,
   },
   optionText: {
-    fontSize: 16,
+    fontSize: 15.5,
     fontWeight: "700",
-    color: "#333",
-    marginBottom: 2,
+    color: colors.text,
+    marginBottom: 1,
   },
   optionSubtext: {
-    fontSize: 13,
-    color: "#888",
+    fontSize: 12.5,
+    color: colors.textMuted,
+  },
+  dangerZone: {
+    marginHorizontal: spacing.lg,
+    gap: spacing.md,
   },
   logoutBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FEF2F2",
-    marginHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#FEE2E2",
-    marginBottom: 16,
+    backgroundColor: colors.errorSoft,
+    paddingVertical: 15,
+    borderRadius: radius.md,
+    gap: 8,
   },
   logoutText: {
-    color: "#E53935",
-    fontSize: 16,
+    color: colors.error,
+    fontSize: 15.5,
     fontWeight: "700",
-    marginLeft: 8,
   },
   deleteBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#FEE2E2",
-    marginBottom: 24,
+    paddingVertical: 13,
+    gap: 8,
   },
   deleteText: {
-    color: "#E53935",
-    fontSize: 16,
-    fontWeight: "700",
-    marginLeft: 8,
+    color: colors.textMuted,
+    fontSize: 14,
+    fontWeight: "600",
   },
   versionText: {
     textAlign: "center",
-    color: "#BBB",
+    color: colors.gray,
     fontSize: 12,
     fontWeight: "500",
+    marginTop: spacing.xl,
   },
 });

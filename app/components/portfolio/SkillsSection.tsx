@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   StyleSheet,
@@ -8,6 +8,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { colors } from "../../constants/colors";
+import { radius, spacing } from "../../constants/theme";
+import SectionCard from "./SectionCard";
 
 type Props = {
   skills: string[];
@@ -26,13 +29,13 @@ const SkillItem = ({
 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  useState(() => {
+  useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 400,
+      duration: 300,
       useNativeDriver: true,
     }).start();
-  });
+  }, [fadeAnim]);
 
   return (
     <Animated.View
@@ -51,19 +54,10 @@ const SkillItem = ({
         },
       ]}
     >
-      <View style={styles.skillContent}>
-        <View style={styles.skillIconContainer}>
-          <Feather name="zap" size={14} color="#FFD700" />
-        </View>
-        <Text style={styles.skillText}>{item}</Text>
-      </View>
+      <Text style={styles.skillText}>{item}</Text>
       {editable && (
-        <TouchableOpacity
-          onPress={onRemove}
-          style={styles.removeButton}
-          activeOpacity={0.7}
-        >
-          <Feather name="trash-2" size={16} color="#E53935" />
+        <TouchableOpacity onPress={onRemove} hitSlop={6} activeOpacity={0.7}>
+          <Feather name="x" size={14} color={colors.primary} />
         </TouchableOpacity>
       )}
     </Animated.View>
@@ -76,8 +70,13 @@ export default function SkillsSection({ skills = [], onChange, mode }: Props) {
   const editable = mode !== "view";
 
   const addSkill = () => {
-    if (!skill.trim()) return;
-    onChange([...skills, skill.trim()]);
+    const v = skill.trim();
+    if (!v) return;
+    if (skills.some((s) => s.toLowerCase() === v.toLowerCase())) {
+      setSkill("");
+      return;
+    }
+    onChange([...skills, v]);
     setSkill("");
   };
 
@@ -86,28 +85,18 @@ export default function SkillsSection({ skills = [], onChange, mode }: Props) {
   };
 
   return (
-    <View style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <Feather name="target" size={20} color="#4A6CF7" />
-          <Text style={styles.title}>
-            Key Skills <Text style={{ color: "#E53935" }}>*</Text>
-          </Text>
-        </View>
-
-        {skills.length > 0 && (
-          <View style={styles.countBadge}>
-            <Text style={styles.countText}>{skills.length}</Text>
-          </View>
-        )}
-      </View>
-
+    <SectionCard
+      icon="award"
+      title="Key Skills"
+      required
+      count={skills.length}
+    >
       {skills.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Feather name="award" size={40} color="#ccc" />
+          <Feather name="zap" size={32} color={colors.gray} />
           <Text style={styles.emptyText}>No skills listed yet</Text>
           {editable && (
-            <Text style={styles.emptyHint}>Showcase your expertise here</Text>
+            <Text style={styles.emptyHint}>Showcase your expertise</Text>
           )}
         </View>
       ) : (
@@ -124,195 +113,129 @@ export default function SkillsSection({ skills = [], onChange, mode }: Props) {
       )}
 
       {editable && (
-        <View style={styles.addSection}>
-          <View style={styles.addContainer}>
-            <View
-              style={[
-                styles.inputWrapper,
-                inputFocused && styles.inputWrapperFocused,
-              ]}
-            >
-              <Feather
-                name="plus"
-                size={18}
-                color={inputFocused ? "#4A6CF7" : "#999"}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                placeholder="Add a skill"
-                placeholderTextColor="#aaa"
-                value={skill}
-                onChangeText={setSkill}
-                onSubmitEditing={addSkill}
-                returnKeyType="done"
-                style={styles.input}
-                onFocus={() => setInputFocused(true)}
-                onBlur={() => setInputFocused(false)}
-              />
-            </View>
-
-            <TouchableOpacity
-              onPress={addSkill}
-              disabled={!skill.trim()}
-              style={[
-                styles.addButton,
-                !skill.trim() && styles.addButtonDisabled,
-              ]}
-              activeOpacity={0.8}
-            >
-              <Feather
-                name="plus"
-                size={18}
-                color={skill.trim() ? "#fff" : "#999"}
-              />
-            </TouchableOpacity>
+        <View style={styles.addContainer}>
+          <View
+            style={[
+              styles.inputWrapper,
+              inputFocused && styles.inputWrapperFocused,
+            ]}
+          >
+            <Feather
+              name="plus"
+              size={18}
+              color={inputFocused ? colors.primary : colors.placeholder}
+            />
+            <TextInput
+              placeholder="Add a skill"
+              placeholderTextColor={colors.placeholder}
+              value={skill}
+              onChangeText={setSkill}
+              onSubmitEditing={addSkill}
+              returnKeyType="done"
+              style={styles.input}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setInputFocused(false)}
+            />
           </View>
+
+          <TouchableOpacity
+            onPress={addSkill}
+            disabled={!skill.trim()}
+            style={[
+              styles.addButton,
+              !skill.trim() && styles.addButtonDisabled,
+            ]}
+            activeOpacity={0.8}
+          >
+            <Feather
+              name="plus"
+              size={20}
+              color={skill.trim() ? "#fff" : colors.gray}
+            />
+          </TouchableOpacity>
         </View>
       )}
-    </View>
+    </SectionCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#f0f0f0",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  countBadge: {
-    backgroundColor: "#4A6CF7",
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    minWidth: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 2,
-  },
-  countText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "700",
-  },
   emptyContainer: {
     alignItems: "center",
-    paddingVertical: 24,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 12,
-    marginBottom: 16,
+    paddingVertical: spacing.xl,
+    backgroundColor: colors.inputBg,
+    borderRadius: radius.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
+    borderColor: colors.border,
     borderStyle: "dashed",
   },
   emptyText: {
     fontSize: 14,
-    color: "#666",
-    marginTop: 8,
-    fontWeight: "500",
+    color: colors.textMuted,
+    marginTop: spacing.sm,
+    fontWeight: "600",
   },
   emptyHint: {
     fontSize: 12,
-    color: "#999",
+    color: colors.gray,
     marginTop: 4,
   },
   skillsList: {
-    marginBottom: 16,
-    gap: 8,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
     flexDirection: "row",
     flexWrap: "wrap",
   },
   skillItem: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#f0f4ff",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#e0e8ff",
-  },
-  skillContent: {
-    flexDirection: "row",
-    alignItems: "center",
     gap: 6,
-  },
-  skillIconContainer: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: colors.primarySoft,
+    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
   },
   skillText: {
     fontSize: 13,
-    color: "#303F9F",
+    color: colors.primary,
     fontWeight: "600",
-  },
-  removeButton: {
-    marginLeft: 8,
-    padding: 2,
-  },
-  addSection: {
-    marginTop: 8,
   },
   addContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
   inputWrapper: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 10,
-    backgroundColor: "#f8f9fa",
-    paddingHorizontal: 10,
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.inputBg,
+    paddingHorizontal: spacing.md,
   },
   inputWrapperFocused: {
-    borderColor: "#4A6CF7",
-    backgroundColor: "#fff",
-  },
-  inputIcon: {
-    marginRight: 6,
+    borderColor: colors.primary,
+    backgroundColor: colors.card,
   },
   input: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     fontSize: 14,
-    color: "#333",
+    color: colors.text,
   },
   addButton: {
-    backgroundColor: "#4A6CF7",
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    backgroundColor: colors.primary,
+    width: 46,
+    height: 46,
+    borderRadius: radius.md,
     alignItems: "center",
     justifyContent: "center",
   },
   addButtonDisabled: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: colors.border,
   },
 });

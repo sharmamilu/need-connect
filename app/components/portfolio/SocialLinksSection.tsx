@@ -8,6 +8,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { colors } from "../../constants/colors";
+import { radius, spacing } from "../../constants/theme";
+import SectionCard from "./SectionCard";
 
 type Props = {
   links: {
@@ -40,8 +43,7 @@ export default function SocialLinksSection({
   const [showAdd, setShowAdd] = useState(false);
 
   const handleUpdate = (key: string, value: string) => {
-    const updated = { ...links, [key.toLowerCase()]: value };
-    onChange(updated);
+    onChange({ ...links, [key.toLowerCase()]: value });
   };
 
   const handleRemove = (key: string) => {
@@ -65,35 +67,39 @@ export default function SocialLinksSection({
   const allPlatforms = Object.keys(links);
 
   return (
-    <View style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <Feather name="link" size={20} color="#4A6CF7" />
-          <Text style={styles.title}>Public & Social Links</Text>
-        </View>
-        {editable && !showAdd && (
+    <SectionCard
+      icon="link"
+      title="Social Links"
+      right={
+        editable && !showAdd ? (
           <TouchableOpacity
-            style={styles.addButton}
+            style={styles.addHeaderButton}
             onPress={() => setShowAdd(true)}
+            activeOpacity={0.8}
           >
-            <Feather name="plus" size={18} color="#4A6CF7" />
-            <Text style={styles.addText}>Add</Text>
+            <Feather name="plus" size={16} color={colors.primary} />
+            <Text style={styles.addHeaderText}>Add</Text>
           </TouchableOpacity>
-        )}
-      </View>
-
+        ) : undefined
+      }
+    >
       {showAdd && (
         <View style={styles.addSection}>
           <TextInput
             style={styles.addInput}
-            placeholder="Platform Name (e.g. Instagram)"
+            placeholder="Platform name (e.g. Instagram)"
+            placeholderTextColor={colors.placeholder}
             value={newPlatform}
             onChangeText={setNewPlatform}
+            onSubmitEditing={handleAddPlatform}
             autoFocus
           />
           <View style={styles.addActions}>
             <TouchableOpacity
-              onPress={() => setShowAdd(false)}
+              onPress={() => {
+                setShowAdd(false);
+                setNewPlatform("");
+              }}
               style={styles.cancelButton}
             >
               <Text style={styles.cancelText}>Cancel</Text>
@@ -110,7 +116,9 @@ export default function SocialLinksSection({
 
       {allPlatforms.length === 0 && !showAdd && (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No links added yet.</Text>
+          <Text style={styles.emptyText}>
+            No links added{editable ? " — optional" : ""}.
+          </Text>
         </View>
       )}
 
@@ -119,14 +127,16 @@ export default function SocialLinksSection({
           <Feather
             name={SOCIAL_ICONS[platform] || "link"}
             size={18}
-            color="#999"
+            color={colors.placeholder}
             style={styles.icon}
           />
           <TextInput
             placeholder={`${platform.charAt(0).toUpperCase() + platform.slice(1)} URL`}
-            placeholderTextColor="#aaa"
+            placeholderTextColor={colors.placeholder}
             value={links[platform]}
             editable={editable}
+            autoCapitalize="none"
+            keyboardType="url"
             onChangeText={(val) => handleUpdate(platform, val)}
             style={[styles.input, !editable && styles.inputDisabled]}
           />
@@ -134,103 +144,69 @@ export default function SocialLinksSection({
             <TouchableOpacity
               onPress={() => handleRemove(platform)}
               style={styles.removeButton}
+              hitSlop={6}
             >
-              <Feather name="trash-2" size={16} color="#E53935" />
+              <Feather name="trash-2" size={16} color={colors.error} />
             </TouchableOpacity>
           )}
         </View>
       ))}
-    </View>
+    </SectionCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#f0f0f0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  addButton: {
+  addHeaderButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#F0F4FF",
-    paddingHorizontal: 10,
+    backgroundColor: colors.primarySoft,
+    paddingHorizontal: spacing.md,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: radius.pill,
   },
-  addText: {
+  addHeaderText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: "#4A6CF7",
+    fontWeight: "700",
+    color: colors.primary,
   },
   addSection: {
-    backgroundColor: "#F8F9FA",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 16,
+    backgroundColor: colors.inputBg,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
+    borderColor: colors.border,
   },
   addInput: {
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 8,
-    padding: 10,
-    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: 11,
+    backgroundColor: colors.card,
     fontSize: 14,
+    color: colors.text,
   },
   addActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    gap: 12,
-    marginTop: 10,
+    gap: spacing.md,
+    marginTop: spacing.md,
+    alignItems: "center",
   },
-  cancelButton: {
-    padding: 6,
-  },
-  cancelText: {
-    color: "#777",
-    fontWeight: "600",
-  },
+  cancelButton: { padding: 6 },
+  cancelText: { color: colors.textMuted, fontWeight: "600" },
   confirmButton: {
-    backgroundColor: "#4A6CF7",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 8,
+    borderRadius: radius.sm,
   },
-  confirmText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
+  confirmText: { color: "#fff", fontWeight: "700" },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: spacing.md,
     position: "relative",
   },
   icon: {
@@ -240,32 +216,31 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 12,
-    paddingLeft: 44,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingLeft: 42,
     paddingRight: 40,
     paddingVertical: 12,
     fontSize: 14,
-    color: "#333",
-    backgroundColor: "#f8f9fa",
+    color: colors.text,
+    backgroundColor: colors.inputBg,
   },
   inputDisabled: {
-    backgroundColor: "#f5f5f5",
-    color: "#777",
-    paddingRight: 10,
+    backgroundColor: colors.inputBg,
+    color: colors.textMuted,
+    paddingRight: 12,
   },
   removeButton: {
     position: "absolute",
     right: 12,
-    padding: 8,
+    padding: 6,
   },
   emptyState: {
-    padding: 10,
+    paddingVertical: spacing.md,
     alignItems: "center",
   },
   emptyText: {
-    color: "#999",
-    fontStyle: "italic",
+    color: colors.gray,
   },
 });

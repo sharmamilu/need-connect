@@ -1,5 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { colors } from "../../constants/colors";
+import { radius, spacing } from "../../constants/theme";
 
 export default function CreatePostTrigger({
   onPress,
@@ -14,8 +16,12 @@ export default function CreatePostTrigger({
     "";
 
   return (
-    <View style={styles.card}>
-      <TouchableOpacity onPress={onProfilePress}>
+    <View style={styles.container}>
+      <TouchableOpacity
+        onPress={onProfilePress}
+        activeOpacity={0.85}
+        style={styles.avatarWrapper}
+      >
         {avatarUri ? (
           <Image source={{ uri: avatarUri }} style={styles.avatar} />
         ) : (
@@ -23,67 +29,96 @@ export default function CreatePostTrigger({
             {nameInitial ? (
               <Text style={styles.initialText}>{nameInitial}</Text>
             ) : (
-              <Feather name="user" size={16} color="#666" />
+              <Feather name="user" size={15} color="#fff" />
             )}
           </View>
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.inputBar} onPress={onPress}>
-        <Text style={styles.placeholder}>What's on your mind?</Text>
+      <TouchableOpacity
+        style={styles.inputBar}
+        onPress={onPress}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.placeholder}>What&apos;s on your mind?</Text>
+        <Feather name="edit-2" size={14} color={colors.placeholder} style={styles.editIcon} />
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={onPress}>
-        <Feather name="image" size={20} color="#45bd62" />
+      <TouchableOpacity
+        style={styles.photoButton}
+        onPress={onPress}
+        activeOpacity={0.8}
+      >
+        <Feather name="image" size={18} color={colors.success} />
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
+  container: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 16,
-    marginBottom: 20,
+    backgroundColor: colors.card,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: radius.xl,
+    marginBottom: spacing.lg,
     gap: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: "#f0f2f5",
+    borderWidth: 1.5,
+    borderColor: colors.border,
+  },
+  avatarWrapper: {
+    borderWidth: 2,
+    borderColor: colors.primarySoft,
+    borderRadius: 22,
+    padding: 1,
   },
   avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.skeleton,
   },
   avatarPlaceholder: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: "#4A6CF7",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
   initialText: {
     color: "#fff",
     fontSize: 14,
-    fontWeight: "bold",
+    fontWeight: "700",
   },
   inputBar: {
     flex: 1,
     height: 40,
-    backgroundColor: "#f0f2f6",
-    borderRadius: 20,
-    justifyContent: "center",
-    paddingHorizontal: 16,
+    backgroundColor: colors.inputBg,
+    borderRadius: radius.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+    borderColor: "transparent",
   },
   placeholder: {
-    color: "#65676b",
-    fontSize: 15,
+    color: colors.placeholder,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  editIcon: {
+    opacity: 0.7,
+  },
+  photoButton: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primarySoft,
   },
 });

@@ -1,77 +1,34 @@
 import { Feather } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { Link, router } from "expo-router";
 import { useRef, useState } from "react";
-import {
-  Animated,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import AuthHeader from "../components/auth/AuthHeader";
+import AuthScreen from "../components/auth/AuthScreen";
 import AppButton from "../components/common/AppButton";
-import AppInput from "../components/common/AppInput";
+import FormField, {
+  FormFieldHandle,
+} from "../components/common/FormField";
 import { colors } from "../constants/colors";
-import { useAlert } from "../utils/AlertManager";
 import { forgotPasswordApi } from "../utils/api/auth.api";
 
 export default function ForgotPassword() {
-  const { showAlert } = useAlert();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [generalError, setGeneralError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const emailShakeAnimation = useRef(new Animated.Value(0)).current;
-
-  const shakeEmail = () => {
-    Animated.sequence([
-      Animated.timing(emailShakeAnimation, {
-        toValue: 10,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(emailShakeAnimation, {
-        toValue: -10,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(emailShakeAnimation, {
-        toValue: 6,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(emailShakeAnimation, {
-        toValue: -6,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(emailShakeAnimation, {
-        toValue: 2,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-      Animated.timing(emailShakeAnimation, {
-        toValue: 0,
-        duration: 50,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
+  const emailRef = useRef<FormFieldHandle>(null);
 
   const validate = (): boolean => {
     if (!email.trim()) {
       setError("Email address is required");
-      shakeEmail();
+      emailRef.current?.shake();
       return false;
-    } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+    }
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
       setError("Enter a valid email address");
-      shakeEmail();
+      emailRef.current?.shake();
       return false;
     }
     setError("");
@@ -79,21 +36,22 @@ export default function ForgotPassword() {
   };
 
   const handleForgotPassword = async () => {
-    if (!validate() || isLoading) return;
+    if (isLoading || !validate()) return;
 
+    setGeneralError("");
     setIsLoading(true);
     try {
-      await forgotPasswordApi({ email });
-      showAlert("Password reset code sent to your email", "success");
-      // Redirect the user to verification screen with the typed email passed as a query param
-      router.push(`/reset-password?email=${encodeURIComponent(email)}` as any);
+      await forgotPasswordApi({ email: email.trim() });
+      router.push(
+        `/reset-password?email=${encodeURIComponent(email.trim())}` as any,
+      );
     } catch (err: any) {
-      const errorMessage = err.message?.toLowerCase() || "";
-      if (errorMessage.includes("email")) {
-        setError(err.message);
-        shakeEmail();
+      const message = err?.message || "Something went wrong. Please try again.";
+      if (message.toLowerCase().includes("no user")) {
+        setError(message);
+        emailRef.current?.shake();
       } else {
-        showAlert(err.message, "error");
+        setGeneralError(message);
       }
     } finally {
       setIsLoading(false);
@@ -103,170 +61,93 @@ export default function ForgotPassword() {
   const isFormValid = email.trim() !== "";
 
   return (
-    <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.card}>
-            {/* LOGO AREA */}
-            <View style={styles.logoContainer}>
-              <Image
-                source={require("../../assets/images/icon.png")}
-                style={styles.logo}
-              />
-              <Text style={styles.logoText}>Need Connect</Text>
-            </View>
+    <AuthScreen>
+      <AuthHeader
+        title="Forgot Password"
+        subtitle="Enter your email and we'll send you a 6-digit reset code"
+      />
 
-            <AuthHeader
-              title="Forgot Password"
-              subtitle="Enter your email to receive a 6-digit reset code"
-            />
+      {generalError ? (
+        <View style={styles.banner}>
+          <Feather name="alert-circle" size={16} color={colors.error} />
+          <Text style={styles.bannerText}>{generalError}</Text>
+        </View>
+      ) : null}
 
-            <View style={styles.form}>
-              <View>
-                <Animated.View
-                  style={[
-                    styles.inputWrapper,
-                    {
-                      transform: [
-                        {
-                          translateX: emailShakeAnimation,
-                        },
-                      ],
-                    },
-                  ]}
-                >
-                  <AppInput
-                    placeholder="Email Address"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    value={email}
-                    onChangeText={(val: string) => {
-                      setEmail(val);
-                      setError("");
-                    }}
-                    style={styles.inputWithIcon}
-                  />
-                  <Feather
-                    name="mail"
-                    size={20}
-                    color="#999"
-                    style={styles.inputIcon}
-                  />
-                </Animated.View>
-                {error ? <Text style={styles.errorText}>{error}</Text> : null}
-              </View>
+      <View style={styles.form}>
+        <FormField
+          ref={emailRef}
+          icon="mail"
+          placeholder="Email Address"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoComplete="email"
+          textContentType="emailAddress"
+          returnKeyType="send"
+          onSubmitEditing={handleForgotPassword}
+          value={email}
+          onChangeText={(v) => {
+            setEmail(v);
+            setError("");
+            setGeneralError("");
+          }}
+          error={error}
+        />
 
-              <AppButton
-                title="Send Reset Code"
-                onPress={handleForgotPassword}
-                disabled={!isFormValid || isLoading}
-                isLoading={isLoading}
-              />
-            </View>
+        <AppButton
+          title="Send Reset Code"
+          loadingTitle="Sending..."
+          onPress={handleForgotPassword}
+          disabled={!isFormValid}
+          isLoading={isLoading}
+        />
+      </View>
 
-            <View style={styles.loginContainer}>
-              <Link href="/login" asChild>
-                <TouchableOpacity>
-                  <Text style={styles.loginLink}>Back to Login</Text>
-                </TouchableOpacity>
-              </Link>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <View style={styles.backContainer}>
+        <Link href="/login" asChild>
+          <TouchableOpacity hitSlop={8} style={styles.backRow}>
+            <Feather name="arrow-left" size={16} color={colors.primary} />
+            <Text style={styles.backLink}>Back to Login</Text>
+          </TouchableOpacity>
+        </Link>
+      </View>
+    </AuthScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
+  form: {
+    marginTop: 4,
+    gap: 16,
   },
-
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 20,
-  },
-
-  card: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-
-  logoContainer: {
+  banner: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 8,
+    backgroundColor: colors.errorSoft,
+    borderRadius: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
     marginBottom: 16,
   },
-
-  logoText: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: "#4A6CF7",
-    letterSpacing: 0.5,
-    marginTop: 6,
+  bannerText: {
+    flex: 1,
+    color: colors.error,
+    fontSize: 13,
+    fontWeight: "500",
   },
-
-  logo: {
-    width: 64,
-    height: 64,
-    resizeMode: "contain",
+  backContainer: {
+    alignItems: "center",
+    marginTop: 26,
   },
-
-  form: {
-    marginTop: 12,
-    gap: 14,
-  },
-
-  inputWrapper: {
-    position: "relative",
-    width: "100%",
-  },
-
-  inputWithIcon: {
-    paddingRight: 40,
-  },
-
-  inputIcon: {
-    position: "absolute",
-    right: 12,
-    top: "39%",
-    transform: [{ translateY: -10 }],
-    zIndex: 1,
-  },
-
-  errorText: {
-    color: "#E53935",
-    fontSize: 12,
-    marginTop: 4,
-    marginLeft: 4,
-  },
-
-  loginContainer: {
+  backRow: {
     flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 24,
+    alignItems: "center",
+    gap: 6,
   },
-
-  loginLink: {
+  backLink: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#4A6CF7",
+    fontWeight: "700",
+    color: colors.primary,
   },
 });

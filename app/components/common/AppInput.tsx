@@ -1,34 +1,110 @@
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  TextInput,
+  TextInputProps,
+  View,
+  ViewStyle,
+} from "react-native";
 import { colors } from "../../constants/colors";
 
-export default function AppInput({ error, style, ...props }: any) {
+type AppInputProps = TextInputProps & {
+  /** Optional Feather icon shown on the left of the field. */
+  icon?: keyof typeof Feather.glyphMap;
+  /** Optional element rendered on the right (e.g. a show/hide password button). */
+  rightAdornment?: React.ReactNode;
+  /** When true, the field renders in its error (red) state. */
+  hasError?: boolean;
+  containerStyle?: ViewStyle;
+};
+
+export default function AppInput({
+  icon,
+  rightAdornment,
+  hasError = false,
+  containerStyle,
+  style,
+  onFocus,
+  onBlur,
+  ...props
+}: AppInputProps) {
+  const [focused, setFocused] = useState(false);
+
   return (
-    <View style={styles.wrapper}>
+    <View
+      style={[
+        styles.container,
+        focused && styles.focused,
+        hasError && styles.error,
+        containerStyle,
+      ]}
+    >
+      {icon && (
+        <Feather
+          name={icon}
+          size={19}
+          color={
+            hasError
+              ? colors.error
+              : focused
+                ? colors.primary
+                : colors.placeholder
+          }
+          style={styles.leftIcon}
+        />
+      )}
+
       <TextInput
         {...props}
-        style={[styles.input, error && styles.errorBorder, style]}
-        placeholderTextColor={colors.gray}
+        style={[styles.input, style]}
+        placeholderTextColor={colors.placeholder}
+        onFocus={(e) => {
+          setFocused(true);
+          onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocused(false);
+          onBlur?.(e);
+        }}
       />
-      {error && <Text style={styles.error}>{error}</Text>}
+
+      {rightAdornment ? (
+        <View style={styles.rightAdornment}>{rightAdornment}</View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: { marginBottom: 12 },
-  input: {
-    borderWidth: 1,
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.inputBg,
+    borderWidth: 1.5,
     borderColor: colors.border,
-    borderRadius: 8,
-    padding: 14,
-    fontSize: 16,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    minHeight: 54,
   },
-  errorBorder: {
-    borderColor: "red",
+  focused: {
+    borderColor: colors.primary,
+    backgroundColor: colors.card,
   },
   error: {
-    color: "red",
-    fontSize: 12,
-    marginTop: 4,
+    borderColor: colors.error,
+    backgroundColor: colors.errorSoft,
+  },
+  leftIcon: {
+    marginRight: 10,
+  },
+  input: {
+    flex: 1,
+    fontSize: 15.5,
+    color: colors.text,
+    paddingVertical: 14,
+  },
+  rightAdornment: {
+    marginLeft: 8,
   },
 });

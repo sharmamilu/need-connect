@@ -1,28 +1,36 @@
 import { Feather } from "@expo/vector-icons";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Dimensions,
+  FlatList,
   Image,
   Modal,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { colors } from "../../constants/colors";
+import { radius, spacing } from "../../constants/theme";
 
 const { width } = Dimensions.get("window");
 
 export default function PostImageGrid({ images = [] }) {
   const [viewerVisible, setViewerVisible] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const listRef = useRef(null);
 
   if (!images || images.length === 0) return null;
 
   const handleOpen = (index) => {
     setSelectedIndex(index);
     setViewerVisible(true);
+  };
+
+  const onViewerScroll = (e) => {
+    const idx = Math.round(e.nativeEvent.contentOffset.x / width);
+    setSelectedIndex(idx);
   };
 
   const renderGrid = () => {
@@ -129,7 +137,7 @@ export default function PostImageGrid({ images = [] }) {
           {images.slice(2, 4).map((img, i) => (
             <TouchableOpacity
               key={i}
-              style={styles.flex1}
+              style={styles.thirdWidth}
               activeOpacity={0.9}
               onPress={() => handleOpen(i + 2)}
             >
@@ -137,7 +145,7 @@ export default function PostImageGrid({ images = [] }) {
             </TouchableOpacity>
           ))}
           <TouchableOpacity
-            style={styles.flex1}
+            style={styles.thirdWidth}
             activeOpacity={0.9}
             onPress={() => handleOpen(4)}
           >
@@ -159,80 +167,106 @@ export default function PostImageGrid({ images = [] }) {
     <View style={styles.container}>
       {renderGrid()}
 
-      <Modal visible={viewerVisible} transparent animationType="fade">
-        <SafeAreaView style={styles.viewerContainer}>
+      {viewerVisible && (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          onRequestClose={() => setViewerVisible(false)}
+        >
+          <SafeAreaView style={styles.viewerContainer}>
           <TouchableOpacity
             style={styles.closeButton}
             onPress={() => setViewerVisible(false)}
+            hitSlop={10}
           >
-            <Feather name="x" size={28} color="#fff" />
+            <Feather name="x" size={26} color="#fff" />
           </TouchableOpacity>
 
-          <ScrollView
+          {images.length > 1 && (
+            <View style={styles.counterPill}>
+              <Text style={styles.counterText}>
+                {selectedIndex + 1} / {images.length}
+              </Text>
+            </View>
+          )}
+
+          <FlatList
+            ref={listRef}
+            data={images}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            contentOffset={{ x: selectedIndex * width, y: 0 }}
-          >
-            {images.map((img, i) => (
-              <View key={i} style={styles.slide}>
+            keyExtractor={(_, i) => String(i)}
+            initialScrollIndex={selectedIndex}
+            getItemLayout={(_, index) => ({
+              length: width,
+              offset: width * index,
+              index,
+            })}
+            onMomentumScrollEnd={onViewerScroll}
+            renderItem={({ item }) => (
+              <View style={styles.slide}>
                 <Image
-                  source={{ uri: img }}
+                  source={{ uri: item }}
                   style={styles.fullImage}
                   resizeMode="contain"
                 />
               </View>
-            ))}
-          </ScrollView>
+            )}
+          />
 
-          <View style={styles.pagination}>
-            {images.map((_, i) => (
-              <View
-                key={i}
-                style={[styles.dot, i === selectedIndex && styles.activeDot]}
-              />
-            ))}
-          </View>
-        </SafeAreaView>
-      </Modal>
+          {images.length > 1 && (
+            <View style={styles.pagination}>
+              {images.map((_, i) => (
+                <View
+                  key={i}
+                  style={[styles.dot, i === selectedIndex && styles.activeDot]}
+                />
+              ))}
+            </View>
+          )}
+          </SafeAreaView>
+        </Modal>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 12,
-    borderRadius: 12,
+    marginTop: spacing.md,
+    borderRadius: radius.md,
     overflow: "hidden",
   },
   singleImage: {
     width: "100%",
     height: 300,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: colors.skeleton,
   },
   gridContainer: {
-    gap: 4,
+    gap: 3,
   },
   row: {
     flexDirection: "row",
-    gap: 4,
+    gap: 3,
   },
   halfWidth: {
     flex: 1,
-    height: 200,
+    height: 190,
   },
   fullWidth: {
     width: "100%",
     height: 200,
   },
-  flex1: {
+  thirdWidth: {
     flex: 1,
-    height: 150,
+    height: 130,
   },
   gridImage: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#f0f0f0",
+    backgroundColor: colors.skeleton,
   },
   moreContainer: {
     width: "100%",
@@ -241,7 +275,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.45)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -259,7 +293,22 @@ const styles = StyleSheet.create({
     top: 50,
     right: 20,
     zIndex: 10,
-    padding: 10,
+    padding: spacing.sm,
+  },
+  counterPill: {
+    position: "absolute",
+    top: 54,
+    alignSelf: "center",
+    zIndex: 10,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+  },
+  counterText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "600",
   },
   slide: {
     width: width,
@@ -277,15 +326,16 @@ const styles = StyleSheet.create({
     bottom: 40,
     width: "100%",
     justifyContent: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
   dot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.3)",
+    backgroundColor: "rgba(255,255,255,0.35)",
   },
   activeDot: {
     backgroundColor: "#fff",
+    width: 18,
   },
 });

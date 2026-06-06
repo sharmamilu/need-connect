@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   StyleSheet,
@@ -8,6 +8,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { colors } from "../../constants/colors";
+import { radius, spacing } from "../../constants/theme";
+import SectionCard from "./SectionCard";
 
 type Props = {
   services: string[];
@@ -26,14 +29,13 @@ const ServiceItem = ({
 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Simple entry animation when a service is added
-  useState(() => {
+  useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 400,
+      duration: 350,
       useNativeDriver: true,
     }).start();
-  });
+  }, [fadeAnim]);
 
   return (
     <Animated.View
@@ -54,7 +56,7 @@ const ServiceItem = ({
     >
       <View style={styles.serviceContent}>
         <View style={styles.serviceIconContainer}>
-          <Feather name="check-circle" size={14} color="#4A6CF7" />
+          <Feather name="check" size={13} color={colors.primary} />
         </View>
         <Text style={styles.serviceText}>{item}</Text>
       </View>
@@ -63,8 +65,9 @@ const ServiceItem = ({
           onPress={onRemove}
           style={styles.removeButton}
           activeOpacity={0.7}
+          hitSlop={6}
         >
-          <Feather name="trash-2" size={16} color="#E53935" />
+          <Feather name="trash-2" size={16} color={colors.error} />
         </TouchableOpacity>
       )}
     </Animated.View>
@@ -81,8 +84,13 @@ export default function ServicesSection({
   const editable = mode !== "view";
 
   const addService = () => {
-    if (!service.trim()) return;
-    onChange([...services, service.trim()]);
+    const v = service.trim();
+    if (!v) return;
+    if (services.some((s) => s.toLowerCase() === v.toLowerCase())) {
+      setService("");
+      return;
+    }
+    onChange([...services, v]);
     setService("");
   };
 
@@ -91,28 +99,18 @@ export default function ServicesSection({
   };
 
   return (
-    <View style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <Feather name="briefcase" size={20} color="#4A6CF7" />
-          <Text style={styles.title}>
-            Services Offered <Text style={{ color: "#E53935" }}>*</Text>
-          </Text>
-        </View>
-
-        {services.length > 0 && (
-          <View style={styles.countBadge}>
-            <Text style={styles.countText}>{services.length}</Text>
-          </View>
-        )}
-      </View>
-
+    <SectionCard
+      icon="briefcase"
+      title="Services Offered"
+      required
+      count={services.length}
+    >
       {services.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Feather name="inbox" size={40} color="#ccc" />
+          <Feather name="inbox" size={32} color={colors.gray} />
           <Text style={styles.emptyText}>No services added yet</Text>
           {editable && (
-            <Text style={styles.emptyHint}>Add your first service below</Text>
+            <Text style={styles.emptyHint}>e.g. Wiring, Repairs, Install</Text>
           )}
         </View>
       ) : (
@@ -129,223 +127,147 @@ export default function ServicesSection({
       )}
 
       {editable && (
-        <View style={styles.addSection}>
-          <View style={styles.addContainer}>
-            <View
-              style={[
-                styles.inputWrapper,
-                inputFocused && styles.inputWrapperFocused,
-              ]}
-            >
-              <Feather
-                name="plus"
-                size={18}
-                color={inputFocused ? "#4A6CF7" : "#999"}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                placeholder="Add a service"
-                placeholderTextColor="#aaa"
-                value={service}
-                onChangeText={setService}
-                onSubmitEditing={addService}
-                returnKeyType="done"
-                style={styles.input}
-                onFocus={() => setInputFocused(true)}
-                onBlur={() => setInputFocused(false)}
-              />
-              {service.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => setService("")}
-                  style={styles.clearButton}
-                >
-                  <Feather name="x" size={16} color="#999" />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            <TouchableOpacity
-              onPress={addService}
-              disabled={!service.trim()}
-              style={[
-                styles.addButton,
-                !service.trim() && styles.addButtonDisabled,
-              ]}
-              activeOpacity={0.8}
-            >
-              <Feather
-                name="plus"
-                size={18}
-                color={service.trim() ? "#fff" : "#999"}
-              />
-            </TouchableOpacity>
+        <View style={styles.addContainer}>
+          <View
+            style={[
+              styles.inputWrapper,
+              inputFocused && styles.inputWrapperFocused,
+            ]}
+          >
+            <Feather
+              name="plus"
+              size={18}
+              color={inputFocused ? colors.primary : colors.placeholder}
+            />
+            <TextInput
+              placeholder="Add a service"
+              placeholderTextColor={colors.placeholder}
+              value={service}
+              onChangeText={setService}
+              onSubmitEditing={addService}
+              returnKeyType="done"
+              style={styles.input}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setInputFocused(false)}
+            />
           </View>
 
-          {services.length > 0 && (
-            <Text style={styles.hint}>
-              <Feather name="info" size={12} color="#999" /> Tap trash to remove
-            </Text>
-          )}
+          <TouchableOpacity
+            onPress={addService}
+            disabled={!service.trim()}
+            style={[
+              styles.addButton,
+              !service.trim() && styles.addButtonDisabled,
+            ]}
+            activeOpacity={0.8}
+          >
+            <Feather
+              name="plus"
+              size={20}
+              color={service.trim() ? "#fff" : colors.gray}
+            />
+          </TouchableOpacity>
         </View>
       )}
-    </View>
+    </SectionCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#f0f0f0",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  countBadge: {
-    backgroundColor: "#4A6CF7",
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    minWidth: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#4A6CF7",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  countText: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "700",
-    textAlign: "center",
-  },
   emptyContainer: {
     alignItems: "center",
-    paddingVertical: 24,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 12,
-    marginBottom: 16,
+    paddingVertical: spacing.xl,
+    backgroundColor: colors.inputBg,
+    borderRadius: radius.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
+    borderColor: colors.border,
     borderStyle: "dashed",
   },
   emptyText: {
     fontSize: 14,
-    color: "#666",
-    marginTop: 8,
-    fontWeight: "500",
+    color: colors.textMuted,
+    marginTop: spacing.sm,
+    fontWeight: "600",
   },
   emptyHint: {
     fontSize: 12,
-    color: "#999",
+    color: colors.gray,
     marginTop: 4,
   },
   servicesList: {
-    marginBottom: 16,
-    gap: 8,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
   },
   serviceItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#f8f9fa",
+    backgroundColor: colors.inputBg,
     paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
+    borderColor: colors.border,
   },
   serviceContent: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
-    gap: 8,
+    gap: spacing.sm,
   },
   serviceIconContainer: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#e8f0fe",
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },
   serviceText: {
     fontSize: 14,
-    color: "#333",
+    color: colors.text,
     flex: 1,
+    fontWeight: "500",
   },
   removeButton: {
     padding: 6,
-    backgroundColor: "#fff",
-    borderRadius: 6,
-  },
-  addSection: {
-    marginTop: 8,
   },
   addContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
   inputWrapper: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 10,
-    backgroundColor: "#f8f9fa",
-    paddingHorizontal: 10,
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.inputBg,
+    paddingHorizontal: spacing.md,
   },
   inputWrapperFocused: {
-    borderColor: "#4A6CF7",
-    backgroundColor: "#fff",
-  },
-  inputIcon: {
-    marginRight: 6,
+    borderColor: colors.primary,
+    backgroundColor: colors.card,
   },
   input: {
     flex: 1,
     paddingVertical: 12,
     fontSize: 14,
-    color: "#333",
-  },
-  clearButton: {
-    padding: 4,
+    color: colors.text,
   },
   addButton: {
-    backgroundColor: "#4A6CF7",
-    width: 44,
-    height: 44,
-    borderRadius: 10,
+    backgroundColor: colors.primary,
+    width: 46,
+    height: 46,
+    borderRadius: radius.md,
     alignItems: "center",
     justifyContent: "center",
   },
   addButtonDisabled: {
-    backgroundColor: "#f0f0f0",
-  },
-  hint: {
-    fontSize: 11,
-    color: "#999",
-    marginTop: 8,
-    textAlign: "center",
+    backgroundColor: colors.border,
   },
 });

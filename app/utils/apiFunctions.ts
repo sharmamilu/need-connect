@@ -1,7 +1,8 @@
 import axios from "axios";
+import { Platform } from "react-native";
 import { getToken } from "./storage";
 
-const BASE_URL = "https://need-connect-backend.onrender.com/api";
+const BASE_URL = "http://192.168.1.2:5000/api";
 
 const API = axios.create({
   baseURL: BASE_URL,
@@ -15,57 +16,148 @@ API.interceptors.request.use(async (config) => {
   return config;
 });
 
+/* ---------- IMAGE UPLOAD HELPERS ---------- */
+
+const appendImagesToFormData = async (formData: FormData, fieldName: string, images: any[]) => {
+  for (let index = 0; index < images.length; index++) {
+    const img = images[index];
+    if (!img) continue;
+
+    let uri = typeof img === "string" ? img : img.uri;
+    if (!uri || uri.startsWith("http://") || uri.startsWith("https://")) {
+      continue;
+    }
+
+    // On Android, make sure local paths are prefixed with file:// if they aren't content://
+    if (Platform.OS === "android" && !uri.startsWith("file://") && !uri.startsWith("content://")) {
+      uri = `file://${uri}`;
+    }
+
+    const name = img.fileName || `${fieldName}_${index}.jpg`;
+    const type = img.mimeType || "image/jpeg";
+
+    console.log(`[appendImagesToFormData] Appending image #${index}:`, { uri, name, type });
+
+    if (Platform.OS === "web") {
+      try {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        formData.append(fieldName, blob, name);
+      } catch (err) {
+        console.error("Failed to convert image to blob on web:", err);
+      }
+    } else {
+      formData.append(fieldName, {
+        uri,
+        name,
+        type,
+      } as any);
+    }
+  }
+};
+
+const appendSingleImageToFormData = async (formData: FormData, fieldName: string, image: any) => {
+  if (!image) return;
+  let uri = typeof image === "string" ? image : image.uri;
+  if (!uri || uri.startsWith("http://") || uri.startsWith("https://")) {
+    return;
+  }
+
+  if (Platform.OS === "android" && !uri.startsWith("file://") && !uri.startsWith("content://")) {
+    uri = `file://${uri}`;
+  }
+
+  const name = image.fileName || `${fieldName}.jpg`;
+  const type = image.mimeType || "image/jpeg";
+
+  console.log(`[appendSingleImageToFormData] Appending image:`, { uri, name, type });
+
+  if (Platform.OS === "web") {
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      formData.append(fieldName, blob, name);
+    } catch (err) {
+      console.error("Failed to convert image to blob on web:", err);
+    }
+  } else {
+    formData.append(fieldName, {
+      uri,
+      name,
+      type,
+    } as any);
+  }
+};
+
 /* ---------- IMAGE UPLOAD ---------- */
 
 export const uploadProfileImage = async (image: any) => {
   const formData = new FormData();
-  formData.append("image", {
-    uri: image.uri,
-    name: "profile.jpg",
-    type: "image/jpeg",
-  } as any);
+  await appendSingleImageToFormData(formData, "image", image);
 
-  const res = await API.post("/upload/profile", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+  const token = await getToken();
+  const response = await fetch(`${BASE_URL}/upload/profile`, {
+    method: "POST",
+    body: formData,
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
   });
 
-  return res.data?.data?.url || res.data?.url;
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("[uploadProfileImage] failed:", response.status, errorText);
+    throw new Error(`Profile image upload failed: ${response.status} - ${errorText}`);
+  }
+
+  const resData = await response.json();
+  return resData.data?.url || resData.url;
 };
 
 export const uploadPostImages = async (images: any[]) => {
   const formData = new FormData();
+  await appendImagesToFormData(formData, "images", images);
 
-  images.forEach((img, index) => {
-    formData.append("images", {
-      uri: img.uri,
-      name: `post_${index}.jpg`,
-      type: "image/jpeg",
-    } as any);
+  const token = await getToken();
+  const response = await fetch(`${BASE_URL}/upload/post`, {
+    method: "POST",
+    body: formData,
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
   });
 
-  const res = await API.post("/upload/post", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("[uploadPostImages] failed:", response.status, errorText);
+    throw new Error(`Post images upload failed: ${response.status} - ${errorText}`);
+  }
 
-  return res.data?.data?.urls || res.data?.urls;
+  const resData = await response.json();
+  return resData.data?.urls || resData.urls;
 };
 
 export const uploadGalleryImages = async (images: any[]) => {
   const formData = new FormData();
+  await appendImagesToFormData(formData, "images", images);
 
-  images.forEach((img, index) => {
-    formData.append("images", {
-      uri: img.uri,
-      name: `gallery_${index}.jpg`,
-      type: "image/jpeg",
-    } as any);
+  const token = await getToken();
+  const response = await fetch(`${BASE_URL}/upload/gallery`, {
+    method: "POST",
+    body: formData,
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
   });
 
-  const res = await API.post("/upload/gallery", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("[uploadGalleryImages] failed:", response.status, errorText);
+    throw new Error(`Gallery images upload failed: ${response.status} - ${errorText}`);
+  }
 
-  return res.data?.data?.urls || res.data?.urls;
+  const resData = await response.json();
+  return resData.data?.urls || resData.urls;
 };
 
 /* ---------- PORTFOLIO ---------- */
@@ -184,20 +276,25 @@ export const fetchReviewStats = (userId: string) =>
 
 export const uploadListingImages = async (images: any[]) => {
   const formData = new FormData();
+  await appendImagesToFormData(formData, "images", images);
 
-  images.forEach((img, index) => {
-    formData.append("images", {
-      uri: img.uri,
-      name: `listing_${index}.jpg`,
-      type: "image/jpeg",
-    } as any);
+  const token = await getToken();
+  const response = await fetch(`${BASE_URL}/upload/listing`, {
+    method: "POST",
+    body: formData,
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
   });
 
-  const res = await API.post("/upload/listing", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("[uploadListingImages] failed:", response.status, errorText);
+    throw new Error(`Listing images upload failed: ${response.status} - ${errorText}`);
+  }
 
-  return res.data?.data?.urls || res.data?.urls;
+  const resData = await response.json();
+  return resData.data?.urls || resData.urls;
 };
 
 export const createListing = (data: any) => API.post("/listings", data);
@@ -223,6 +320,8 @@ export const fetchUserListings = (
 ) => API.get(`/listings/user/${userId}`, { params });
 
 export const deleteListing = (id: string) => API.delete(`/listings/${id}`);
+
+export const fetchSuggestedOpportunities = () => API.get("/listings/suggested");
 
 /* ---------- ADMIN ---------- */
 
@@ -259,3 +358,8 @@ export const fetchMyDocuments = (
 
 export const deleteDocument = (documentId: string) =>
   API.delete(`/documents/${documentId}`);
+
+// Dummy default export to satisfy Expo Router's route compiler
+export default function DummyApiFunctionsRoute() {
+  return null;
+}

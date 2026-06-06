@@ -109,3 +109,9 @@ export const removeUser = async (): Promise<void> => {
     throw error;
   }
 };
+
+// Dummy default export to satisfy Expo Router's route compiler
+export default function DummyStorageRoute() {
+  return null;
+}
+

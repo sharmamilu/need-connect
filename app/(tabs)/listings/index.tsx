@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,6 +17,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ListingCard from "../../components/listings/ListingCard";
+import { colors } from "../../constants/colors";
+import { radius, shadow, spacing } from "../../constants/theme";
 import { fetchListings } from "../../utils/apiFunctions";
 
 const CATEGORIES = [
@@ -30,11 +32,26 @@ const CATEGORIES = [
   "Other",
 ];
 
+type SortKey = "newest" | "priceLow" | "priceHigh";
+const SORTS: { key: SortKey; label: string; icon: keyof typeof Feather.glyphMap }[] = [
+  { key: "newest", label: "Newest", icon: "clock" },
+  { key: "priceLow", label: "Price ↑", icon: "arrow-up" },
+  { key: "priceHigh", label: "Price ↓", icon: "arrow-down" },
+];
+
+// Best-effort numeric price from a free-text price string ("$1,299 or best offer").
+const parsePrice = (p: any): number | null => {
+  if (p == null) return null;
+  const m = String(p).replace(/,/g, "").match(/\d+(\.\d+)?/);
+  return m ? parseFloat(m[0]) : null;
+};
+
 export default function ListingsFeed() {
   const router = useRouter();
 
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
+  const [sort, setSort] = useState<SortKey>("newest");
 
   const [listings, setListings] = useState<any[]>([]);
   const [page, setPage] = useState(1);
@@ -201,6 +218,25 @@ export default function ListingsFeed() {
     setQuery(text);
   };
 
+  // Client-side sort over the loaded listings.
+  const visibleListings = useMemo(() => {
+    if (sort === "newest") return listings;
+    const priceOf = (l: any) =>
+      l.listingType === "Free" || l.listingType === "Donate"
+        ? 0
+        : parsePrice(l.price);
+    const arr = [...listings];
+    arr.sort((a, b) => {
+      const pa = priceOf(a);
+      const pb = priceOf(b);
+      if (pa == null && pb == null) return 0;
+      if (pa == null) return 1; // unknown prices last
+      if (pb == null) return -1;
+      return sort === "priceLow" ? pa - pb : pb - pa;
+    });
+    return arr;
+  }, [listings, sort]);
+
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -247,13 +283,13 @@ export default function ListingsFeed() {
                 {locationLoading ? (
                   <ActivityIndicator
                     size="small"
-                    color={locationFilter ? "#fff" : "#4A6CF7"}
+                    color={locationFilter ? "#fff" : colors.primary}
                   />
                 ) : (
                   <Feather
                     name="navigation"
                     size={20}
-                    color={locationFilter ? "#fff" : "#4A6CF7"}
+                    color={locationFilter ? "#fff" : colors.primary}
                   />
                 )}
               </TouchableOpacity>
@@ -321,15 +357,46 @@ export default function ListingsFeed() {
             </View>
           </View>
 
+          {/* Sort + count bar */}
+          {!loading && listings.length > 0 && (
+            <View style={styles.sortBar}>
+              <Text style={styles.resultCount}>
+                {listings.length} {listings.length === 1 ? "result" : "results"}
+              </Text>
+              <View style={styles.sortChips}>
+                {SORTS.map((s) => {
+                  const active = sort === s.key;
+                  return (
+                    <TouchableOpacity
+                      key={s.key}
+                      style={[styles.sortChip, active && styles.sortChipActive]}
+                      onPress={() => setSort(s.key)}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.sortChipText,
+                          active && styles.sortChipTextActive,
+                        ]}
+                      >
+                        {s.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
           {/* Results */}
           {loading && !refreshing ? (
             <View style={styles.centered}>
-              <ActivityIndicator size="large" color="#4A6CF7" />
+              <ActivityIndicator size="large" color={colors.primary} />
               <Text style={styles.loadingText}>Finding listings...</Text>
             </View>
           ) : (
             <FlatList
-              data={listings}
+              data={visibleListings}
               keyExtractor={(item) => item._id}
               renderItem={({ item }) => (
                 <ListingCard
@@ -365,7 +432,7 @@ export default function ListingsFeed() {
               ListEmptyComponent={
                 error ? (
                   <View style={styles.centered}>
-                    <Feather name="alert-circle" size={48} color="#FF4757" />
+                    <Feather name="alert-circle" size={48} color={colors.error} />
                     <Text style={styles.errorText}>{error}</Text>
                     <TouchableOpacity
                       style={styles.retryButton}
@@ -376,7 +443,7 @@ export default function ListingsFeed() {
                   </View>
                 ) : (
                   <View style={styles.centered}>
-                    <Feather name="inbox" size={48} color="#ccc" />
+                    <Feather name="inbox" size={48} color={colors.gray} />
                     <Text style={styles.emptyText}>No listings found</Text>
                     <Text style={styles.emptySubText}>
                       Try adjusting your search or category
@@ -388,7 +455,7 @@ export default function ListingsFeed() {
                 loadingMore ? (
                   <ActivityIndicator
                     size="small"
-                    color="#4A6CF7"
+                    color={colors.primary}
                     style={styles.loadMoreSpinner}
                   />
                 ) : null
@@ -404,148 +471,183 @@ export default function ListingsFeed() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#F8F9FA",
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#2D3436",
+    fontSize: 26,
+    fontWeight: "800",
+    color: colors.text,
   },
   addButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#4A6CF7",
-    paddingHorizontal: 16,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: radius.md,
     gap: 6,
+    ...shadow.card,
   },
   addButtonText: {
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 14,
   },
   container: {
     flex: 1,
-    paddingHorizontal: 16,
-    backgroundColor: "#F8F9FA",
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.background,
   },
   searchSection: {
-    gap: 16,
-    marginBottom: 16,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
   searchBar: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    paddingHorizontal: 16,
+    backgroundColor: colors.card,
+    paddingHorizontal: spacing.md,
     paddingVertical: 12,
-    borderRadius: 16,
-    gap: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    borderRadius: radius.md,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   nearMeBtn: {
     width: 48,
     height: 48,
-    backgroundColor: "#EDF1FF",
-    borderRadius: 16,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.md,
     justifyContent: "center",
     alignItems: "center",
     alignSelf: "center",
   },
   nearMeBtnActive: {
-    backgroundColor: "#4A6CF7",
+    backgroundColor: colors.primary,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: "#2D3436",
+    fontSize: 15,
+    color: colors.text,
     fontWeight: "500",
   },
   categoriesWrapper: {
-    marginHorizontal: -16, // Bleed into edges
+    marginHorizontal: -spacing.lg,
   },
   categoriesList: {
-    paddingHorizontal: 16,
-    gap: 10,
-    paddingBottom: 4,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+    paddingBottom: 2,
   },
   categoryItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#fff",
+    paddingHorizontal: spacing.md,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.border,
   },
   categoryItemActive: {
-    backgroundColor: "#4A6CF7",
-    borderColor: "#4A6CF7",
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   categoryText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#666",
+    fontSize: 13.5,
+    fontWeight: "600",
+    color: colors.textMuted,
   },
   categoryTextActive: {
     color: "#fff",
   },
+  sortBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+  },
+  resultCount: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.textMuted,
+  },
+  sortChips: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  sortChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  sortChipActive: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primary,
+  },
+  sortChipText: {
+    fontSize: 12.5,
+    fontWeight: "600",
+    color: colors.textMuted,
+  },
+  sortChipTextActive: {
+    color: colors.primary,
+    fontWeight: "700",
+  },
   listContent: {
-    paddingBottom: 20,
+    paddingBottom: spacing.xl,
   },
   centered: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    gap: 12,
+    gap: spacing.md,
+    paddingVertical: 60,
   },
   errorText: {
-    fontSize: 16,
-    color: "#FF4757",
+    fontSize: 15,
+    color: colors.error,
     fontWeight: "600",
     textAlign: "center",
   },
   loadingText: {
-    fontSize: 15,
-    color: "#666",
-    marginTop: 8,
+    fontSize: 14,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
   },
   emptyText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#444",
-    marginTop: 8,
+    fontSize: 17,
+    fontWeight: "700",
+    color: colors.text,
+    marginTop: spacing.sm,
   },
   emptySubText: {
-    fontSize: 14,
-    color: "#999",
+    fontSize: 13.5,
+    color: colors.textMuted,
   },
   retryButton: {
-    marginTop: 12,
-    backgroundColor: "#4A6CF7",
-    paddingHorizontal: 24,
+    marginTop: spacing.md,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.xxl,
     paddingVertical: 12,
-    borderRadius: 14,
+    borderRadius: radius.md,
   },
   retryText: {
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 15,
   },
   loadMoreSpinner: {
-    paddingVertical: 16,
+    paddingVertical: spacing.lg,
   },
 });

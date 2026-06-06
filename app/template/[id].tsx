@@ -18,7 +18,96 @@ import {
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
+import { colors } from "../constants/colors";
+import { getTemplate } from "../constants/templates";
+import { radius, shadow, spacing } from "../constants/theme";
 import { fetchDocumentById, generateDocument } from "../utils/apiFunctions";
+
+/** Fields the generator requires before producing a document. */
+const REQUIRED_FIELDS = ["title", "clientName"];
+
+/** A small themed mock that visually approximates each design style. */
+function StyleMock({ styleId }: { styleId: string }) {
+  if (styleId === "dark") {
+    return (
+      <View style={[mock.doc, { backgroundColor: "#0F172A" }]}>
+        <View style={[mock.accent, { backgroundColor: "#38BDF8" }]} />
+        <View style={[mock.line, { backgroundColor: "#334155", width: "70%" }]} />
+        <View style={[mock.line, { backgroundColor: "#1E293B" }]} />
+        <View style={[mock.line, { backgroundColor: "#1E293B", width: "55%" }]} />
+      </View>
+    );
+  }
+  if (styleId === "creative") {
+    return (
+      <View style={[mock.doc, { backgroundColor: "#fff" }]}>
+        <View style={[mock.heroBand, { backgroundColor: "#DB2777" }]} />
+        <View style={[mock.line, { backgroundColor: "#FBCFE8", width: "75%" }]} />
+        <View style={[mock.line, { backgroundColor: "#F1F5F9" }]} />
+        <View style={[mock.line, { backgroundColor: "#F1F5F9", width: "60%" }]} />
+      </View>
+    );
+  }
+  if (styleId === "elegant") {
+    return (
+      <View
+        style={[
+          mock.doc,
+          { backgroundColor: "#FAFAF9", borderColor: "#E7E5E4", borderWidth: 1 },
+        ]}
+      >
+        <View style={[mock.centerBar, { backgroundColor: "#D97706" }]} />
+        <View style={[mock.divider, { backgroundColor: "#E7E5E4" }]} />
+        <View style={[mock.line, { backgroundColor: "#E7E5E4", alignSelf: "center", width: "80%" }]} />
+        <View style={[mock.line, { backgroundColor: "#E7E5E4", alignSelf: "center", width: "65%" }]} />
+      </View>
+    );
+  }
+  // classic
+  return (
+    <View style={[mock.doc, { backgroundColor: "#fff" }]}>
+      <View style={[mock.topBorder, { backgroundColor: "#4A6CF7" }]} />
+      <View style={[mock.line, { backgroundColor: "#C7D2FE", width: "70%" }]} />
+      <View style={[mock.line, { backgroundColor: "#E2E8F0" }]} />
+      <View style={[mock.line, { backgroundColor: "#E2E8F0", width: "55%" }]} />
+    </View>
+  );
+}
+
+const mock = StyleSheet.create({
+  doc: {
+    width: 60,
+    height: 78,
+    borderRadius: 8,
+    padding: 8,
+    gap: 5,
+    overflow: "hidden",
+    justifyContent: "flex-start",
+  },
+  topBorder: {
+    height: 5,
+    borderRadius: 2,
+    marginBottom: 4,
+    marginHorizontal: -8,
+    marginTop: -8,
+  },
+  heroBand: {
+    height: 22,
+    marginHorizontal: -8,
+    marginTop: -8,
+    marginBottom: 6,
+  },
+  accent: { height: 4, width: 24, borderRadius: 2, marginBottom: 4 },
+  centerBar: {
+    height: 4,
+    width: 28,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginTop: 6,
+  },
+  divider: { height: 1, width: "60%", alignSelf: "center", marginVertical: 4 },
+  line: { height: 5, borderRadius: 2, width: "100%" },
+});
 
 const STYLES = [
   {
@@ -56,150 +145,13 @@ const STYLES = [
   },
 ];
 
-const TEMPLATE_CONFIGS: Record<
-  string,
-  { key: string; label: string; placeholder: string; multiline?: boolean }[]
-> = {
-  invoice: [
-    {
-      key: "title",
-      label: "Invoice Title",
-      placeholder: "e.g. Graphic Design Services",
-    },
-    { key: "invoiceNo", label: "Invoice Number", placeholder: "INV-001" },
-    {
-      key: "clientName",
-      label: "Billed To (Client Name)",
-      placeholder: "Acme Corp",
-    },
-    { key: "amount", label: "Total Invoice Amount", placeholder: "$1,500.00" },
-    {
-      key: "description",
-      label: "Services Rendered",
-      placeholder: "Logo design, branding...",
-      multiline: true,
-    },
-    {
-      key: "dueDate",
-      label: "Payment Due Date",
-      placeholder: "Within 15 days",
-    },
-  ],
-  quotation: [
-    {
-      key: "title",
-      label: "Quotation Title",
-      placeholder: "e.g. Website Development",
-    },
-    {
-      key: "clientName",
-      label: "Prepared For",
-      placeholder: "Target Client Name",
-    },
-    { key: "amount", label: "Estimated Cost", placeholder: "$3,200.00" },
-    {
-      key: "description",
-      label: "Scope of Work",
-      placeholder: "Detailed tasks to be performed...",
-      multiline: true,
-    },
-    { key: "validity", label: "Valid Until", placeholder: "March 30, 2026" },
-  ],
-  proposal: [
-    { key: "title", label: "Proposal Title", placeholder: "Mobile App Pitch" },
-    {
-      key: "clientName",
-      label: "Prospective Client",
-      placeholder: "Client Name",
-    },
-    { key: "amount", label: "Proposed Budget", placeholder: "$10,000.00" },
-    {
-      key: "description",
-      label: "Proposed Solution & Summary",
-      placeholder: "How we will solve the problem...",
-      multiline: true,
-    },
-    {
-      key: "timeline",
-      label: "Timeline / Milestones",
-      placeholder: "4-6 weeks",
-    },
-  ],
-  contract: [
-    {
-      key: "title",
-      label: "Contract Title",
-      placeholder: "Freelance Service Agreement",
-    },
-    {
-      key: "clientName",
-      label: "Party B (Client Name)",
-      placeholder: "Client Legal Name",
-    },
-    { key: "amount", label: "Total Contract Value", placeholder: "$5,000.00" },
-    {
-      key: "description",
-      label: "Terms & Conditions",
-      placeholder: "1. Services... 2. Payment...",
-      multiline: true,
-    },
-  ],
-  resume: [
-    { key: "title", label: "Full Name", placeholder: "Jane Doe" },
-    {
-      key: "clientName",
-      label: "Professional Title",
-      placeholder: "Senior Mobile Engineer",
-    },
-    {
-      key: "contact",
-      label: "Email & Phone",
-      placeholder: "jane.doe@email.com | +1 234 567 890",
-    },
-    {
-      key: "links",
-      label: "Portfolio / LinkedIn",
-      placeholder: "linkedin.com/in/janedoe",
-    },
-    {
-      key: "description",
-      label: "Professional Summary",
-      placeholder: "Experienced engineer with 5 years in building...",
-      multiline: true,
-    },
-    {
-      key: "experience",
-      label: "Work Experience",
-      placeholder: "Company A (2020 - Present)\n- Led mobile team...",
-      multiline: true,
-    },
-    {
-      key: "education",
-      label: "Education",
-      placeholder: "B.S. Computer Science, University X",
-      multiline: true,
-    },
-    {
-      key: "skills",
-      label: "Skills & Expertise",
-      placeholder: "React Native, TypeScript, Node.js, UI/UX",
-      multiline: true,
-    },
-    {
-      key: "personalDetails",
-      label: "Personal Details",
-      placeholder: "Languages, Hobbies, Date of Birth, etc.",
-      multiline: true,
-    },
-  ],
-};
-
 export default function TemplateViewer() {
   const { id, docId } = useLocalSearchParams<{ id: string; docId?: string }>();
   const router = useRouter();
 
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [fetchingDoc, setFetchingDoc] = useState(false);
@@ -226,8 +178,21 @@ export default function TemplateViewer() {
   }, [docId]);
 
   const generateLocalHtml = (style: any) => {
-    const fieldsConfig =
-      TEMPLATE_CONFIGS[id || "invoice"] || TEMPLATE_CONFIGS["invoice"];
+    const tmpl = getTemplate(id);
+    const fieldsConfig = tmpl?.fields || getTemplate("invoice")!.fields;
+
+    // Resolve client and amount labels dynamically for context-appropriate output
+    const clientField = fieldsConfig.find((f) => f.key === "clientName");
+    const clientLabel = clientField ? clientField.label : "Client / Recipient";
+
+    const amountField = fieldsConfig.find((f) => f.key === "amount");
+    const amountLabel = amountField ? amountField.label : "Amount / Value";
+
+    // Whether to render the monetary "amount" block for this template.
+    const showAmount =
+      (tmpl?.hasAmount ?? true) &&
+      id !== "resume" &&
+      !!(formData.amount && formData.amount.trim());
 
     // Core extracted fields for hero sections
     const titleStr = formData.title || "Untitled Document";
@@ -321,13 +286,13 @@ export default function TemplateViewer() {
           </div>
           <div class="resume-body">
             <div>
-              ${renderSection("Professional Summary", summaryStr)}
-              ${renderSection("Experience", expStr)}
+              ${renderSection("Professional Profile Summary", summaryStr)}
+              ${renderSection("Work Experience History", expStr)}
             </div>
             <div>
-              ${renderSection("Skills", skillsStr)}
-              ${renderSection("Education", eduStr)}
-              ${renderSection("Personal Details", personalStr)}
+              ${renderSection("Key Skills & Core Competencies", skillsStr)}
+              ${renderSection("Education Background", eduStr)}
+              ${renderSection("Additional Personal Details", personalStr)}
             </div>
           </div>
         </div>
@@ -361,14 +326,14 @@ export default function TemplateViewer() {
           </div>
           <div class="info-grid">
             <div>
-              <div class="label">Primary Party</div>
+              <div class="label">${clientLabel}</div>
               <div class="value">${clientStr}</div>
             </div>
             ${
-              id !== "resume"
+              showAmount
                 ? `
             <div class="amount-box">
-              <div class="label">Primary Valuation</div>
+              <div class="label">${amountLabel}</div>
               <div class="amount-val">${amountStr}</div>
             </div>`
                 : ""
@@ -403,10 +368,10 @@ export default function TemplateViewer() {
           <div class="content">
             <div class="flex-row">
               <div>
-                <div class="label">Main Client / Subject</div>
+                <div class="label">${clientLabel}</div>
                 <div class="client-name">${clientStr}</div>
               </div>
-              ${id !== "resume" ? `<div class="amount-circle">${amountStr}</div>` : ""}
+              ${showAmount ? `<div class="amount-circle">${amountStr}</div>` : ""}
             </div>
             ${renderExtraFields()}
           </div>
@@ -434,13 +399,13 @@ export default function TemplateViewer() {
             </div>
             <div style="text-align: right; color: #64748B;">${dateStr}</div>
           </div>
-          <div class="label">Core Subject</div>
+          <div class="label">${clientLabel}</div>
           <div class="value">${clientStr}</div>
           <div class="divider"></div>
           ${
-            id !== "resume"
+            showAmount
               ? `
-          <div class="label">Total Value</div>
+          <div class="label">${amountLabel}</div>
           <div class="amount-text">${amountStr}</div>
           <div class="divider"></div>
           `
@@ -472,7 +437,7 @@ export default function TemplateViewer() {
           </div>
           <div class="info">
             <div>
-              <div style="color: #78716C; font-size: 12px; text-transform: uppercase;">To / Subject</div>
+              <div style="color: #78716C; font-size: 12px; text-transform: uppercase;">${clientLabel}</div>
               <div style="font-size: 18px; margin-top: 5px;">${clientStr}</div>
             </div>
             <div style="text-align: right;">
@@ -481,10 +446,10 @@ export default function TemplateViewer() {
             </div>
           </div>
           ${
-            id !== "resume"
+            showAmount
               ? `
           <div class="amount-section">
-            <div style="color: #78716C; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px;">Total Valuation</div>
+            <div style="color: #78716C; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px;">${amountLabel}</div>
             <div class="amount-val">${amountStr}</div>
           </div>
           `
@@ -621,28 +586,40 @@ export default function TemplateViewer() {
 
   const renderStylePicker = () => (
     <View style={styles.content}>
-      <Text style={styles.promptText}>Select a Design Style</Text>
+      <View style={styles.stepBadge}>
+        <Text style={styles.stepBadgeText}>STEP 1 OF 2</Text>
+      </View>
+      <Text style={styles.promptText}>Choose a design style</Text>
       <Text style={styles.subPrompt}>
-        Choose an aesthetic that matches your brand.
+        Pick a look that fits your brand — you can change it anytime.
       </Text>
 
       {STYLES.map((style) => (
         <TouchableOpacity
           key={style.id}
-          activeOpacity={0.8}
-          style={[styles.styleCard, { borderColor: style.bg }]}
+          activeOpacity={0.85}
+          style={styles.styleCard}
           onPress={() => setSelectedStyle(style.id)}
         >
-          <View
-            style={[styles.styleIconWrapper, { backgroundColor: style.bg }]}
-          >
-            <Feather name={style.icon as any} size={24} color={style.color} />
-          </View>
+          <StyleMock styleId={style.id} />
           <View style={styles.styleTextWrapper}>
-            <Text style={styles.styleName}>{style.name}</Text>
+            <View style={styles.styleNameRow}>
+              <View
+                style={[styles.styleIconChip, { backgroundColor: style.bg }]}
+              >
+                <Feather
+                  name={style.icon as any}
+                  size={13}
+                  color={style.color}
+                />
+              </View>
+              <Text style={styles.styleName}>{style.name}</Text>
+            </View>
             <Text style={styles.styleDesc}>{style.description}</Text>
           </View>
-          <Feather name="chevron-right" size={20} color="#CCC" />
+          <View style={[styles.selectPill, { backgroundColor: style.color }]}>
+            <Feather name="arrow-right" size={16} color="#fff" />
+          </View>
         </TouchableOpacity>
       ))}
     </View>
@@ -650,101 +627,109 @@ export default function TemplateViewer() {
 
   const renderForm = () => {
     const activeStyle = STYLES.find((s) => s.id === selectedStyle);
+    const accent = activeStyle?.color || colors.primary;
+    const fields = getTemplate(id)?.fields || getTemplate("invoice")!.fields;
 
     return (
       <View style={styles.content}>
-        <View style={styles.activeStyleBanner}>
-          <Text style={styles.activeStyleLabel}>Selected Style</Text>
+        {/* Selected-style header card */}
+        <View style={styles.styleHeaderCard}>
+          <StyleMock styleId={activeStyle?.id || "classic"} />
+          <View style={styles.styleHeaderText}>
+            <Text style={styles.styleHeaderLabel}>SELECTED STYLE</Text>
+            <Text style={styles.styleHeaderName}>{activeStyle?.name}</Text>
+          </View>
           <TouchableOpacity
             style={styles.changeStyleBtn}
             onPress={() => setSelectedStyle(null)}
+            activeOpacity={0.8}
           >
+            <Feather name="refresh-cw" size={13} color={colors.primary} />
             <Text style={styles.changeStyleText}>Change</Text>
           </TouchableOpacity>
         </View>
 
-        <View
-          style={[
-            styles.activeStylePreview,
-            { backgroundColor: activeStyle?.bg },
-          ]}
-        >
-          <Feather
-            name={activeStyle?.icon as any}
-            size={20}
-            color={activeStyle?.color}
-            style={{ marginRight: 8 }}
-          />
-          <Text style={[styles.activeStyleName, { color: activeStyle?.color }]}>
-            {activeStyle?.name}
-          </Text>
-        </View>
-
         <View style={styles.formCard}>
-          <Text style={styles.sectionTitle}>Document Content</Text>
+          <View style={styles.stepBadge}>
+            <Text style={styles.stepBadgeText}>STEP 2 OF 2</Text>
+          </View>
+          <Text style={styles.sectionTitle}>Fill in the details</Text>
+          <Text style={styles.sectionSub}>
+            Required fields are marked with{" "}
+            <Text style={{ color: colors.error }}>*</Text>
+          </Text>
 
-          {(TEMPLATE_CONFIGS[id as string] || TEMPLATE_CONFIGS["invoice"]).map(
-            (field) => (
-              <View key={field.key}>
-                <Text style={styles.label}>{field.label}</Text>
+          {fields.map((field) => {
+            const required = REQUIRED_FIELDS.includes(field.key);
+            const focused = focusedField === field.key;
+            const value = formData[field.key] || "";
+            return (
+              <View key={field.key} style={styles.fieldBlock}>
+                <Text style={styles.label}>
+                  {field.label}
+                  {required ? (
+                    <Text style={{ color: colors.error }}> *</Text>
+                  ) : null}
+                </Text>
                 <TextInput
-                  style={[styles.input, field.multiline && styles.textArea]}
+                  style={[
+                    styles.input,
+                    field.multiline && styles.textArea,
+                    focused && { borderColor: accent, backgroundColor: "#fff" },
+                  ]}
                   placeholder={field.placeholder}
+                  placeholderTextColor={colors.placeholder}
                   multiline={field.multiline}
                   numberOfLines={field.multiline ? 5 : 1}
-                  value={formData[field.key] || ""}
+                  value={value}
+                  onFocus={() => setFocusedField(field.key)}
+                  onBlur={() => setFocusedField(null)}
                   onChangeText={(text) =>
                     setFormData({ ...formData, [field.key]: text })
                   }
                 />
+                {field.multiline && value.length > 0 && (
+                  <Text style={styles.charCount}>{value.length} characters</Text>
+                )}
               </View>
-            ),
-          )}
+            );
+          })}
+        </View>
 
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[
-                styles.outlineButton,
-                { borderColor: activeStyle?.color },
-              ]}
-              onPress={handlePreview}
-              disabled={previewLoading || loading}
-            >
-              {previewLoading ? (
-                <ActivityIndicator color={activeStyle?.color} size="small" />
-              ) : (
-                <>
-                  <Text
-                    style={[
-                      styles.outlineButtonText,
-                      { color: activeStyle?.color },
-                    ]}
-                  >
-                    Preview Template
-                  </Text>
-                  <Feather name="eye" size={18} color={activeStyle?.color} />
-                </>
-              )}
-            </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.outlineButton, { borderColor: accent }]}
+            onPress={handlePreview}
+            disabled={previewLoading || loading}
+            activeOpacity={0.85}
+          >
+            {previewLoading ? (
+              <ActivityIndicator color={accent} size="small" />
+            ) : (
+              <>
+                <Feather name="eye" size={18} color={accent} />
+                <Text style={[styles.outlineButtonText, { color: accent }]}>
+                  Preview
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.generateButton,
-                { backgroundColor: activeStyle?.color },
-              ]}
-              onPress={handleGenerate}
-              disabled={loading || previewLoading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <>
-                  <Text style={styles.generateButtonText}>Generate & Save</Text>
-                  <Feather name="check-circle" size={18} color="#fff" />
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[styles.generateButton, { backgroundColor: accent }]}
+            onPress={handleGenerate}
+            disabled={loading || previewLoading}
+            activeOpacity={0.85}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Feather name="download" size={18} color="#fff" />
+                <Text style={styles.generateButtonText}>Generate PDF</Text>
+              </>
+            )}
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -764,10 +749,10 @@ export default function TemplateViewer() {
           }}
           style={styles.backButton}
         >
-          <Feather name="arrow-left" size={24} color="#333" />
+          <Feather name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {id ? id.charAt(0).toUpperCase() + id.slice(1) : "Template"}
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {getTemplate(id)?.title || "Template"}
         </Text>
         <View style={{ width: 32 }} />
       </View>
@@ -788,9 +773,13 @@ export default function TemplateViewer() {
               alignItems: "center",
             }}
           >
-            <ActivityIndicator size="large" color="#4A6CF7" />
+            <ActivityIndicator size="large" color={colors.primary} />
             <Text
-              style={{ marginTop: 15, color: "#64748B", fontWeight: "500" }}
+              style={{
+                marginTop: 15,
+                color: colors.textMuted,
+                fontWeight: "500",
+              }}
             >
               Loading previous design...
             </Text>
@@ -815,10 +804,20 @@ export default function TemplateViewer() {
               onPress={() => setPreviewHtml(null)}
               style={{ padding: 8 }}
             >
-              <Feather name="x" size={24} color="#333" />
+              <Feather name="x" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={styles.previewTitle}>Live Preview</Text>
-            <View style={{ width: 40 }} />
+            <TouchableOpacity
+              style={styles.previewSaveBtn}
+              onPress={() => {
+                setPreviewHtml(null);
+                handleGenerate();
+              }}
+              activeOpacity={0.85}
+            >
+              <Feather name="download" size={15} color="#fff" />
+              <Text style={styles.previewSaveText}>Save</Text>
+            </TouchableOpacity>
           </View>
           {previewHtml && (
             <WebView
@@ -837,17 +836,17 @@ export default function TemplateViewer() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#fff",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomColor: colors.border,
   },
   backButton: {
     padding: 8,
@@ -856,161 +855,210 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#333",
+    color: colors.text,
+    flex: 1,
+    textAlign: "center",
   },
   scrollContent: {
     paddingBottom: 40,
   },
   content: {
-    padding: 16,
+    padding: spacing.lg,
+  },
+  stepBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: colors.primarySoft,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+    marginBottom: spacing.md,
+  },
+  stepBadgeText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.primary,
+    letterSpacing: 0.6,
   },
   promptText: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "800",
-    color: "#1c1e21",
+    color: colors.text,
     marginBottom: 6,
   },
   subPrompt: {
-    fontSize: 15,
-    color: "#666",
-    marginBottom: 24,
+    fontSize: 14.5,
+    color: colors.textMuted,
+    marginBottom: spacing.xl,
+    lineHeight: 21,
   },
   styleCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  styleIconWrapper: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
+    gap: spacing.md,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow.card,
   },
   styleTextWrapper: {
     flex: 1,
-    paddingRight: 12,
   },
-  styleName: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#333",
+  styleNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     marginBottom: 4,
   },
-  styleDesc: {
-    fontSize: 13,
-    color: "#666",
-    lineHeight: 18,
-  },
-  activeStyleBanner: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  styleIconChip: {
+    width: 22,
+    height: 22,
+    borderRadius: 7,
     alignItems: "center",
-    marginBottom: 12,
+    justifyContent: "center",
   },
-  activeStyleLabel: {
-    fontSize: 14,
+  styleName: {
+    fontSize: 15.5,
     fontWeight: "700",
-    color: "#888",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    color: colors.text,
+  },
+  styleDesc: {
+    fontSize: 12.5,
+    color: colors.textMuted,
+    lineHeight: 17,
+  },
+  selectPill: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  styleHeaderCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow.card,
+  },
+  styleHeaderText: {
+    flex: 1,
+  },
+  styleHeaderLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.gray,
+    letterSpacing: 0.6,
+    marginBottom: 2,
+  },
+  styleHeaderName: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: colors.text,
   },
   changeStyleBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: "#E2E8F0",
-    borderRadius: 20,
-  },
-  changeStyleText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#475569",
-  },
-  activeStylePreview: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.pill,
   },
-  activeStyleName: {
-    fontSize: 16,
+  changeStyleText: {
+    fontSize: 12.5,
     fontWeight: "700",
+    color: colors.primary,
   },
   formCard: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 3,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow.card,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: "800",
-    color: "#1c1e21",
-    marginBottom: 20,
+    color: colors.text,
+    marginBottom: 4,
+  },
+  sectionSub: {
+    fontSize: 13,
+    color: colors.textMuted,
+    marginBottom: spacing.lg,
+  },
+  fieldBlock: {
+    marginBottom: spacing.lg,
   },
   label: {
-    fontSize: 14,
-    color: "#475569",
-    marginBottom: 8,
+    fontSize: 13.5,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
     fontWeight: "600",
   },
   input: {
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: colors.inputBg,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 13,
     fontSize: 15,
-    marginBottom: 20,
-    color: "#333",
+    color: colors.text,
   },
   textArea: {
-    height: 120,
+    minHeight: 120,
     textAlignVertical: "top",
+    paddingTop: 13,
+  },
+  charCount: {
+    fontSize: 11,
+    color: colors.gray,
+    textAlign: "right",
+    marginTop: 5,
   },
   buttonContainer: {
     flexDirection: "row",
-    gap: 12,
-    marginTop: 10,
+    gap: spacing.md,
+    marginTop: spacing.lg,
   },
   outlineButton: {
     flex: 1,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 2,
+    paddingVertical: 15,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
     gap: 8,
-    backgroundColor: "transparent",
+    backgroundColor: colors.card,
   },
   outlineButtonText: {
     fontWeight: "700",
     fontSize: 15,
   },
   generateButton: {
-    flex: 1,
+    flex: 1.4,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    padding: 16,
-    borderRadius: 14,
+    paddingVertical: 15,
+    borderRadius: radius.md,
     gap: 8,
+    shadowColor: "#0B1B3A",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 4,
   },
   generateButtonText: {
     color: "#fff",
@@ -1021,15 +1069,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
-    backgroundColor: "#fff",
+    borderBottomColor: colors.border,
+    backgroundColor: colors.card,
   },
   previewTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#1E293B",
+    color: colors.text,
+  },
+  previewSaveBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+  },
+  previewSaveText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 13,
   },
 });

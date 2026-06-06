@@ -509,10 +509,10 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
           onClose={() => setPickerVisible(false)}
           onSelect={(country) => {
             setSelectedCountry(country);
-            // Update nested countryCode AND clear phone as requested
+            // Update the country code but keep whatever phone the user typed.
             onChange({
               ...data,
-              contact: { countryCode: country.code, phone: "" },
+              contact: { ...data.contact, countryCode: country.code },
             });
           }}
         />

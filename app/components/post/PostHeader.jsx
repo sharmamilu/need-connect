@@ -2,6 +2,8 @@ import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { colors } from "../../constants/colors";
+import { spacing } from "../../constants/theme";
 import { formatRelativeTime } from "../../utils/dateUtils";
 import PostMenuModal from "./PostMenuModal";
 
@@ -75,9 +77,15 @@ export default function PostHeader({
         )}
         <View style={styles.info}>
           <View style={styles.nameRow}>
-            <Text style={styles.name}>{name}</Text>
+            <Text style={styles.name} numberOfLines={1}>
+              {name}
+            </Text>
             {verified && (
-              <Ionicons name="checkmark-circle" size={14} color="#4A6CF7" />
+              <Ionicons
+                name="checkmark-circle"
+                size={14}
+                color={colors.primary}
+              />
             )}
             {profession && (
               <Text style={styles.profession} numberOfLines={1}>
@@ -88,8 +96,8 @@ export default function PostHeader({
               <MaterialCommunityIcons
                 name="pin"
                 size={14}
-                color="#E53935"
-                style={{ marginLeft: 6 }}
+                color={colors.error}
+                style={{ marginLeft: 2 }}
               />
             )}
           </View>
@@ -102,7 +110,7 @@ export default function PostHeader({
                     key={i}
                     name={i < Math.floor(rating) ? "star" : "star-outline"}
                     size={12}
-                    color="#FFB800"
+                    color={colors.star}
                   />
                 ))}
               </View>
@@ -139,7 +147,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: spacing.md,
   },
   profileArea: {
     flexDirection: "row",
@@ -150,17 +158,18 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    marginRight: 12,
+    marginRight: spacing.md,
+    backgroundColor: colors.skeleton,
   },
   placeholderAvatar: {
-    backgroundColor: "#4A6CF7",
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
   },
   placeholderText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "700",
   },
   info: {
     flex: 1,
@@ -175,17 +184,18 @@ const styles = StyleSheet.create({
   name: {
     fontWeight: "700",
     fontSize: 15,
-    color: "#1a1a1a",
+    color: colors.text,
+    flexShrink: 1,
   },
   profession: {
     fontSize: 13,
-    color: "#666",
-    flex: 1,
+    color: colors.textMuted,
+    flexShrink: 1,
   },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
   ratingRow: {
     flexDirection: "row",
@@ -194,10 +204,10 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: 12,
-    color: "#999",
+    color: colors.gray,
   },
   menuButton: {
-    padding: 8,
-    marginRight: -8,
+    padding: spacing.sm,
+    marginRight: -spacing.sm,
   },
 });

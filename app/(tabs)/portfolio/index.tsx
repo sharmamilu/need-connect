@@ -1,5 +1,6 @@
 import { Redirect } from "expo-router";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { colors } from "../../constants/colors";
 import { usePortfolio } from "../../hooks/usePortfolio";
 
 export default function PortfolioIndex() {
@@ -7,8 +8,8 @@ export default function PortfolioIndex() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#4A6CF7" />
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -19,3 +20,12 @@ export default function PortfolioIndex() {
     <Redirect href={hasPortfolio ? "/portfolio/view" : "/portfolio/create"} />
   );
 }
+
+const styles = StyleSheet.create({
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.background,
+  },
+});

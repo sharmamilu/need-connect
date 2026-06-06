@@ -12,6 +12,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { colors } from "../constants/colors";
+import { FALLBACK_TEMPLATE_ICON, getTemplate } from "../constants/templates";
 import { deleteDocument, fetchMyDocuments } from "../utils/apiFunctions";
 
 export default function MyDocumentsScreen() {
@@ -75,15 +77,10 @@ export default function MyDocumentsScreen() {
     const title = item.formData?.title || "Untitled Document";
     const dateStr = new Date(item.createdAt).toLocaleDateString();
 
-    const icons: Record<string, string> = {
-      invoice: "file-text",
-      quotation: "dollar-sign",
-      proposal: "briefcase",
-      contract: "check-square",
-      resume: "user",
-    };
-
-    const iconName = icons[rawTemplateType] || "file";
+    const tmpl = getTemplate(rawTemplateType);
+    const iconName = tmpl?.icon || FALLBACK_TEMPLATE_ICON;
+    const iconColor = tmpl?.color || colors.primary;
+    const iconBg = tmpl?.bg || colors.primarySoft;
 
     return (
       <TouchableOpacity
@@ -93,15 +90,17 @@ export default function MyDocumentsScreen() {
           router.push(`/template/${rawTemplateType}?docId=${docId}` as any)
         }
       >
-        <View style={styles.iconContainer}>
-          <Feather name={iconName as any} size={24} color="#4A6CF7" />
+        <View style={[styles.iconContainer, { backgroundColor: iconBg }]}>
+          <Feather name={iconName} size={22} color={iconColor} />
         </View>
         <View style={styles.infoContainer}>
           <Text style={styles.title} numberOfLines={1}>
             {title}
           </Text>
           <View style={styles.metaRow}>
-            <Text style={styles.badge}>{rawTemplateType.toUpperCase()}</Text>
+            <Text style={styles.badge}>
+              {(tmpl?.category || rawTemplateType).toUpperCase()}
+            </Text>
             <Text style={styles.date}>{dateStr}</Text>
           </View>
         </View>
