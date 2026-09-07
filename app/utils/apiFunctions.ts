@@ -1,8 +1,7 @@
 import axios from "axios";
 import { Platform } from "react-native";
+import { BASE_URL } from "./constants";
 import { getToken, saveToken } from "./storage";
-
-const BASE_URL = "https://need-connect-backend.onrender.com/api";
 
 const API = axios.create({
   baseURL: BASE_URL,
@@ -28,14 +27,23 @@ API.interceptors.response.use(
     }
     return response;
   },
-  (error) => {
+  async (error) => {
+    if (error.response?.status === 401) {
+      try {
+        await saveToken("");
+      } catch {}
+    }
     return Promise.reject(error);
-  }
+  },
 );
 
 /* ---------- IMAGE UPLOAD HELPERS ---------- */
 
-const appendImagesToFormData = async (formData: FormData, fieldName: string, images: any[]) => {
+const appendImagesToFormData = async (
+  formData: FormData,
+  fieldName: string,
+  images: any[],
+) => {
   for (let index = 0; index < images.length; index++) {
     const img = images[index];
     if (!img) continue;
@@ -46,14 +54,22 @@ const appendImagesToFormData = async (formData: FormData, fieldName: string, ima
     }
 
     // On Android, make sure local paths are prefixed with file:// if they aren't content://
-    if (Platform.OS === "android" && !uri.startsWith("file://") && !uri.startsWith("content://")) {
+    if (
+      Platform.OS === "android" &&
+      !uri.startsWith("file://") &&
+      !uri.startsWith("content://")
+    ) {
       uri = `file://${uri}`;
     }
 
     const name = img.fileName || `${fieldName}_${index}.jpg`;
     const type = img.mimeType || "image/jpeg";
 
-    console.log(`[appendImagesToFormData] Appending image #${index}:`, { uri, name, type });
+    console.log(`[appendImagesToFormData] Appending image #${index}:`, {
+      uri,
+      name,
+      type,
+    });
 
     if (Platform.OS === "web") {
       try {
@@ -73,21 +89,33 @@ const appendImagesToFormData = async (formData: FormData, fieldName: string, ima
   }
 };
 
-const appendSingleImageToFormData = async (formData: FormData, fieldName: string, image: any) => {
+const appendSingleImageToFormData = async (
+  formData: FormData,
+  fieldName: string,
+  image: any,
+) => {
   if (!image) return;
   let uri = typeof image === "string" ? image : image.uri;
   if (!uri || uri.startsWith("http://") || uri.startsWith("https://")) {
     return;
   }
 
-  if (Platform.OS === "android" && !uri.startsWith("file://") && !uri.startsWith("content://")) {
+  if (
+    Platform.OS === "android" &&
+    !uri.startsWith("file://") &&
+    !uri.startsWith("content://")
+  ) {
     uri = `file://${uri}`;
   }
 
   const name = image.fileName || `${fieldName}.jpg`;
   const type = image.mimeType || "image/jpeg";
 
-  console.log(`[appendSingleImageToFormData] Appending image:`, { uri, name, type });
+  console.log(`[appendSingleImageToFormData] Appending image:`, {
+    uri,
+    name,
+    type,
+  });
 
   if (Platform.OS === "web") {
     try {
@@ -117,14 +145,16 @@ export const uploadProfileImage = async (image: any) => {
     method: "POST",
     body: formData,
     headers: {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
   if (!response.ok) {
     const errorText = await response.text();
     console.error("[uploadProfileImage] failed:", response.status, errorText);
-    throw new Error(`Profile image upload failed: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Profile image upload failed: ${response.status} - ${errorText}`,
+    );
   }
 
   const resData = await response.json();
@@ -140,14 +170,16 @@ export const uploadPostImages = async (images: any[]) => {
     method: "POST",
     body: formData,
     headers: {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
   if (!response.ok) {
     const errorText = await response.text();
     console.error("[uploadPostImages] failed:", response.status, errorText);
-    throw new Error(`Post images upload failed: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Post images upload failed: ${response.status} - ${errorText}`,
+    );
   }
 
   const resData = await response.json();
@@ -163,14 +195,16 @@ export const uploadGalleryImages = async (images: any[]) => {
     method: "POST",
     body: formData,
     headers: {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
   if (!response.ok) {
     const errorText = await response.text();
     console.error("[uploadGalleryImages] failed:", response.status, errorText);
-    throw new Error(`Gallery images upload failed: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Gallery images upload failed: ${response.status} - ${errorText}`,
+    );
   }
 
   const resData = await response.json();
@@ -300,14 +334,16 @@ export const uploadListingImages = async (images: any[]) => {
     method: "POST",
     body: formData,
     headers: {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
   if (!response.ok) {
     const errorText = await response.text();
     console.error("[uploadListingImages] failed:", response.status, errorText);
-    throw new Error(`Listing images upload failed: ${response.status} - ${errorText}`);
+    throw new Error(
+      `Listing images upload failed: ${response.status} - ${errorText}`,
+    );
   }
 
   const resData = await response.json();

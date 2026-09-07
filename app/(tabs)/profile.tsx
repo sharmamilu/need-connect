@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     fontSize: 18,
-    fontWeight: "850",
+    fontWeight: "800",
     color: colors.primary,
   },
   ratingRow: {
@@ -589,7 +589,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 14.5,
-    fontWeight: "750",
+    fontWeight: "700",
     color: colors.text,
     marginBottom: 1,
   },

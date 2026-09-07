@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Feather, FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -91,12 +91,11 @@ export default function ListingCard({ data, onDeleteSuccess }: any) {
           onPress={() => setIsFavorite(!isFavorite)}
           activeOpacity={0.8}
         >
-          <Feather
-            name="heart"
-            size={15}
-            color={isFavorite ? "#EF4444" : "#4B5563"}
-            style={isFavorite ? { fill: "#EF4444" } : null}
-          />
+          {isFavorite ? (
+            <FontAwesome name="heart" size={15} color="#EF4444" />
+          ) : (
+            <Feather name="heart" size={15} color="#4B5563" />
+          )}
         </TouchableOpacity>
 
         {/* Floating Price Tag */}

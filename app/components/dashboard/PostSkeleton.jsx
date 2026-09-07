@@ -3,6 +3,10 @@ import { Animated, StyleSheet, View } from "react-native";
 import { colors } from "../../constants/colors";
 import { radius, shadow, spacing } from "../../constants/theme";
 
+function SkeletonBlock({ style, opacity }) {
+  return <Animated.View style={[styles.block, style, { opacity }]} />;
+}
+
 /** Animated placeholder shown while the feed is loading. */
 export default function PostSkeleton() {
   const pulse = useRef(new Animated.Value(0.4)).current;
@@ -26,25 +30,21 @@ export default function PostSkeleton() {
     return () => loop.stop();
   }, [pulse]);
 
-  const Block = ({ style }) => (
-    <Animated.View style={[styles.block, style, { opacity: pulse }]} />
-  );
-
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
-        <Block style={styles.avatar} />
+        <SkeletonBlock style={styles.avatar} opacity={pulse} />
         <View style={styles.headerText}>
-          <Block style={styles.lineShort} />
-          <Block style={styles.lineTiny} />
+          <SkeletonBlock style={styles.lineShort} opacity={pulse} />
+          <SkeletonBlock style={styles.lineTiny} opacity={pulse} />
         </View>
       </View>
-      <Block style={styles.lineFull} />
-      <Block style={styles.lineWide} />
-      <Block style={styles.image} />
+      <SkeletonBlock style={styles.lineFull} opacity={pulse} />
+      <SkeletonBlock style={styles.lineWide} opacity={pulse} />
+      <SkeletonBlock style={styles.image} opacity={pulse} />
       <View style={styles.footerRow}>
-        <Block style={styles.pill} />
-        <Block style={styles.pill} />
+        <SkeletonBlock style={styles.pill} opacity={pulse} />
+        <SkeletonBlock style={styles.pill} opacity={pulse} />
       </View>
     </View>
   );

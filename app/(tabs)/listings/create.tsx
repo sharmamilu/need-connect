@@ -328,7 +328,7 @@ export default function CreateListing() {
                     activeOpacity={0.8}
                   >
                     <Feather
-                      name={catIcons[cat] || "package"}
+                      name={(catIcons[cat] || "package") as any}
                       size={12}
                       color={isActive ? "#fff" : "#4B5563"}
                       style={{ marginRight: 6 }}

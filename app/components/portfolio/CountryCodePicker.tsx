@@ -28,12 +28,6 @@ export default function CountryCodePicker({
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    if (visible && countries.length === 0) {
-      loadCountries();
-    }
-  }, [visible]);
-
   const loadCountries = async () => {
     setLoading(true);
     const data = await fetchCountries();
@@ -41,6 +35,12 @@ export default function CountryCodePicker({
     setFilteredCountries(data);
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (visible && countries.length === 0) {
+      loadCountries();
+    }
+  }, [visible, countries.length]);
 
   const handleSearch = (text: string) => {
     setSearch(text);

@@ -66,29 +66,6 @@ export default function UserGuide() {
   // Focus Circle Animation
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
-    checkGuideStatus();
-  }, []);
-
-  useEffect(() => {
-    if (visible) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.2,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-        ]),
-      ).start();
-    }
-  }, [visible]);
-
   const checkGuideStatus = async () => {
     try {
       const hasSeen = await AsyncStorage.getItem(GUIDE_KEY);
@@ -99,6 +76,10 @@ export default function UserGuide() {
       console.log("Error checking guide status:", e);
     }
   };
+
+  useEffect(() => {
+    checkGuideStatus();
+  }, []);
 
   const handleNext = async () => {
     if (stepIndex < STEPS.length - 1) {

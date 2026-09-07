@@ -108,8 +108,10 @@ export default function MatchedPreferencesSection() {
       } else {
         setHasPreferences(false);
       }
-    } catch (err) {
-      console.error("Failed to load matching preferences:", err);
+    } catch (err: any) {
+      if (err?.response?.status !== 401) {
+        console.warn("Failed to load matching preferences:", err?.message || err);
+      }
     } finally {
       setLoading(false);
     }

@@ -7,6 +7,7 @@ import {
   Platform,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -30,6 +31,26 @@ type RegisterForm = {
 };
 
 type FormErrors = Partial<Record<keyof RegisterForm, string>>;
+
+const convertDMYtoYMD = (dmy: string): string => {
+  if (!dmy) return "";
+  const parts = dmy.split("/");
+  if (parts.length === 3) {
+    const [day, month, year] = parts;
+    return `${year}-${month}-${day}`;
+  }
+  return "";
+};
+
+const convertYMDtoDMY = (ymd: string): string => {
+  if (!ymd) return "";
+  const parts = ymd.split("-");
+  if (parts.length === 3) {
+    const [year, month, day] = parts;
+    return `${day}/${month}/${year}`;
+  }
+  return "";
+};
 
 export default function RegisterScreen() {
   const { showAlert } = useAlert();
@@ -215,27 +236,70 @@ export default function RegisterScreen() {
         {/* DATE OF BIRTH */}
         <View>
           <Animated.View style={{ transform: [{ translateX: dobShake }] }}>
-            <TouchableOpacity
-              style={[styles.dob, errors.dateOfBirth && styles.dobError]}
-              onPress={() => setShowDatePicker(true)}
-              activeOpacity={0.7}
-            >
-              <Feather
-                name="calendar"
-                size={19}
-                color={errors.dateOfBirth ? colors.error : colors.placeholder}
-              />
-              <Text
-                style={[
-                  styles.dobText,
-                  !form.dateOfBirth && styles.dobPlaceholder,
-                ]}
+            {Platform.OS === "web" ? (
+              <View style={[styles.dob, errors.dateOfBirth && styles.dobError]}>
+                <Feather
+                  name="calendar"
+                  size={19}
+                  color={errors.dateOfBirth ? colors.error : colors.placeholder}
+                />
+                <TextInput
+                  placeholder="Date of Birth"
+                  value={convertDMYtoYMD(form.dateOfBirth)}
+                  onChangeText={(text) => {
+                    const dmy = convertYMDtoDMY(text);
+                    updateField("dateOfBirth", dmy);
+                    if (text) {
+                      setDateOfBirthObject(new Date(text));
+                    } else {
+                      setDateOfBirthObject(null);
+                    }
+                  }}
+                  style={[
+                    styles.dobText,
+                    !form.dateOfBirth && styles.dobPlaceholder,
+                    {
+                      outlineStyle: "none",
+                      backgroundColor: "transparent",
+                      borderWidth: 0,
+                      flex: 1,
+                      fontFamily: "inherit",
+                    } as any,
+                  ]}
+                  {...({
+                    type: "date",
+                    max: new Date().toISOString().split("T")[0],
+                    onClick: (e: any) => {
+                      try {
+                        e.target.showPicker();
+                      } catch (err) {}
+                    },
+                  } as any)}
+                />
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.dob, errors.dateOfBirth && styles.dobError]}
+                onPress={() => setShowDatePicker(true)}
+                activeOpacity={0.7}
               >
-                {form.dateOfBirth || "Date of Birth (DD/MM/YYYY)"}
-              </Text>
-            </TouchableOpacity>
+                <Feather
+                  name="calendar"
+                  size={19}
+                  color={errors.dateOfBirth ? colors.error : colors.placeholder}
+                />
+                <Text
+                  style={[
+                    styles.dobText,
+                    !form.dateOfBirth && styles.dobPlaceholder,
+                  ]}
+                >
+                  {form.dateOfBirth || "Date of Birth (DD/MM/YYYY)"}
+                </Text>
+              </TouchableOpacity>
+            )}
           </Animated.View>
-          {showDatePicker && (
+          {Platform.OS !== "web" && showDatePicker && (
             <DateTimePicker
               value={dateOfBirthObject || new Date(2000, 0, 1)}
               mode="date"

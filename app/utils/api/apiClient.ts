@@ -1,6 +1,5 @@
+import { BASE_URL } from "../constants";
 import { getToken } from "../storage";
-
-const BASE_URL = "https://need-connect-backend.onrender.com/api";
 
 type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "DELETE";

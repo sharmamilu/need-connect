@@ -40,8 +40,10 @@ export default function SuggestedOpportunities() {
         if (res.data && res.data.success) {
           setOpportunities(res.data.data || []);
         }
-      } catch (err) {
-        console.error("Error loading suggested opportunities:", err);
+      } catch (err: any) {
+        if (err?.response?.status !== 401) {
+          console.warn("Could not load suggested opportunities:", err?.message || err);
+        }
       } finally {
         setLoading(false);
       }

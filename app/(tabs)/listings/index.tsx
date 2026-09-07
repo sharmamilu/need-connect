@@ -360,7 +360,7 @@ export default function ListingsFeed() {
                     activeOpacity={0.8}
                   >
                     <Feather
-                      name={CATEGORY_ICONS[item] || "package"}
+                      name={(CATEGORY_ICONS[item] || "package") as any}
                       size={13}
                       color={isActive ? "#fff" : "#4B5563"}
                       style={{ marginRight: 6 }}

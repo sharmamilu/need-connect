@@ -54,14 +54,14 @@ const elevatedShadow = (
     default: {},
   }) as ViewStyle;
 
-export const shadow = {
+export const shadow: Record<"card" | "header" | "raised", ViewStyle> = {
   /** Subtle lift for feed cards. */
   card: elevatedShadow(0.06, 10, 2),
   /** Slightly stronger, for headers / floating elements. */
   header: elevatedShadow(0.08, 12, 4),
   /** Pronounced, for modals / FABs. */
   raised: elevatedShadow(0.16, 18, 8),
-} as const;
+};
 
 export const typography: Record<string, TextStyle> = {
   h1: { fontSize: fontSize.title, fontWeight: "800", color: colors.text },

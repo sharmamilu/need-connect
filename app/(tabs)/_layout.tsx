@@ -33,8 +33,10 @@ export default function TabsLayout() {
         const listingCount = listingsRes.data?.count ?? listingsRes.data?.pagination?.total ?? (listingsRes.data?.data?.length || 0);
         const total = postCount + listingCount;
         setBadgeCount(total > 0 ? total : undefined);
-      } catch (err) {
-        console.log("Error fetching badge count:", err);
+      } catch (err: any) {
+        if (err?.response?.status !== 401) {
+          console.log("Error fetching badge count:", err);
+        }
       }
     };
 
