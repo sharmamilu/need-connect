@@ -159,7 +159,7 @@ export default function ProfileSection({ data, onChange, mode }: Props) {
                   ? typeof data.profilePhoto === "string"
                     ? { uri: data.profilePhoto }
                     : { uri: data.profilePhoto.uri }
-                  : require("../../../assets/images/icon.png")
+                  : require("../../assets/images/icon.png")
               }
               style={styles.viewAvatar}
             />
