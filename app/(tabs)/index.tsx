@@ -22,7 +22,6 @@ import FeedControls, {
 import FeedEmpty from "@/components/dashboard/FeedEmpty";
 import HomeHeader from "@/components/dashboard/HomeHeader";
 import PostSkeleton from "@/components/dashboard/PostSkeleton";
-import QuickActionsStrip from "@/components/dashboard/QuickActionsStrip";
 import SuggestedOpportunities from "@/components/dashboard/SuggestedOpportunities";
 import MatchedPreferencesSection from "@/components/dashboard/MatchedPreferencesSection";
 import PostCard from "@/components/post/PostCard";
@@ -56,33 +55,6 @@ export default function HomeScreen() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
-
-  const [showTools, setShowTools] = useState(true);
-
-  // Load tools visibility preference
-  useEffect(() => {
-    const loadPref = async () => {
-      try {
-        const value = await AsyncStorage.getItem("show_featured_tools");
-        if (value !== null) {
-          setShowTools(value === "true");
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    loadPref();
-  }, []);
-
-  const handleToggleTools = async () => {
-    const newVal = !showTools;
-    setShowTools(newVal);
-    try {
-      await AsyncStorage.setItem("show_featured_tools", newVal ? "true" : "false");
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   const loadHomeData = async (pageNum = 1, isInitial = true) => {
     try {
@@ -194,7 +166,6 @@ export default function HomeScreen() {
             onPress={() => setModalVisible(true)}
             onProfilePress={() => router.push("/dashboard")}
           />
-          {showTools && <QuickActionsStrip />}
           <SuggestedOpportunities />
           <MatchedPreferencesSection />
           {[0, 1, 2].map((i) => (
@@ -228,7 +199,6 @@ export default function HomeScreen() {
               onPress={() => setModalVisible(true)}
               onProfilePress={() => router.push("/dashboard")}
             />
-            {showTools && <QuickActionsStrip onHide={handleToggleTools} />}
             <SuggestedOpportunities />
             <MatchedPreferencesSection />
             {posts.length > 0 && (
@@ -237,8 +207,6 @@ export default function HomeScreen() {
                 sort={sort}
                 onFilterChange={setFilter}
                 onSortChange={setSort}
-                showTools={showTools}
-                onToggleTools={handleToggleTools}
               />
             )}
           </View>

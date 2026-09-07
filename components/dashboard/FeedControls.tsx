@@ -17,8 +17,6 @@ type Props = {
   sort: FeedSort;
   onFilterChange: (f: FeedFilter) => void;
   onSortChange: (s: FeedSort) => void;
-  showTools: boolean;
-  onToggleTools: () => void;
 };
 
 /** Filter chips + sort toggle for the feed (operates on loaded posts). */
@@ -27,8 +25,6 @@ export default function FeedControls({
   sort,
   onFilterChange,
   onSortChange,
-  showTools,
-  onToggleTools,
 }: Props) {
   return (
     <View style={styles.container}>
@@ -57,23 +53,6 @@ export default function FeedControls({
       </View>
 
       <View style={styles.rightGroup}>
-        <TouchableOpacity
-          style={[styles.toolsToggle, showTools && styles.toolsToggleActive]}
-          onPress={onToggleTools}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel={showTools ? "Hide Tools" : "Show Tools"}
-        >
-          <Feather
-            name={showTools ? "eye" : "eye-off"}
-            size={12}
-            color={showTools ? colors.primary : colors.textMuted}
-          />
-          <Text style={[styles.toolsToggleText, showTools && styles.toolsToggleTextActive]}>
-            Tools
-          </Text>
-        </TouchableOpacity>
-
         <TouchableOpacity
           style={styles.sortButton}
           onPress={() => onSortChange(sort === "latest" ? "top" : "latest")}
