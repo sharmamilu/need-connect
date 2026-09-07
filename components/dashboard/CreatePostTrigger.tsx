@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import React from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "@/constants/colors";
 import { radius, spacing } from "@/constants/theme";
 import { User } from "@/types";
@@ -32,7 +33,12 @@ export default function CreatePostTrigger({
         style={styles.avatarWrapper}
       >
         {avatarUri ? (
-          <Image source={{ uri: avatarUri }} style={styles.avatar} />
+          <Image
+            source={{ uri: avatarUri }}
+            style={styles.avatar}
+            contentFit="cover"
+            transition={200}
+          />
         ) : (
           <View style={styles.avatarPlaceholder}>
             {nameInitial ? (

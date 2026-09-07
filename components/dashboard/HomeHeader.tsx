@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "@/constants/colors";
 import { radius, shadow, spacing } from "@/constants/theme";
@@ -10,7 +11,7 @@ type HomeHeaderProps = {
   profile?: any;
 };
 
-/** Sticky top app bar for the home feed. */
+/** Sticky top app bar for the home feed with soothing, refined aesthetics. */
 export default function HomeHeader({ user, profile }: HomeHeaderProps) {
   const router = useRouter();
   const avatarUri = profile?.profilePhoto || user?.avatar;
@@ -19,28 +20,47 @@ export default function HomeHeader({ user, profile }: HomeHeaderProps) {
     profile?.name?.charAt(0).toUpperCase() ||
     "";
 
+  // Dynamic warm greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  };
+
+  const displayName = user?.name || profile?.name || "Professional";
+
   return (
     <View style={styles.header}>
       <TouchableOpacity
         style={styles.profileBtn}
         onPress={() => router.push("/profile")}
-        activeOpacity={0.8}
+        activeOpacity={0.75}
       >
-        {avatarUri ? (
-          <Image source={{ uri: avatarUri }} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            {nameInitial ? (
-              <Text style={styles.initialText}>{nameInitial}</Text>
-            ) : (
-              <Feather name="user" size={14} color="#fff" />
-            )}
-          </View>
-        )}
+        <View style={styles.avatarContainer}>
+          {avatarUri ? (
+            <Image
+              source={{ uri: avatarUri }}
+              style={styles.avatar}
+              contentFit="cover"
+              transition={200}
+            />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              {nameInitial ? (
+                <Text style={styles.initialText}>{nameInitial}</Text>
+              ) : (
+                <Feather name="user" size={16} color={colors.primary} />
+              )}
+            </View>
+          )}
+          <View style={styles.onlineBadge} />
+        </View>
+
         <View style={styles.welcomeInfo}>
-          <Text style={styles.welcomeSub}>Welcome back,</Text>
+          <Text style={styles.welcomeSub}>{getGreeting()},</Text>
           <Text style={styles.welcomeName} numberOfLines={1}>
-            {user?.name || "Professional"}
+            {displayName}
           </Text>
         </View>
       </TouchableOpacity>
@@ -53,7 +73,7 @@ export default function HomeHeader({ user, profile }: HomeHeaderProps) {
           accessibilityRole="button"
           accessibilityLabel="Search"
         >
-          <Feather name="search" size={18} color={colors.text} />
+          <Feather name="search" size={17} color="#334155" />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -63,7 +83,7 @@ export default function HomeHeader({ user, profile }: HomeHeaderProps) {
           accessibilityRole="button"
           accessibilityLabel="Utilities"
         >
-          <Feather name="grid" size={18} color={colors.text} />
+          <Feather name="grid" size={17} color="#334155" />
         </TouchableOpacity>
       </View>
     </View>
@@ -76,66 +96,92 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.card,
+    paddingTop: 10,
+    paddingBottom: 12,
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: "#F1F5F9",
     ...shadow.header,
   },
   profileBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: 12,
     flex: 1,
     marginRight: spacing.md,
   },
+  avatarContainer: {
+    position: "relative",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    padding: 2,
+    backgroundColor: "#EEF2FF",
+    borderWidth: 1.5,
+    borderColor: "rgba(74, 108, 247, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.skeleton,
+    width: "100%",
+    height: "100%",
+    borderRadius: 20,
+    backgroundColor: "#E2E8F0",
   },
   avatarPlaceholder: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.primary,
+    width: "100%",
+    height: "100%",
+    borderRadius: 20,
+    backgroundColor: "#EEF2FF",
     alignItems: "center",
     justifyContent: "center",
   },
   initialText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "700",
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  onlineBadge: {
+    position: "absolute",
+    bottom: -1,
+    right: -1,
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    backgroundColor: "#10B981",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
   },
   welcomeInfo: {
     flex: 1,
     justifyContent: "center",
   },
   welcomeSub: {
-    fontSize: 11,
-    color: colors.textMuted,
+    fontSize: 12,
+    color: "#64748B",
     fontWeight: "500",
+    letterSpacing: 0.1,
   },
   welcomeName: {
-    fontSize: 14,
+    fontSize: 15.5,
     fontWeight: "700",
-    color: colors.text,
+    color: "#0F172A",
     marginTop: 1,
+    letterSpacing: -0.2,
   },
   rightActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: 10,
   },
   iconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.pill,
-    backgroundColor: colors.inputBg,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#F8FAFC",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: "#E2E8F0",
   },
 });
