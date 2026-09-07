@@ -396,82 +396,116 @@ export default function TemplateViewer() {
         </div>
       `;
     } else if (id === "resume") {
-      const emailStr = formData.contact || "";
-      const linksStr = formData.links || "";
-      const summaryStr = formData.description || "";
-      const expStr = formData.experience || "";
+      const name = formData.fullName || formData.clientName || "ALEXANDER J. MORGAN";
+      const headline = formData.title || "";
+      const loc = formData.location || "";
+      const email = formData.email || formData.contact || "";
+      const phone = formData.phone || "";
+      const linkedin = formData.linkedin || formData.links || "";
+
+      const summaryStr = formData.summary || formData.description || "";
       const eduStr = formData.education || "";
-      const skillsStr = formData.skills || "";
-      const personalStr = formData.personalDetails || "";
+      const expStr = formData.experience || "";
+      const projStr = formData.projects || "";
+      const leaderStr = formData.leadership || "";
+      const skillsStr = formData.skills || formData.technicalSkills || "";
+      const certStr = formData.certifications || "";
+      const interestStr = formData.languagesInterests || formData.personalDetails || "";
 
-      const primaryColor = style.id === "dark" ? "#38BDF8" : style.color;
-      const bgCol =
-        style.id === "dark"
-          ? "#0F172A"
-          : style.id === "elegant"
-            ? "#E7E5E4"
-            : style.id === "creative"
-              ? "#FDF2F8"
-              : "#F8FAFC";
-      const surfaceCol =
-        style.id === "dark"
-          ? "#1E293B"
-          : style.id === "elegant"
-            ? "#FAFAF9"
-            : "#FFFFFF";
-      const textMain = style.id === "dark" ? "#F8FAFC" : "#1E293B";
-      const textDim = style.id === "dark" ? "#94A3B8" : "#64748B";
+      // Contact row array
+      const contactItems: string[] = [];
+      if (loc) contactItems.push(loc);
+      if (phone) contactItems.push(phone);
+      if (email) contactItems.push(email);
+      if (linkedin) contactItems.push(linkedin);
 
-      const isSerif = style.id === "elegant";
+      const isSerif = style.id === "elegant" || style.id === "classic";
       const fontFamily = isSerif
-        ? "'Georgia', serif"
+        ? "'Times New Roman', Times, 'Georgia', serif"
         : style.id === "creative"
-          ? "'Avenir', sans-serif"
-          : "'Inter', 'Helvetica Neue', sans-serif";
+          ? "'Avenir', 'Segoe UI', sans-serif"
+          : "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
-      const renderSection = (title: string, content: string) => {
-        if (!content) return "";
+      const primaryColor = style.id === "dark" ? "#38BDF8" : style.id === "creative" ? "#DB2777" : style.id === "elegant" ? "#7C2D12" : "#1E293B";
+      const headingBorder = style.id === "dark" ? "#38BDF8" : style.id === "creative" ? "#DB2777" : style.id === "elegant" ? "#9A3412" : "#1E293B";
+      const bgCol = style.id === "dark" ? "#020617" : "#F8FAFC";
+      const cardBg = style.id === "dark" ? "#0F172A" : "#FFFFFF";
+      const textMain = style.id === "dark" ? "#F8FAFC" : "#111827";
+      const textMuted = style.id === "dark" ? "#94A3B8" : "#4B5563";
+
+      const formatContent = (text: string) => {
+        if (!text) return "";
+        const lines = text.split("\n");
+        return lines
+          .map((line) => {
+            const trimmed = line.trim();
+            if (!trimmed) return "<div style='height: 6px;'></div>";
+            if (trimmed.startsWith("•") || trimmed.startsWith("-") || trimmed.startsWith("*")) {
+              const cleanBullet = trimmed.replace(/^[\s•\-\*]+/, "");
+              return `<div style="display: flex; margin-bottom: 4px; padding-left: 12px;"><span style="margin-right: 8px; font-weight: bold; color: ${primaryColor};">•</span><span>${cleanBullet}</span></div>`;
+            }
+            return `<div style="margin-bottom: 4px; line-height: 1.5;">${trimmed}</div>`;
+          })
+          .join("");
+      };
+
+      const renderHarvardSection = (title: string, content: string) => {
+        if (!content || !content.trim()) return "";
         return `
-          <div style="margin-bottom: 30px;">
-            <div style="font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; color: ${primaryColor}; border-bottom: 2px solid ${style.id === "dark" ? "#334155" : "#E2E8F0"}; padding-bottom: 8px; margin-bottom: 16px;">
+          <div style="margin-bottom: 18px;">
+            <div style="font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: ${primaryColor}; border-bottom: 1.5px solid ${headingBorder}; padding-bottom: 3px; margin-bottom: 8px;">
               ${title}
             </div>
-            <div style="font-size: 15px; line-height: 1.8; color: ${textMain}; white-space: pre-wrap;">${content}</div>
+            <div style="font-size: 12.5px; line-height: 1.55; color: ${textMain};">
+              ${formatContent(content)}
+            </div>
           </div>
         `;
       };
 
       css = `
-        body { font-family: ${fontFamily}; background-color: ${bgCol}; color: ${textMain}; padding: 30px; margin: 0; }
-        .resume-container { max-width: 850px; margin: 0 auto; background-color: ${surfaceCol}; border-radius: ${style.id === "creative" ? "20px" : "0"}; box-shadow: ${style.id === "classic" ? "0 4px 15px rgba(0,0,0,0.05)" : "none"}; overflow: hidden; ${style.id === "elegant" ? "border: 1px solid #D6D3D1;" : ""} ${style.id === "dark" ? "border: 1px solid #334155;" : ""} }
-        .resume-header { background: ${style.id === "creative" ? `linear-gradient(135deg, ${primaryColor}, #F472B6)` : style.id === "dark" ? "#0F172A" : "#FFFFFF"}; padding: 50px 40px; text-align: ${style.id === "creative" || style.id === "elegant" ? "center" : "left"}; ${style.id === "classic" ? `border-top: 10px solid ${primaryColor};` : ""} ${style.id === "elegant" ? "border-bottom: 1px solid #D6D3D1;" : ""} }
-        .resume-name { font-size: ${style.id === "elegant" ? "42px" : "38px"}; font-weight: ${style.id === "creative" ? "800" : style.id === "elegant" ? "normal" : "700"}; margin: 0; color: ${style.id === "creative" ? "#FFF" : textMain}; ${style.id === "elegant" ? "font-style: italic;" : ""} }
-        .resume-title { font-size: 20px; color: ${style.id === "creative" ? "rgba(255,255,255,0.9)" : primaryColor}; font-weight: 500; margin-top: 8px; letter-spacing: 1px; text-transform: uppercase; }
-        .resume-contact { margin-top: 25px; font-size: 14px; color: ${style.id === "creative" ? "rgba(255,255,255,0.8)" : textDim}; display: flex; gap: 20px; flex-wrap: wrap; justify-content: ${style.id === "creative" || style.id === "elegant" ? "center" : "flex-start"}; }
-        .resume-body { padding: 40px; display: grid; gap: 40px; grid-template-columns: ${style.id === "creative" || style.id === "elegant" ? "1fr" : "2fr 1fr"}; }
+        * { box-sizing: border-box; }
+        body { font-family: ${fontFamily}; background-color: ${bgCol}; color: ${textMain}; padding: 30px 20px; margin: 0; line-height: 1.45; }
+        .harvard-page { max-width: 820px; margin: 0 auto; background: ${cardBg}; padding: 45px 50px; border: 1px solid ${style.id === "dark" ? "#334155" : "#E5E7EB"}; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border-radius: ${style.id === "creative" ? "12px" : "2px"}; }
+        
+        .header { text-align: center; margin-bottom: 22px; }
+        .name { font-size: 26px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0; color: ${style.id === "creative" ? primaryColor : textMain}; }
+        .headline { font-size: 13.5px; font-weight: 600; color: ${textMuted}; margin-top: 4px; letter-spacing: 0.5px; }
+        .contact-bar { font-size: 11.5px; color: ${textMuted}; margin-top: 8px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+        .contact-item { white-space: nowrap; }
+        .contact-separator { color: ${style.id === "dark" ? "#475569" : "#CBD5E1"}; font-weight: bold; }
       `;
 
       bodyHtml = `
-        <div class="resume-container">
-          <div class="resume-header">
-            <h1 class="resume-name">${titleStr}</h1>
-            <div class="resume-title">${clientStr}</div>
-            <div class="resume-contact">
-              ${emailStr ? `<div>${emailStr}</div>` : ""}
-              ${linksStr ? `<div>|</div><div>${linksStr}</div>` : ""}
-            </div>
+        <div class="harvard-page">
+          <div class="header">
+            <h1 class="name">${name}</h1>
+            ${headline ? `<div class="headline">${headline}</div>` : ""}
+            ${
+              contactItems.length > 0
+                ? `<div class="contact-bar">
+                    ${contactItems
+                      .map(
+                        (item, i) =>
+                          `<span class="contact-item">${item}</span>` +
+                          (i < contactItems.length - 1
+                            ? `<span class="contact-separator">|</span>`
+                            : ""),
+                      )
+                      .join("")}
+                  </div>`
+                : ""
+            }
           </div>
-          <div class="resume-body">
-            <div>
-              ${renderSection("Professional Profile Summary", summaryStr)}
-              ${renderSection("Work Experience History", expStr)}
-            </div>
-            <div>
-              ${renderSection("Key Skills & Core Competencies", skillsStr)}
-              ${renderSection("Education Background", eduStr)}
-              ${renderSection("Additional Personal Details", personalStr)}
-            </div>
-          </div>
+
+          ${renderHarvardSection("Professional Summary", summaryStr)}
+          ${renderHarvardSection("Education & Academic Honors", eduStr)}
+          ${renderHarvardSection("Professional Experience", expStr)}
+          ${renderHarvardSection("Key Projects & Research", projStr)}
+          ${renderHarvardSection("Leadership & Activities", leaderStr)}
+          ${renderHarvardSection("Technical & Core Competencies", skillsStr)}
+          ${renderHarvardSection("Certifications & Awards", certStr)}
+          ${renderHarvardSection("Languages & Interests", interestStr)}
         </div>
       `;
     } else if (style.id === "classic") {
@@ -650,8 +684,11 @@ export default function TemplateViewer() {
 
   const handlePreview = async () => {
     const isSalarySlip = id === "salary_slip" || id === "salary-slip" || id === "payslip";
+    const isResume = id === "resume";
     const hasAnyField = isSalarySlip
       ? !!(formData.companyName || formData.employeeName || formData.basicSalary || formData.title)
+      : isResume
+      ? !!(formData.fullName || formData.title || formData.email || formData.experience || formData.education || formData.skills || formData.summary)
       : !!(formData.title || formData.clientName || formData.amount);
 
     if (!hasAnyField) {
@@ -679,8 +716,11 @@ export default function TemplateViewer() {
 
   const handleGenerate = async () => {
     const isSalarySlip = id === "salary_slip" || id === "salary-slip" || id === "payslip";
+    const isResume = id === "resume";
     const hasRequired = isSalarySlip
       ? !!((formData.companyName || formData.title) && (formData.employeeName || formData.clientName))
+      : isResume
+      ? !!(formData.fullName || formData.title || formData.email)
       : !!(formData.title && formData.clientName);
 
     if (!hasRequired) {
@@ -688,6 +728,8 @@ export default function TemplateViewer() {
         "Missing Fields",
         isSalarySlip
           ? "Please provide at least the Company Name and Employee Name."
+          : isResume
+          ? "Please provide at least your Full Name or Title to generate your resume."
           : "Please fill out at least a title and a client/subject name.",
       );
       return;
@@ -712,7 +754,11 @@ export default function TemplateViewer() {
         base64: false,
       });
 
-      const docTitle = formData.title || (isSalarySlip ? `${formData.companyName || "Company"}_Payslip_${formData.employeeName || "Employee"}` : id);
+      const docTitle = isResume
+        ? `${formData.fullName || formData.title || "Harvard"}_Resume`
+        : isSalarySlip
+        ? `${formData.companyName || "Company"}_Payslip_${formData.employeeName || "Employee"}`
+        : formData.title || id;
       const pdfName = `${docTitle.replace(/[^a-zA-Z0-9]/g, "_")}_Document.pdf`;
 
       // 3. Save directly to the phone's native filesystem
@@ -850,7 +896,13 @@ export default function TemplateViewer() {
           </Text>
 
           {fields.map((field) => {
-            const required = REQUIRED_FIELDS.includes(field.key);
+            const requiredKeys =
+              id === "resume"
+                ? ["fullName", "email"]
+                : id === "salary_slip" || id === "salary-slip" || id === "payslip"
+                ? ["companyName", "employeeName"]
+                : REQUIRED_FIELDS;
+            const required = requiredKeys.includes(field.key);
             const focused = focusedField === field.key;
             const value = formData[field.key] || "";
             return (
