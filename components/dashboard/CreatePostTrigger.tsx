@@ -1,7 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { colors } from "@/constants/colors";
 import { radius, spacing } from "@/constants/theme";
 import { User } from "@/types";
@@ -74,31 +73,49 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.card,
-    paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: radius.xl,
-    marginBottom: spacing.lg,
+    borderRadius: 18,
+    marginBottom: spacing.md,
+    marginTop: 4,
     gap: 12,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.8)",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#0F172A",
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 2,
+      },
+      default: {},
+    }),
   },
   avatarWrapper: {
-    borderWidth: 2,
-    borderColor: colors.primarySoft,
-    borderRadius: 22,
-    padding: 1,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    padding: 1.5,
+    backgroundColor: "#EEF2FF",
+    borderWidth: 1.5,
+    borderColor: "rgba(74, 108, 247, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: "100%",
+    height: "100%",
+    borderRadius: 17,
     backgroundColor: colors.skeleton,
   },
   avatarPlaceholder: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: "100%",
+    height: "100%",
+    borderRadius: 17,
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
@@ -111,29 +128,31 @@ const styles = StyleSheet.create({
   inputBar: {
     flex: 1,
     height: 40,
-    backgroundColor: colors.inputBg,
-    borderRadius: radius.lg,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     borderWidth: 1,
-    borderColor: "transparent",
+    borderColor: "#E2E8F0",
   },
   placeholder: {
-    color: colors.placeholder,
-    fontSize: 14,
+    color: "#94A3B8",
+    fontSize: 13.5,
     fontWeight: "500",
   },
   editIcon: {
-    opacity: 0.7,
+    opacity: 0.6,
   },
   photoButton: {
     width: 38,
     height: 38,
-    borderRadius: radius.md,
+    borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primarySoft,
+    backgroundColor: "#F0FDF4",
+    borderWidth: 1,
+    borderColor: "#DCFCE7",
   },
 });
