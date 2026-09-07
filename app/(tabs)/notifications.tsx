@@ -13,8 +13,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../utils/AuthContext";
-import { fetchAdminListings, fetchAdminPosts } from "../utils/apiFunctions";
+import { useAuth } from "@/utils/AuthContext";
+import { fetchAdminListings, fetchAdminPosts } from "@/utils/apiFunctions";
 
 export default function NotificationsScreen() {
   const { user } = useAuth();

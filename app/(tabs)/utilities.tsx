@@ -10,13 +10,13 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "../constants/colors";
+import { colors } from "@/constants/colors";
 import {
   TEMPLATE_CATEGORIES,
   TEMPLATES,
   TemplateDef,
-} from "../constants/templates";
-import { radius, shadow, spacing } from "../constants/theme";
+} from "@/constants/templates";
+import { radius, shadow, spacing } from "@/constants/theme";
 
 const RECOMMENDED_IDS = ["invoice", "resume", "contract"];
 

@@ -9,29 +9,30 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "../constants/colors";
-import { spacing } from "../constants/theme";
+import { colors } from "@/constants/colors";
+import { spacing } from "@/constants/theme";
 
-import UserGuide from "../components/common/UserGuide";
-import CreatePostModal from "../components/dashboard/CreatePostModal";
-import CreatePostTrigger from "../components/dashboard/CreatePostTrigger";
+import UserGuide from "@/components/common/UserGuide";
+import CreatePostModal from "@/components/dashboard/CreatePostModal";
+import CreatePostTrigger from "@/components/dashboard/CreatePostTrigger";
 import FeedControls, {
   FeedFilter,
   FeedSort,
-} from "../components/dashboard/FeedControls";
-import FeedEmpty from "../components/dashboard/FeedEmpty";
-import HomeHeader from "../components/dashboard/HomeHeader";
-import PostSkeleton from "../components/dashboard/PostSkeleton";
-import QuickActionsStrip from "../components/dashboard/QuickActionsStrip";
-import SuggestedOpportunities from "../components/dashboard/SuggestedOpportunities";
-import MatchedPreferencesSection from "../components/dashboard/MatchedPreferencesSection";
-import PostCard from "../components/post/PostCard";
-import { useAuth } from "../utils/AuthContext";
+} from "@/components/dashboard/FeedControls";
+import FeedEmpty from "@/components/dashboard/FeedEmpty";
+import HomeHeader from "@/components/dashboard/HomeHeader";
+import PostSkeleton from "@/components/dashboard/PostSkeleton";
+import QuickActionsStrip from "@/components/dashboard/QuickActionsStrip";
+import SuggestedOpportunities from "@/components/dashboard/SuggestedOpportunities";
+import MatchedPreferencesSection from "@/components/dashboard/MatchedPreferencesSection";
+import PostCard from "@/components/post/PostCard";
+import { useAuth } from "@/utils/AuthContext";
 import {
   fetchFeedPosts,
   fetchMe,
   fetchMyPortfolio,
-} from "../utils/apiFunctions";
+} from "@/utils/apiFunctions";
+import { Portfolio, Post, User } from "@/types";
 
 const hasImages = (p: any) => p?.images?.length > 0 || !!p?.image;
 const likeCount = (p: any) => p?.likesCount ?? p?.likes ?? 0;
@@ -42,7 +43,7 @@ export default function HomeScreen() {
   const { updateUser } = useAuth();
   const [posts, setPosts] = useState<any[]>([]);
   const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState<Portfolio | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -95,12 +96,13 @@ export default function HomeScreen() {
           : Promise.resolve(null),
       ]);
 
-      const newPosts = postsRes.data.posts || postsRes.data.data || [];
-      const pagination = postsRes.data;
+      const postsData: any = postsRes.data;
+      const newPosts = postsData?.posts || postsData?.data || (Array.isArray(postsData) ? postsData : []);
+      const pagination = postsData;
 
       if (pageNum === 1) {
         setPosts(newPosts);
-        setTotalPages(pagination.totalPages || 1);
+        setTotalPages(pagination?.totalPages || 1);
       } else {
         setPosts((prev) => [...prev, ...newPosts]);
       }
@@ -112,7 +114,7 @@ export default function HomeScreen() {
       }
 
       if (profileRes?.data?.success) {
-        setProfile(profileRes.data.data);
+        setProfile(profileRes.data.data ?? null);
       }
     } catch (error) {
       console.error("Error fetching home data:", error);

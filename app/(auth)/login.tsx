@@ -3,16 +3,16 @@ import { Link, router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import AuthHeader from "../components/auth/AuthHeader";
-import AuthScreen from "../components/auth/AuthScreen";
-import AppButton from "../components/common/AppButton";
+import AuthHeader from "@/components/auth/AuthHeader";
+import AuthScreen from "@/components/auth/AuthScreen";
+import AppButton from "@/components/common/AppButton";
 import FormField, {
   FormFieldHandle,
-} from "../components/common/FormField";
-import { colors } from "../constants/colors";
-import { loginApi } from "../utils/api/auth.api";
-import { useAuth } from "../utils/AuthContext";
-import { getToken } from "../utils/storage";
+} from "@/components/common/FormField";
+import { colors } from "@/constants/colors";
+import { loginApi } from "@/utils/api/auth.api";
+import { useAuth } from "@/utils/AuthContext";
+import { getToken } from "@/utils/storage";
 
 type LoginForm = {
   email: string;

@@ -12,15 +12,15 @@ import {
   View,
 } from "react-native";
 
-import AuthHeader from "../components/auth/AuthHeader";
-import AuthScreen from "../components/auth/AuthScreen";
-import AppButton from "../components/common/AppButton";
+import AuthHeader from "@/components/auth/AuthHeader";
+import AuthScreen from "@/components/auth/AuthScreen";
+import AppButton from "@/components/common/AppButton";
 import FormField, {
   FormFieldHandle,
-} from "../components/common/FormField";
-import { colors } from "../constants/colors";
-import { useAlert } from "../utils/AlertManager";
-import { registerApi } from "../utils/api/auth.api";
+} from "@/components/common/FormField";
+import { colors } from "@/constants/colors";
+import { useAlert } from "@/utils/AlertManager";
+import { registerApi } from "@/utils/api/auth.api";
 
 type RegisterForm = {
   name: string;

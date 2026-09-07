@@ -10,9 +10,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "../constants/colors";
-import { FeatherIcon } from "../constants/templates";
-import { radius, shadow, spacing } from "../constants/theme";
+import { colors } from "@/constants/colors";
+import { FeatherIcon } from "@/constants/templates";
+import { radius, shadow, spacing } from "@/constants/theme";
 
 /* ----------------------------- helpers ----------------------------- */
 

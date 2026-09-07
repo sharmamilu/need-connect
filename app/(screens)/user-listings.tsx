@@ -11,8 +11,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ListingCard from "../components/listings/ListingCard";
-import { fetchUserListings } from "../utils/apiFunctions";
+import ListingCard from "@/components/listings/ListingCard";
+import { fetchUserListings } from "@/utils/apiFunctions";
 
 export default function UserListingsScreen() {
   const router = useRouter();

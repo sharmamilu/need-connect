@@ -11,8 +11,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ProfessionalCard from "../components/explore/ProfessionalCard";
-import { fetchSavedPortfolios } from "../utils/apiFunctions";
+import ProfessionalCard from "@/components/explore/ProfessionalCard";
+import { fetchSavedPortfolios } from "@/utils/apiFunctions";
 
 export default function SavedPortfoliosScreen() {
   const router = useRouter();

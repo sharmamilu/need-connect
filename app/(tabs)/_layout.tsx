@@ -3,9 +3,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Tabs } from "expo-router";
 import { useEffect, useState } from "react";
 import { DeviceEventEmitter, Platform } from "react-native";
-import ProtectedRoute from "../components/auth/ProtectedRoute";
-import { useAuth } from "../utils/AuthContext";
-import { fetchAdminListings, fetchAdminPosts } from "../utils/apiFunctions";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { useAuth } from "@/utils/AuthContext";
+import { fetchAdminListings, fetchAdminPosts } from "@/utils/apiFunctions";
 
 export default function TabsLayout() {
   const { user } = useAuth();

@@ -1,5 +1,5 @@
-import { AlertProvider } from "@/app/utils/AlertManager";
-import { AuthProvider } from "@/app/utils/AuthContext";
+import { AlertProvider } from "@/utils/AlertManager";
+import { AuthProvider } from "@/utils/AuthContext";
 import {
   DarkTheme,
   DefaultTheme,

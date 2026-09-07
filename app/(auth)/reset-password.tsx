@@ -4,19 +4,19 @@ import { useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import OTPTextView from "react-native-otp-textinput";
 
-import AuthHeader from "../components/auth/AuthHeader";
-import AuthScreen from "../components/auth/AuthScreen";
-import AppButton from "../components/common/AppButton";
+import AuthHeader from "@/components/auth/AuthHeader";
+import AuthScreen from "@/components/auth/AuthScreen";
+import AppButton from "@/components/common/AppButton";
 import FormField, {
   FormFieldHandle,
-} from "../components/common/FormField";
-import { colors } from "../constants/colors";
-import { useAlert } from "../utils/AlertManager";
+} from "@/components/common/FormField";
+import { colors } from "@/constants/colors";
+import { useAlert } from "@/utils/AlertManager";
 import {
   forgotPasswordApi,
   resetPasswordApi,
   verifyResetCodeApi,
-} from "../utils/api/auth.api";
+} from "@/utils/api/auth.api";
 
 export default function ResetPassword() {
   const { showAlert } = useAlert();

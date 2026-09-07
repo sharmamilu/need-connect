@@ -11,8 +11,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import PostCard from "../components/dashboard/PostCard";
-import { fetchSavedPosts } from "../utils/apiFunctions";
+import PostCard from "@/components/dashboard/PostCard";
+import { fetchSavedPosts } from "@/utils/apiFunctions";
 
 export default function SavedPostsScreen() {
   const router = useRouter();

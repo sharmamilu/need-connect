@@ -10,16 +10,16 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ExperienceSection from "../../components/portfolio/ExperienceSection";
-import GallerySection from "../../components/portfolio/GallerySection";
-import PortfolioActions from "../../components/portfolio/PortfolioActions";
-import ProfileSection from "../../components/portfolio/ProfileSection";
-import ServicesSection from "../../components/portfolio/ServicesSection";
-import SkillsSection from "../../components/portfolio/SkillsSection";
-import SocialLinksSection from "../../components/portfolio/SocialLinksSection";
-import { colors } from "../../constants/colors";
-import { radius, shadow, spacing } from "../../constants/theme";
-import { usePortfolio } from "../../hooks/usePortfolio";
+import ExperienceSection from "@/components/portfolio/ExperienceSection";
+import GallerySection from "@/components/portfolio/GallerySection";
+import PortfolioActions from "@/components/portfolio/PortfolioActions";
+import ProfileSection from "@/components/portfolio/ProfileSection";
+import ServicesSection from "@/components/portfolio/ServicesSection";
+import SkillsSection from "@/components/portfolio/SkillsSection";
+import SocialLinksSection from "@/components/portfolio/SocialLinksSection";
+import { colors } from "@/constants/colors";
+import { radius, shadow, spacing } from "@/constants/theme";
+import { usePortfolio } from "@/hooks/usePortfolio";
 
 export default function ViewPortfolio() {
   const { portfolio, loading, error } = usePortfolio();

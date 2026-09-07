@@ -12,9 +12,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "../constants/colors";
-import { FALLBACK_TEMPLATE_ICON, getTemplate } from "../constants/templates";
-import { deleteDocument, fetchMyDocuments } from "../utils/apiFunctions";
+import { colors } from "@/constants/colors";
+import { FALLBACK_TEMPLATE_ICON, getTemplate } from "@/constants/templates";
+import { deleteDocument, fetchMyDocuments } from "@/utils/apiFunctions";
 
 export default function MyDocumentsScreen() {
   const router = useRouter();
@@ -25,11 +25,9 @@ export default function MyDocumentsScreen() {
   const loadDocuments = async () => {
     try {
       const res = await fetchMyDocuments();
-      if (res.data?.success) {
-        setDocuments(res.data.data);
-      } else {
-        setDocuments(res.data || []);
-      }
+      const rawData: any = res.data;
+      const docsList = Array.isArray(rawData) ? rawData : (rawData?.data || []);
+      setDocuments(docsList);
     } catch (error) {
       console.error("Failed to load documents", error);
     } finally {

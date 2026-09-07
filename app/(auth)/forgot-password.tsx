@@ -3,14 +3,14 @@ import { Link, router } from "expo-router";
 import { useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import AuthHeader from "../components/auth/AuthHeader";
-import AuthScreen from "../components/auth/AuthScreen";
-import AppButton from "../components/common/AppButton";
+import AuthHeader from "@/components/auth/AuthHeader";
+import AuthScreen from "@/components/auth/AuthScreen";
+import AppButton from "@/components/common/AppButton";
 import FormField, {
   FormFieldHandle,
-} from "../components/common/FormField";
-import { colors } from "../constants/colors";
-import { forgotPasswordApi } from "../utils/api/auth.api";
+} from "@/components/common/FormField";
+import { colors } from "@/constants/colors";
+import { forgotPasswordApi } from "@/utils/api/auth.api";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");

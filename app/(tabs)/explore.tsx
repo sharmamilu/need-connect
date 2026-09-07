@@ -14,9 +14,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ProfessionalCard from "../components/explore/ProfessionalCard";
-import { fetchPortfolios, fetchSuggestions } from "../utils/apiFunctions";
-import { colors } from "../constants/colors";
+import ProfessionalCard from "@/components/explore/ProfessionalCard";
+import { fetchPortfolios, fetchSuggestions } from "@/utils/apiFunctions";
+import { colors } from "@/constants/colors";
 
 export default function ExploreScreen() {
   const [skillQuery, setSkillQuery] = useState("");
@@ -60,10 +60,12 @@ export default function ExploreScreen() {
         if (location) params.location = location;
 
         const res = await fetchPortfolios(params);
-        const { data, pagination } = res.data;
+        const rawData: any = res.data;
+        const portfolioList: any[] = Array.isArray(rawData) ? rawData : (rawData?.data || rawData?.portfolios || []);
+        const pagination = rawData?.pagination;
 
-        setProfessionals((prev) => (replace ? data : [...prev, ...data]));
-        setTotalPages(pagination.pages);
+        setProfessionals((prev) => (replace ? portfolioList : [...prev, ...portfolioList]));
+        setTotalPages(pagination?.pages || 1);
         setPage(pageNum);
       } catch (err: any) {
         setError("Failed to load professionals. Please try again.");

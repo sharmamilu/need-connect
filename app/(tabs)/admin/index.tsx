@@ -18,7 +18,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { POST_BACKGROUNDS } from "../../constants/postBackgrounds";
+import { POST_BACKGROUNDS } from "@/constants/postBackgrounds";
 import {
   approveListing,
   approvePost,
@@ -26,7 +26,7 @@ import {
   fetchAdminPosts,
   rejectListing,
   rejectPost,
-} from "../../utils/apiFunctions";
+} from "@/utils/apiFunctions";
 
 export default function AdminDashboard() {
   const router = useRouter();

@@ -14,15 +14,15 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "../constants/colors";
-import { radius, shadow, spacing } from "../constants/theme";
+import { colors } from "@/constants/colors";
+import { radius, shadow, spacing } from "@/constants/theme";
 import {
   deleteMyAccount,
   fetchReviewStats,
   uploadProfileImage,
   updatePortfolio,
-} from "../utils/apiFunctions";
-import { useAuth } from "../utils/AuthContext";
+} from "@/utils/apiFunctions";
+import { useAuth } from "@/utils/AuthContext";
 
 type OptionRow = {
   icon: keyof typeof Feather.glyphMap;

@@ -12,9 +12,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors } from "../../constants/colors";
-import { radius, shadow, spacing } from "../../constants/theme";
-import { fetchListingById } from "../../utils/apiFunctions";
+import { colors } from "@/constants/colors";
+import { radius, shadow, spacing } from "@/constants/theme";
+import { fetchListingById } from "@/utils/apiFunctions";
 
 const { width } = Dimensions.get("window");
 

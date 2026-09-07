@@ -16,10 +16,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ListingCard from "../../components/listings/ListingCard";
-import { colors } from "../../constants/colors";
-import { radius, shadow, spacing } from "../../constants/theme";
-import { fetchListings } from "../../utils/apiFunctions";
+import ListingCard from "@/components/listings/ListingCard";
+import { colors } from "@/constants/colors";
+import { radius, shadow, spacing } from "@/constants/theme";
+import { fetchListings } from "@/utils/apiFunctions";
 
 const CATEGORIES = [
   "All",
@@ -115,9 +115,11 @@ export default function ListingsFeed() {
         if (categoryFilter !== "All") params.category = categoryFilter;
 
         const res = await fetchListings(params);
-        const { data, pagination } = res.data;
+        const rawData: any = res.data;
+        const listingsList: any[] = Array.isArray(rawData) ? rawData : (rawData?.data || rawData?.posts || []);
+        const pagination = rawData?.pagination;
 
-        setListings((prev) => (replace ? data : [...prev, ...data]));
+        setListings((prev) => (replace ? listingsList : [...prev, ...listingsList]));
         setTotalPages(pagination?.pages || 1);
         setPage(pageNum);
       } catch (err: any) {

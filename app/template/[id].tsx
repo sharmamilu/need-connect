@@ -18,10 +18,10 @@ import {
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
-import { colors } from "../constants/colors";
-import { getTemplate } from "../constants/templates";
-import { radius, shadow, spacing } from "../constants/theme";
-import { fetchDocumentById, generateDocument } from "../utils/apiFunctions";
+import { colors } from "@/constants/colors";
+import { getTemplate } from "@/constants/templates";
+import { radius, shadow, spacing } from "@/constants/theme";
+import { fetchDocumentById, generateDocument } from "@/utils/apiFunctions";
 
 /** Fields the generator requires before producing a document. */
 const REQUIRED_FIELDS = ["title", "clientName"];

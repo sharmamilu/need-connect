@@ -1,0 +1,902 @@
+import { Feather, Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  Linking,
+  Modal,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  fetchPortfolioById,
+  fetchReviewStats,
+  postReview,
+} from "@/utils/apiFunctions";
+import { useAuth } from "@/utils/AuthContext";
+import ExperienceSection from "../portfolio/ExperienceSection";
+import ReviewModal from "../reviews/ReviewModal";
+import { colors } from "@/constants/colors";
+import SectionCard from "../portfolio/SectionCard";
+
+export default function PortfolioDetail() {
+  const { portfolioId } = useLocalSearchParams();
+  const [portfolio, setPortfolio] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [showReview, setShowReview] = useState(false);
+  const [stats, setStats] = useState({ averageRating: 0, totalReviews: 0 });
+  const { user: currentUser } = useAuth();
+  const router = useRouter();
+
+  const gallery: string[] = portfolio?.gallery ?? [];
+  const screenWidth = Dimensions.get("window").width;
+
+  /** Ensure URL has a scheme so Android/iOS can open it */
+  const normalizeUrl = (url: string): string => {
+    const trimmed = url.trim();
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    if (/^mailto:/i.test(trimmed)) return trimmed;
+    if (/^tel:/i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetchPortfolioById(portfolioId as string);
+        const pData: any = res.data;
+        const fetchedPortfolio = pData?.data || pData;
+        setPortfolio(fetchedPortfolio);
+
+        // Fetch rating stats
+        const uId =
+          (typeof fetchedPortfolio?.user === "object" ? (fetchedPortfolio?.user?._id || fetchedPortfolio?.user?.id) : fetchedPortfolio?.user) ||
+          fetchedPortfolio?.userId ||
+          portfolioId;
+        if (uId) {
+          try {
+            const statsRes = await fetchReviewStats(uId);
+            if (statsRes.data?.success) {
+              setStats(statsRes.data.data);
+            }
+          } catch (sErr) {
+            console.error("Stats fetch failed:", sErr);
+          }
+        }
+      } catch (err: any) {
+        const message =
+          err?.response?.data?.message ||
+          "Failed to load profile. Please try again.";
+        setError(message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (portfolioId) load();
+  }, [portfolioId]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "#F8F9FA",
+          }}
+        >
+          <ActivityIndicator size="large" color="#4A6CF7" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !portfolio) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "#F8F9FA",
+            gap: 12,
+          }}
+        >
+          <Feather name="alert-circle" size={40} color="#FF4757" />
+          <Text
+            style={{
+              fontSize: 16,
+              color: "#FF4757",
+              textAlign: "center",
+              paddingHorizontal: 32,
+            }}
+          >
+            {error || "Profile not found"}
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{
+              backgroundColor: "#4A6CF7",
+              paddingHorizontal: 24,
+              paddingVertical: 12,
+              borderRadius: 14,
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "600" }}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const ownerId =
+    portfolio?.user?._id ||
+    portfolio?.user?.id ||
+    (typeof portfolio?.user === "string" ? portfolio.user : null) ||
+    portfolio?.userId;
+
+  const currentUid = currentUser?._id || currentUser?.id;
+  const isOwner = !!(currentUid && ownerId && currentUid === ownerId);
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <View style={{ flex: 1, backgroundColor: "#F8F9FA" }}>
+        <ScrollView
+          style={styles.container}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* BACK BUTTON */}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Feather name="arrow-left" size={24} color="#333" />
+          </TouchableOpacity>
+
+          {/* HEADER CARD */}
+          <View style={styles.headerCard}>
+            <View style={styles.headerBanner} />
+            {portfolio.profilePhoto ? (
+              <Image
+                source={{ uri: portfolio.profilePhoto }}
+                style={[
+                  styles.avatar,
+                  styles.avatarHasBanner,
+                  stats.averageRating > 0 &&
+                    stats.averageRating < 2.5 &&
+                    styles.lowRatingAvatar,
+                ]}
+              />
+            ) : (
+              <View
+                style={[
+                  styles.avatar,
+                  styles.avatarHasBanner,
+                  styles.placeholderAvatar,
+                  stats.averageRating > 0 &&
+                    stats.averageRating < 2.5 &&
+                    styles.lowRatingAvatar,
+                ]}
+              >
+                <Text style={styles.placeholderText}>
+                  {portfolio.name?.charAt(0).toUpperCase() || "?"}
+                </Text>
+              </View>
+            )}
+            <View style={styles.nameRow}>
+              <Text style={styles.name}>{portfolio.name}</Text>
+              {(portfolio.isVerified || portfolio.user?.isVerified) && (
+                <Ionicons name="checkmark-circle" size={18} color="#4A6CF7" />
+              )}
+            </View>
+            <Text style={styles.profession}>{portfolio.profession}</Text>
+
+            <TouchableOpacity
+              style={styles.ratingRow}
+              onPress={() =>
+                router.push({
+                  pathname: "/user-reviews" as any,
+                  params: {
+                    userId:
+                      portfolio?.user?._id ||
+                      portfolio?.user?.id ||
+                      portfolio?.user ||
+                      portfolio?.userId,
+                    userName: portfolio?.name,
+                  },
+                })
+              }
+            >
+              {[...Array(5)].map((_, i) => {
+                const rat =
+                  stats.averageRating ||
+                  portfolio.rating ||
+                  portfolio.user?.rating ||
+                  0;
+                return (
+                  <Ionicons
+                    key={i}
+                    name={i < Math.floor(rat) ? "star" : "star-outline"}
+                    size={14}
+                    color="#FFB800"
+                  />
+                );
+              })}
+              <Text
+                style={[
+                  styles.ratingText,
+                  stats.averageRating > 0 &&
+                    stats.averageRating < 2.5 &&
+                    styles.lowRatingText,
+                ]}
+              >
+                {stats.averageRating > 0
+                  ? stats.averageRating.toFixed(1)
+                  : portfolio.rating || portfolio.user?.rating || "New"}
+              </Text>
+              <Feather
+                name="chevron-right"
+                size={12}
+                color="#999"
+                style={{ marginLeft: 4 }}
+              />
+            </TouchableOpacity>
+
+            <View style={styles.locationBadge}>
+              <Feather name="map-pin" size={12} color={colors.textMuted} style={{ marginRight: 4 }} />
+              <Text style={styles.locationText}>{portfolio.location}</Text>
+            </View>
+
+            {isOwner &&
+              stats.averageRating > 0 &&
+              stats.averageRating < 2.5 && (
+                <View style={styles.warningBanner}>
+                  <Ionicons name="warning-outline" size={16} color="#FF4757" />
+                  <Text style={styles.warningText}>
+                    Your rating is low ({stats.averageRating.toFixed(1)}).
+                    Please improve your standing.
+                  </Text>
+                </View>
+              )}
+
+            {!isOwner && (
+              <TouchableOpacity
+                style={styles.reviewBtn}
+                onPress={() => setShowReview(true)}
+              >
+                <Feather name="edit-2" size={14} color="#4A6CF7" />
+                <Text style={styles.reviewBtnText}>Write a Review</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* BIO */}
+          {!!portfolio.bio && (
+            <SectionCard icon="user" title="About">
+              <Text style={styles.text}>{portfolio.bio}</Text>
+            </SectionCard>
+          )}
+
+          {/* SERVICES */}
+          {portfolio.services?.length > 0 && (
+            <SectionCard icon="briefcase" title="Services" count={portfolio.services.length}>
+              <TagList data={portfolio.services} />
+            </SectionCard>
+          )}
+
+          {/* SKILLS */}
+          {portfolio.skills?.length > 0 && (
+            <SectionCard icon="award" title="Skills" count={portfolio.skills.length}>
+              <TagList data={portfolio.skills} />
+            </SectionCard>
+          )}
+
+          {/* EXPERIENCE */}
+          {portfolio.experience?.length > 0 && (
+            <ExperienceSection
+              experiences={portfolio.experience}
+              setExperiences={() => {}}
+              mode="view"
+              error={null}
+            />
+          )}
+
+          {/* GALLERY */}
+          {portfolio.gallery?.length > 0 && (
+            <SectionCard icon="image" title="Portfolio" count={portfolio.gallery.length}>
+              <View style={styles.gallery}>
+                {portfolio.gallery.map((img: string, idx: number) => (
+                  <TouchableOpacity
+                    key={img}
+                    activeOpacity={0.85}
+                    style={styles.imageTouchable}
+                    onPress={() => setLightboxIndex(idx)}
+                  >
+                    <Image source={{ uri: img }} style={styles.image} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </SectionCard>
+          )}
+
+          {/* LIGHTBOX MODAL */}
+          <Modal
+            visible={lightboxIndex !== null}
+            transparent
+            animationType="fade"
+            statusBarTranslucent
+            onRequestClose={() => setLightboxIndex(null)}
+          >
+            <StatusBar backgroundColor="#000" barStyle="light-content" />
+            <View style={styles.lightboxBg}>
+              {/* Close */}
+              <TouchableOpacity
+                style={styles.lightboxClose}
+                onPress={() => setLightboxIndex(null)}
+              >
+                <Feather name="x" size={26} color="#fff" />
+              </TouchableOpacity>
+
+              {/* Counter */}
+              <Text style={styles.lightboxCounter}>
+                {lightboxIndex !== null ? lightboxIndex + 1 : ""} /{" "}
+                {gallery.length}
+              </Text>
+
+              {/* Image */}
+              {lightboxIndex !== null && (
+                <Image
+                  source={{ uri: gallery[lightboxIndex] }}
+                  style={[styles.lightboxImage, { width: screenWidth }]}
+                  resizeMode="contain"
+                />
+              )}
+
+              {/* Prev / Next */}
+              <View style={styles.lightboxNav}>
+                <TouchableOpacity
+                  style={[
+                    styles.lightboxNavBtn,
+                    lightboxIndex === 0 && styles.lightboxNavDisabled,
+                  ]}
+                  onPress={() =>
+                    setLightboxIndex((i) => (i !== null && i > 0 ? i - 1 : i))
+                  }
+                  disabled={lightboxIndex === 0}
+                >
+                  <Feather name="chevron-left" size={30} color="#fff" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.lightboxNavBtn,
+                    lightboxIndex === gallery.length - 1 &&
+                      styles.lightboxNavDisabled,
+                  ]}
+                  onPress={() =>
+                    setLightboxIndex((i) =>
+                      i !== null && i < gallery.length - 1 ? i + 1 : i,
+                    )
+                  }
+                  disabled={lightboxIndex === gallery.length - 1}
+                >
+                  <Feather name="chevron-right" size={30} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          {/* LINKS */}
+          {Object.keys(portfolio.links || {}).length > 0 && (
+            <SectionCard icon="globe" title="Social Links">
+              {Object.entries(portfolio.links)
+                .filter(([, url]) => !!url)
+                .map(([key, url]) => (
+                  <TouchableOpacity
+                    key={key}
+                    style={styles.linkRow}
+                    onPress={() => Linking.openURL(normalizeUrl(url as string))}
+                  >
+                    <View style={styles.linkIconWrap}>
+                      <Feather name="external-link" size={14} color="#4A6CF7" />
+                    </View>
+                    <Text style={styles.linkLabel}>
+                      {key.charAt(0).toUpperCase() + key.slice(1)}
+                    </Text>
+                    <Text style={styles.linkUrl} numberOfLines={1}>
+                      {(url as string).trim()}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+            </SectionCard>
+          )}
+
+          {/* CONTACT INFO */}
+          {(portfolio.contact?.phone || portfolio.email) && (
+            <SectionCard icon="mail" title="Contact">
+              {portfolio.contact?.phone && (
+                <TouchableOpacity
+                  style={styles.contactRow}
+                  onPress={() =>
+                    Linking.openURL(
+                      `tel:${portfolio.contact.countryCode ?? ""}${portfolio.contact.phone}`,
+                    )
+                  }
+                >
+                  <View style={styles.contactIconWrap}>
+                    <Feather name="phone" size={16} color="#4A6CF7" />
+                  </View>
+                  <View>
+                    <Text style={styles.contactLabel}>Phone</Text>
+                    <Text style={styles.contactValue}>
+                      {portfolio.contact.countryCode} {portfolio.contact.phone}
+                    </Text>
+                  </View>
+                  <Feather
+                    name="chevron-right"
+                    size={18}
+                    color="#bbb"
+                    style={{ marginLeft: "auto" }}
+                  />
+                </TouchableOpacity>
+              )}
+              {portfolio.email && (
+                <TouchableOpacity
+                  style={styles.contactRow}
+                  onPress={() => Linking.openURL(`mailto:${portfolio.email}`)}
+                >
+                  <View style={styles.contactIconWrap}>
+                    <Feather name="mail" size={16} color="#4A6CF7" />
+                  </View>
+                  <View>
+                    <Text style={styles.contactLabel}>Email</Text>
+                    <Text style={styles.contactValue}>{portfolio.email}</Text>
+                  </View>
+                  <Feather
+                    name="chevron-right"
+                    size={18}
+                    color="#bbb"
+                    style={{ marginLeft: "auto" }}
+                  />
+                </TouchableOpacity>
+              )}
+            </SectionCard>
+          )}
+
+          {/* FOOTER SPACER */}
+          <View
+            style={{
+              height: portfolio.contact?.phone || portfolio.email ? 100 : 20,
+            }}
+          />
+        </ScrollView>
+
+        {/* BOTTOM ACTION BAR — only shown if at least one contact method exists */}
+        {(portfolio.contact?.phone || portfolio.email) && (
+          <View style={styles.footer}>
+            {portfolio.contact?.phone && (
+              <TouchableOpacity
+                style={[styles.actionButton, styles.callButton]}
+                onPress={() =>
+                  Linking.openURL(
+                    `tel:${portfolio.contact.countryCode ?? ""}${portfolio.contact.phone}`,
+                  )
+                }
+              >
+                <Feather name="phone" size={18} color="#fff" />
+                <Text style={styles.actionButtonText}>Call</Text>
+              </TouchableOpacity>
+            )}
+            {portfolio.email && (
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  styles.emailButton,
+                  !portfolio.contact?.phone && { flex: 1 },
+                ]}
+                onPress={() => Linking.openURL(`mailto:${portfolio.email}`)}
+              >
+                <Feather name="mail" size={18} color="#4A6CF7" />
+                <Text style={[styles.actionButtonText, { color: "#4A6CF7" }]}>
+                  Email
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+      </View>
+
+      <ReviewModal
+        visible={showReview}
+        onClose={() => setShowReview(false)}
+        userName={portfolio?.name || "User"}
+        reviewedUserId={
+          ownerId ||
+          (typeof portfolioId === "string" ? portfolioId : "UNKNOWN_ID")
+        }
+        onSubmit={async (reviewData: any) => {
+          try {
+            await postReview(reviewData);
+            alert("Review submitted successfully!");
+            setShowReview(false);
+          } catch (err: any) {
+            console.error("Review failed:", err);
+            alert(err?.response?.data?.message || "Failed to submit review.");
+          }
+        }}
+      />
+    </SafeAreaView>
+  );
+}
+
+function TagList({ data }: { data: string[] }) {
+  return (
+    <View style={styles.tags}>
+      {data.map((item) => (
+        <View key={item} style={styles.tag}>
+          <Text style={styles.tagText}>{item}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F8F9FA",
+  },
+  container: {
+    flex: 1,
+    backgroundColor: "#F8F9FA",
+    padding: 16,
+  },
+
+  headerCard: {
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 24,
+    alignItems: "center",
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 3,
+    position: "relative",
+    overflow: "hidden",
+  },
+  headerBanner: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 70,
+    backgroundColor: colors.primarySoft,
+  },
+
+  backButton: {
+    marginBottom: 16,
+    marginTop: 8,
+  },
+
+  avatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    marginBottom: 12,
+  },
+  avatarHasBanner: {
+    marginTop: 20,
+    borderWidth: 3,
+    borderColor: "#fff",
+  },
+  placeholderAvatar: {
+    backgroundColor: "#4A6CF7",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  placeholderText: {
+    color: "#fff",
+    fontSize: 42,
+    fontWeight: "800",
+  },
+
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  name: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  profession: {
+    fontSize: 14,
+    color: "#4A6CF7",
+    fontWeight: "700",
+    marginTop: 2,
+  },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    marginTop: 6,
+    marginBottom: 6,
+  },
+  ratingText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#555",
+  },
+  lowRatingAvatar: {
+    borderWidth: 3,
+    borderColor: "#FF4757",
+  },
+  lowRatingText: {
+    color: "#FF4757",
+  },
+  locationBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  locationText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    fontWeight: "600",
+  },
+  warningBanner: {
+    marginTop: 12,
+    padding: 10,
+    backgroundColor: "#FFF5F5",
+    borderRadius: 12,
+    flexDirection: "row",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "#FFE0E0",
+    width: "100%",
+  },
+  warningText: {
+    flex: 1,
+    fontSize: 12,
+    color: "#C53030",
+    lineHeight: 16,
+    fontWeight: "500",
+  },
+  reviewBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    gap: 6,
+    backgroundColor: "#fff",
+    marginTop: 12,
+  },
+  reviewBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#4A6CF7",
+  },
+
+  text: {
+    fontSize: 14.5,
+    color: "#4B5563",
+    lineHeight: 22,
+  },
+
+  tags: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+
+  tag: {
+    backgroundColor: "#EDF1FF",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+
+  tagText: {
+    fontSize: 12,
+    color: "#4A6CF7",
+    fontWeight: "700",
+  },
+
+  gallery: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+
+  imageTouchable: {
+    width: "48%",
+    height: 120,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+
+  linkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 11,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F3F6",
+    gap: 12,
+  },
+
+  linkIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#EDF1FF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  linkLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    width: 90,
+  },
+
+  linkUrl: {
+    flex: 1,
+    fontSize: 13,
+    color: "#4A6CF7",
+  },
+
+  lightboxBg: {
+    flex: 1,
+    backgroundColor: "#000",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  lightboxClose: {
+    position: "absolute",
+    top: 52,
+    right: 20,
+    zIndex: 10,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 20,
+    padding: 8,
+  },
+
+  lightboxCounter: {
+    position: "absolute",
+    top: 58,
+    alignSelf: "center",
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
+    opacity: 0.85,
+  },
+
+  lightboxImage: {
+    height: "75%" as any,
+  },
+
+  lightboxNav: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    position: "absolute",
+    bottom: 60,
+    left: 24,
+    right: 24,
+  },
+
+  lightboxNavBtn: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 28,
+    padding: 12,
+  },
+
+  lightboxNavDisabled: {
+    opacity: 0.25,
+  },
+
+  footer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    padding: 16,
+    paddingBottom: 32,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    flexDirection: "row",
+    gap: 12,
+  },
+
+  actionButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 14,
+    gap: 8,
+  },
+
+  callButton: {
+    backgroundColor: "#4A6CF7",
+    shadowColor: "#4A6CF7",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  emailButton: {
+    backgroundColor: "#EDF1FF",
+  },
+
+  actionButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+
+  contactRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F3F6",
+    gap: 14,
+  },
+
+  contactIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#EDF1FF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  contactLabel: {
+    fontSize: 11,
+    color: "#999",
+    marginBottom: 2,
+  },
+
+  contactValue: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#333",
+  },
+});

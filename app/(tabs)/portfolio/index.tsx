@@ -1,7 +1,7 @@
 import { Redirect } from "expo-router";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { colors } from "../../constants/colors";
-import { usePortfolio } from "../../hooks/usePortfolio";
+import { colors } from "@/constants/colors";
+import { usePortfolio } from "@/hooks/usePortfolio";
 
 export default function PortfolioIndex() {
   const { portfolio, loading } = usePortfolio();

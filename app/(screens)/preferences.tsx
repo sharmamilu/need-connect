@@ -14,7 +14,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { fetchPreferences, updatePreferences } from "../utils/apiFunctions";
+import { fetchPreferences, updatePreferences } from "@/utils/apiFunctions";
 
 type FeedPreferences = {
   feedType: "latest" | "recommended";
