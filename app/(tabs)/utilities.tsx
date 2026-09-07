@@ -18,7 +18,7 @@ import {
 } from "@/constants/templates";
 import { radius, shadow, spacing } from "@/constants/theme";
 
-const RECOMMENDED_IDS = ["invoice", "resume", "contract"];
+const RECOMMENDED_IDS = ["salary_slip", "invoice", "resume", "contract"];
 
 export default function UtilitiesScreen() {
   const router = useRouter();

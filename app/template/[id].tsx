@@ -218,7 +218,184 @@ export default function TemplateViewer() {
     let css = "";
     let bodyHtml = "";
 
-    if (id === "resume") {
+    if (id === "salary_slip" || id === "salary-slip" || id === "payslip") {
+      const companyName = formData.companyName || "ACME CORPORATION LTD.";
+      const companyAddress = formData.companyAddress || "100 Corporate Plaza, Technology District, Suite 400";
+      const empName = formData.employeeName || formData.clientName || "Employee Name";
+      const empId = formData.employeeId || "EMP-001";
+      const designation = formData.designation || "Staff Member";
+      const department = formData.department || "Operations";
+      const payPeriod = formData.payPeriod || "Current Month";
+      const payDate = formData.paymentDate || dateStr;
+      const bankAc = formData.bankAccount || "Corporate Direct Deposit";
+      const taxId = formData.panOrTaxId || "N/A";
+      const workingDays = formData.workingDays || "30 / 30";
+      const hrNotes = formData.notes || "This is a computer-generated salary slip and requires no physical signature.";
+
+      const parseNum = (val: string | undefined) => {
+        if (!val) return 0;
+        const n = parseFloat(val.replace(/[^0-9.-]+/g, ""));
+        return isNaN(n) ? 0 : n;
+      };
+
+      const basic = parseNum(formData.basicSalary);
+      const hra = parseNum(formData.hra);
+      const special = parseNum(formData.specialAllowance);
+      const bonus = parseNum(formData.bonus);
+      const totalEarnings = basic + hra + special + bonus;
+
+      const pf = parseNum(formData.pfDeduction);
+      const tax = parseNum(formData.taxDeduction);
+      const otherDeduct = parseNum(formData.otherDeduction);
+      const totalDeductions = pf + tax + otherDeduct;
+
+      const explicitAmount = parseNum(formData.amount);
+      const netPay = totalEarnings > 0 || totalDeductions > 0
+        ? Math.max(0, totalEarnings - totalDeductions)
+        : (explicitAmount || 0);
+
+      const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      const primaryColor = style.id === "dark" ? "#38BDF8" : style.id === "creative" ? "#DB2777" : style.id === "elegant" ? "#B45309" : "#0D9488";
+      const headerBg = style.id === "dark" ? "#0F172A" : style.id === "creative" ? "linear-gradient(135deg, #0D9488, #06B6D4)" : style.id === "elegant" ? "#FDF8F6" : "#F0FDFA";
+      const bodyBg = style.id === "dark" ? "#020617" : "#F8FAFC";
+      const cardBg = style.id === "dark" ? "#0F172A" : "#FFFFFF";
+      const textColor = style.id === "dark" ? "#F8FAFC" : "#1E293B";
+      const textMuted = style.id === "dark" ? "#94A3B8" : "#64748B";
+      const borderColor = style.id === "dark" ? "#334155" : "#E2E8F0";
+
+      css = `
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: ${bodyBg}; color: ${textColor}; padding: 30px; margin: 0; }
+        .payslip-container { max-width: 850px; margin: 0 auto; background: ${cardBg}; border: 1px solid ${borderColor}; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); overflow: hidden; }
+        
+        .company-header { background: ${headerBg}; padding: 30px; border-bottom: 2px solid ${primaryColor}; text-align: center; }
+        .company-name { font-size: 26px; font-weight: 800; color: ${style.id === "dark" ? "#38BDF8" : "#0F766E"}; letter-spacing: 0.5px; margin: 0; }
+        .company-address { font-size: 13px; color: ${textMuted}; margin-top: 6px; }
+        .doc-badge { display: inline-block; background: ${primaryColor}; color: #ffffff; padding: 6px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 14px; }
+        
+        .section-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: ${primaryColor}; margin-bottom: 12px; }
+        
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; padding: 24px 30px; border-bottom: 1px solid ${borderColor}; background: ${style.id === "dark" ? "#1E293B" : "#F8FAFC"}; }
+        .info-item { display: flex; justify-content: space-between; font-size: 13.5px; padding: 4px 0; }
+        .info-label { color: ${textMuted}; font-weight: 500; }
+        .info-value { font-weight: 700; color: ${textColor}; text-align: right; }
+        
+        .tables-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-bottom: 1px solid ${borderColor}; }
+        .table-col { padding: 24px 28px; }
+        .table-col:first-child { border-right: 1px solid ${borderColor}; }
+        
+        .salary-table { width: 100%; border-collapse: collapse; }
+        .salary-table th { text-align: left; font-size: 11px; text-transform: uppercase; color: ${textMuted}; padding-bottom: 10px; border-bottom: 1px solid ${borderColor}; }
+        .salary-table th:last-child { text-align: right; }
+        .salary-table td { padding: 9px 0; font-size: 13.5px; color: ${textColor}; border-bottom: 1px dashed ${borderColor}; }
+        .salary-table td:last-child { text-align: right; font-weight: 600; }
+        
+        .total-row td { border-bottom: none; font-weight: 800; font-size: 14.5px; padding-top: 14px; color: ${primaryColor}; }
+        
+        .net-pay-banner { background: ${style.id === "dark" ? "#1E293B" : "#F0FDFA"}; padding: 22px 30px; border-bottom: 1px solid ${borderColor}; display: flex; justify-content: space-between; align-items: center; }
+        .net-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: ${textMuted}; }
+        .net-amount { font-size: 28px; font-weight: 900; color: ${style.id === "dark" ? "#38BDF8" : "#0D9488"}; }
+        
+        .signatures-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; padding: 36px 30px 24px; text-align: center; }
+        .sign-box { border-top: 1px solid ${borderColor}; padding-top: 10px; font-size: 13px; color: ${textMuted}; font-weight: 600; }
+        
+        .footer-notes { padding: 18px 30px; background: ${style.id === "dark" ? "#0B0F19" : "#F8FAFC"}; font-size: 11.5px; color: ${textMuted}; text-align: center; border-top: 1px solid ${borderColor}; }
+      `;
+
+      bodyHtml = `
+        <div class="payslip-container">
+          <div class="company-header">
+            <h1 class="company-name">${companyName}</h1>
+            <div class="company-address">${companyAddress}</div>
+            <div class="doc-badge">SALARY SLIP — ${payPeriod.toUpperCase()}</div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item"><span class="info-label">Employee Name:</span><span class="info-value">${empName}</span></div>
+            <div class="info-item"><span class="info-label">Employee ID:</span><span class="info-value">${empId}</span></div>
+            <div class="info-item"><span class="info-label">Designation:</span><span class="info-value">${designation}</span></div>
+            <div class="info-item"><span class="info-label">Department:</span><span class="info-value">${department}</span></div>
+            <div class="info-item"><span class="info-label">Pay Period:</span><span class="info-value">${payPeriod}</span></div>
+            <div class="info-item"><span class="info-label">Disbursement Date:</span><span class="info-value">${payDate}</span></div>
+            <div class="info-item"><span class="info-label">Bank Account:</span><span class="info-value">${bankAc}</span></div>
+            <div class="info-item"><span class="info-label">PAN / Tax ID:</span><span class="info-value">${taxId}</span></div>
+            <div class="info-item"><span class="info-label">Working Days Paid:</span><span class="info-value">${workingDays}</span></div>
+          </div>
+
+          <div class="tables-row">
+            <!-- EARNINGS -->
+            <div class="table-col">
+              <div class="section-title">Earnings Breakdown</div>
+              <table class="salary-table">
+                <thead>
+                  <tr>
+                    <th>Component</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Basic Salary</td><td>$${fmt(basic)}</td></tr>
+                  ${hra > 0 ? `<tr><td>House Rent Allowance (HRA)</td><td>$${fmt(hra)}</td></tr>` : ""}
+                  ${special > 0 ? `<tr><td>Special / Conveyance Allowance</td><td>$${fmt(special)}</td></tr>` : ""}
+                  ${bonus > 0 ? `<tr><td>Bonus & Performance Incentive</td><td>$${fmt(bonus)}</td></tr>` : ""}
+                  <tr class="total-row">
+                    <td>Gross Earnings</td>
+                    <td>$${fmt(totalEarnings > 0 ? totalEarnings : explicitAmount)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- DEDUCTIONS -->
+            <div class="table-col">
+              <div class="section-title">Deductions Breakdown</div>
+              <table class="salary-table">
+                <thead>
+                  <tr>
+                    <th>Component</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Provident Fund (PF / 401k)</td><td>$${fmt(pf)}</td></tr>
+                  <tr><td>Income Tax (TDS / Tax)</td><td>$${fmt(tax)}</td></tr>
+                  ${otherDeduct > 0 ? `<tr><td>Medical & Other Deductions</td><td>$${fmt(otherDeduct)}</td></tr>` : ""}
+                  <tr class="total-row">
+                    <td>Total Deductions</td>
+                    <td>$${fmt(totalDeductions)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="net-pay-banner">
+            <div>
+              <div class="net-label">Net Take-Home Pay</div>
+              <div style="font-size: 12px; color: ${textMuted}; margin-top: 3px;">Paid directly via direct bank deposit</div>
+            </div>
+            <div class="net-amount">$${fmt(netPay)}</div>
+          </div>
+
+          <div class="signatures-grid">
+            <div class="sign-box">
+              <div style="height: 35px;"></div>
+              Authorized Employer Signatory & Seal
+            </div>
+            <div class="sign-box">
+              <div style="height: 35px;"></div>
+              Employee Acknowledgment Signature
+            </div>
+          </div>
+
+          <div class="footer-notes">
+            <strong>HR Note:</strong> ${hrNotes}<br/>
+            <span style="font-size: 10.5px; opacity: 0.8; margin-top: 4px; display: inline-block;">CONFIDENTIAL — Generated securely via Need-Connect Document Engine on ${dateStr}</span>
+          </div>
+        </div>
+      `;
+    } else if (id === "resume") {
       const emailStr = formData.contact || "";
       const linksStr = formData.links || "";
       const summaryStr = formData.description || "";
@@ -472,7 +649,12 @@ export default function TemplateViewer() {
   };
 
   const handlePreview = async () => {
-    if (!formData.title && !formData.clientName && !formData.amount) {
+    const isSalarySlip = id === "salary_slip" || id === "salary-slip" || id === "payslip";
+    const hasAnyField = isSalarySlip
+      ? !!(formData.companyName || formData.employeeName || formData.basicSalary || formData.title)
+      : !!(formData.title || formData.clientName || formData.amount);
+
+    if (!hasAnyField) {
       Alert.alert(
         "Missing Details",
         "Please fill out at least one field to see a preview.",
@@ -496,10 +678,17 @@ export default function TemplateViewer() {
   };
 
   const handleGenerate = async () => {
-    if (!formData.title || !formData.clientName) {
+    const isSalarySlip = id === "salary_slip" || id === "salary-slip" || id === "payslip";
+    const hasRequired = isSalarySlip
+      ? !!((formData.companyName || formData.title) && (formData.employeeName || formData.clientName))
+      : !!(formData.title && formData.clientName);
+
+    if (!hasRequired) {
       Alert.alert(
         "Missing Fields",
-        "Please fill out at least a title and a client/subject name.",
+        isSalarySlip
+          ? "Please provide at least the Company Name and Employee Name."
+          : "Please fill out at least a title and a client/subject name.",
       );
       return;
     }
@@ -523,7 +712,8 @@ export default function TemplateViewer() {
         base64: false,
       });
 
-      const pdfName = `${formData.title.replace(/[^a-zA-Z0-9]/g, "_") || id}_Document.pdf`;
+      const docTitle = formData.title || (isSalarySlip ? `${formData.companyName || "Company"}_Payslip_${formData.employeeName || "Employee"}` : id);
+      const pdfName = `${docTitle.replace(/[^a-zA-Z0-9]/g, "_")}_Document.pdf`;
 
       // 3. Save directly to the phone's native filesystem
       if (Platform.OS === "android") {
