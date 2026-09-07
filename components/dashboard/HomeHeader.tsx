@@ -135,12 +135,13 @@ export default function HomeHeader({ user, profile }: HomeHeaderProps) {
 const styles = StyleSheet.create({
   headerGradient: {
     paddingHorizontal: spacing.lg,
-    paddingTop: 8,
+    paddingTop: 10,
     paddingBottom: 14,
-    borderBottomLeftRadius: 22,
-    borderBottomRightRadius: 22,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(226, 232, 240, 0.8)",
+    borderRadius: 22,
+    marginBottom: 10,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.85)",
     ...Platform.select({
       ios: {
         shadowColor: "#0F172A",
@@ -149,7 +150,7 @@ const styles = StyleSheet.create({
         shadowRadius: 14,
       },
       android: {
-        elevation: 4,
+        elevation: 3,
       },
       default: {},
     }),

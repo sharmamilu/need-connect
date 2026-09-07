@@ -158,8 +158,8 @@ export default function HomeScreen() {
   if (loading && !refreshing) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
-        <HomeHeader user={user} profile={profile} />
         <View style={styles.listContent}>
+          <HomeHeader user={user} profile={profile} />
           <CreatePostTrigger
             user={user}
             profile={profile}
@@ -178,8 +178,6 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <HomeHeader user={user} profile={profile} />
-
       <FlatList
         data={visiblePosts}
         keyExtractor={(item, index) => `${item._id || item.id}-${index}`}
@@ -193,6 +191,7 @@ export default function HomeScreen() {
         }
         ListHeaderComponent={
           <View>
+            <HomeHeader user={user} profile={profile} />
             <CreatePostTrigger
               user={user}
               profile={profile}
